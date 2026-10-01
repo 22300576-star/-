@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 가을창문축제 · 무대운영팀 프로그램 발표 (Toss 스타일)</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" as="style" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<style>
+  :root{
+    /* Toss Reference Design System tokens (Toss Product Sans substituted with Pretendard) */
+    --ground-dark:#0c1a2e;
+    --ground-light:#ffffff;
+    --ink-onlight:#191f28;
+    --ink-onlight-muted:#4e5968;
+    --ink-ondark:#ffffff;
+    --ink-ondark-muted:#9fb3c8;
+    --green:#3182f6;
+    --yellow:#1b64da;
+    --purple:#3182f6;
+    --pink:#2272eb;
+    --surface:#f2f4f6;
+    --border:#e5e8eb;
+    --weak-bg:#e8f3ff;
+    --weak-fg:#1b64da;
+    --font-display:'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+    --font-text:'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#0b1220;overflow:hidden;height:100%;}
+  body{font-family:var(--font-text);}
+
+  #stage{
+    position:relative;
+    width:100vw;height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+  }
+  #scaler{
+    width:1920px;height:1080px;
+    min-width:1920px;min-height:1080px;
+    flex:none;
+    transform-origin:center center;
+    position:relative;
+  }
+
+  .slide{
+    width:1920px;height:1080px;
+    position:absolute; top:0; left:0;
+    padding:128px 128px 160px;
+    display:none;
+    flex-direction:column;
+    color:var(--ink-ondark);
+  }
+  .slide.active{display:flex;}
+  .slide.dark{background:var(--ground-dark);color:var(--ink-ondark);}
+  .slide.light{background:var(--ground-light);color:var(--ink-onlight);}
+
+  .eyebrow{font-size:26px;font-weight:700;letter-spacing:0.5px;margin:0 0 20px;}
+  h1.disp{font-family:var(--font-display);font-weight:800;margin:0;line-height:1.15;letter-spacing:-1px;}
+  h2.disp{font-family:var(--font-display);font-weight:700;margin:0;line-height:1.25;letter-spacing:-0.5px;}
+  h3.card-title{font-size:28px;font-weight:700;margin:0 0 12px;}
+  p{margin:0;}
+  .muted-dark{color:var(--ink-ondark-muted);}
+  .muted-light{color:var(--ink-onlight-muted);}
+
+  .footer{position:absolute;left:128px;bottom:56px;font-size:22px;}
+  .footer.dark{color:#7d90a8;}
+  .footer.light{color:#8b95a1;}
+  .pagenum{position:absolute;right:128px;bottom:56px;font-size:22px;}
+
+  .row{display:flex;}
+  .col{display:flex;flex-direction:column;}
+  .gap-12{gap:12px;} .gap-16{gap:16px;} .gap-20{gap:20px;} .gap-24{gap:24px;}
+  .gap-28{gap:28px;} .gap-32{gap:32px;} .gap-36{gap:36px;} .gap-40{gap:40px;}
+  .gap-48{gap:48px;} .gap-56{gap:56px;} .gap-80{gap:80px;} .gap-96{gap:96px;}
+
+  .card{border-radius:16px;padding:32px;}
+  .card.on-dark{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.16);}
+  .card.on-light{background:var(--surface);border:1px solid var(--border);}
+
+  table{border-collapse:collapse;width:100%;font-size:24px;}
+  th,td{padding:14px 18px;text-align:left;border-bottom:1px solid var(--border);}
+  .light-table th{background:var(--ink-onlight);color:#fff;}
+  .light-table tr:nth-child(even){background:var(--surface);}
+  .light-table tr:nth-child(odd):not(:first-child){background:#ffffff;}
+
+  .swatch{width:56px;height:56px;border-radius:12px;}
+
+  .bar{width:64px;height:8px;border-radius:4px;}
+
+  .day-card{flex:1;border-radius:16px;padding:36px;background:var(--ground-dark);display:flex;flex-direction:column;gap:14px;}
+
+  .pill{display:inline-flex;padding:8px 20px;border-radius:999px;font-size:22px;font-weight:600;background:var(--weak-bg);color:var(--weak-fg);}
+
+  /* Nav UI */
+  #nav{
+    position:fixed;left:0;right:0;bottom:18px;
+    display:flex;align-items:center;justify-content:center;gap:14px;
+    z-index:50; font-family:var(--font-text); color:#eee;
+  }
+  #nav button{
+    background:var(--weak-bg);border:none;
+    color:var(--weak-fg);border-radius:14px;padding:12px 22px;font-size:15px;font-weight:600;cursor:pointer;
+  }
+  #nav button:hover{background:#d7e9ff;}
+  #btn-next{background:#3182f6 !important;color:#fff !important;}
+  #btn-next:hover{background:#2272eb !important;}
+  #counter{font-size:15px;color:#ccc;min-width:64px;text-align:center;}
+  .click-zone{position:fixed;top:0;bottom:0;width:12%;z-index:40;cursor:pointer;}
+  #zone-prev{left:0;} #zone-next{right:0;}
+
+  .img-fallback{display:flex;align-items:center;justify-content:center;background:var(--weak-bg);color:var(--weak-fg);font-weight:700;font-size:32px;text-align:center;}
+
+  @media print{
+    html,body{overflow:visible;background:#fff;}
+    #nav,.click-zone{display:none !important;}
+    #stage{width:auto;height:auto;display:block;overflow:visible;}
+    #scaler{transform:none !important;width:1920px;height:1080px;}
+    .slide{display:flex !important;position:relative;page-break-after:always;}
+    @page{size:1920px 1080px;margin:0;}
+  }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="scaler">
+
+    <!-- 1. COVER -->
+    <section class="slide dark active" id="s-cover">
+      <div class="col gap-28">
+        <p class="eyebrow" style="color:var(--green)">2026 가을창문축제 · DREAMERS</p>
+        <h1 class="disp" style="font-size:150px;color:#fff;">무대운영팀</h1>
+        <h2 class="disp" style="font-size:66px;color:#fff;">프로그램 발표</h2>
+      </div>
+      <div class="row" style="margin-top:auto;align-items:flex-end;justify-content:space-between;">
+        <div class="row gap-16">
+          <div class="swatch" style="background:var(--green);"></div>
+          <div class="swatch" style="background:var(--yellow);border-radius:28px;"></div>
+          <div class="swatch" style="background:var(--purple);"></div>
+          <div class="swatch" style="background:var(--pink);border-radius:28px;"></div>
+        </div>
+        <p style="font-size:27px;color:var(--ink-ondark-muted);">2026.11.04(수) – 11.06(금) · 한동대학교 평봉필드 특설무대</p>
+      </div>
+    </section>
+
+    <!-- 2. CONCEPT -->
+    <section class="slide light" id="s-concept">
+      <p class="eyebrow" style="color:var(--purple);">프로그램 개요</p>
+      <h2 class="disp" style="font-size:58px;margin-bottom:34px;">하나의 무대, 하나의 서사</h2>
+      <div style="width:1350px;margin-bottom:36px;">
+        <p style="font-size:27px;line-height:1.55;color:var(--ink-onlight-muted);">축제 대주제 'Dreamers'는 한동대학교 공동체가 지나온 꿈, 지금 품고 있는 꿈, 앞으로 함께 이루어갈 꿈을 무대 위에 올리는 것을 목표로 합니다. 무대운영팀은 3일간의 프로그램을 개별 이벤트가 아닌 하나의 흐름(Day Flow)으로 연결합니다.</p>
+      </div>
+      <div class="row gap-28">
+        <div class="day-card">
+          <div class="bar" style="background:var(--purple);"></div>
+          <h3 style="font-size:31px;color:#fff;font-weight:700;margin:0;">DAY 1 · 한동의 꿈</h3>
+          <p style="font-size:23px;color:var(--ink-ondark-muted);line-height:1.5;">Our Roots — 공동체가 이어온 정체성을 무대 위에서 다시 꺼냅니다.</p>
+        </div>
+        <div class="day-card">
+          <div class="bar" style="background:var(--yellow);"></div>
+          <h3 style="font-size:31px;color:#fff;font-weight:700;margin:0;">DAY 2 · 나의 꿈</h3>
+          <p style="font-size:23px;color:var(--ink-ondark-muted);line-height:1.5;">My Dream — 학우 개개인이 주인공이 되는 참여형 무대로 이어갑니다.</p>
+        </div>
+        <div class="day-card">
+          <div class="bar" style="background:var(--pink);"></div>
+          <h3 style="font-size:31px;color:#fff;font-weight:700;margin:0;">DAY 3 · 우리의 꿈</h3>
+          <p style="font-size:23px;color:var(--ink-ondark-muted);line-height:1.5;">Our Dream — 흩어진 개인의 꿈이 다시 공동체의 꿈으로 모입니다.</p>
+        </div>
+      </div>
+      <p class="footer light">DREAMERS 2026 · 무대운영팀</p>
+    </section>
+
+    <!-- 3. MESSAGE -->
+    <section class="slide dark" id="s-message" style="justify-content:center;">
+      <p class="eyebrow" style="color:var(--pink);">메시지</p>
+      <div style="width:1550px;margin-bottom:48px;">
+        <p class="disp" style="font-size:46px;font-weight:400;line-height:1.5;color:#fff;">"한동대학교는 사랑·겸손·봉사의 꿈에서 시작되었고, 그 꿈은 지금 이 자리의 학우들에게 이어지고 있습니다."</p>
+      </div>
+      <div style="width:1400px;">
+        <p style="font-size:26px;line-height:1.6;color:var(--ink-ondark-muted);">무대 위에 선 사람뿐 아니라 무대 아래에서 함께 환호하는 모든 학우가 'Dreamers'입니다. Day 1의 '한동의 꿈'이 Day 2의 '나의 꿈'으로, 다시 Day 3의 '우리의 꿈'으로 모이며 — 개인의 꿈과 공동체의 꿈이 연결되어 있는, 꿈꾸는 대학교라는 메시지를 전달합니다.</p>
+      </div>
+      <p class="footer dark">DREAMERS 2026 · 무대운영팀</p>
+    </section>
+
+    <!-- 4. EFFECTS -->
+    <section class="slide light" id="s-effects">
+      <p class="eyebrow" style="color:var(--green);">기대 효과</p>
+      <h2 class="disp" style="font-size:54px;margin-bottom:38px;">무대가 만드는 네 가지 변화</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;">
+        <div class="card on-light">
+          <h3 class="card-title">서사적 일관성 확보</h3>
+          <p style="font-size:23px;color:var(--ink-onlight-muted);line-height:1.5;">3일간의 프로그램이 '한동의 꿈 → 나의 꿈 → 우리의 꿈'으로 이어져, 하나의 축제로 인식됩니다.</p>
+        </div>
+        <div class="card on-light">
+          <h3 class="card-title">참여 확대</h3>
+          <p style="font-size:23px;color:var(--ink-onlight-muted);line-height:1.5;">동아리공연, 경연, 연예인 토크쇼 등 관객이 함께 참여하는 프로그램으로 공연자와 관객이 함께 즐깁니다.</p>
+        </div>
+        <div class="card on-light">
+          <h3 class="card-title">공동체 결속 강화</h3>
+          <p style="font-size:23px;color:var(--ink-onlight-muted);line-height:1.5;">무대를 중심으로 학부·동아리를 넘어선 연합의 경험이 축적됩니다.</p>
+        </div>
+        <div class="card on-light">
+          <h3 class="card-title">정체성 환기</h3>
+          <p style="font-size:23px;color:var(--ink-onlight-muted);line-height:1.5;">꿈의 무대를 통해 학교의 설립 정신과 '꿈꾸는 대학'이라는 정체성을 상기합니다.</p>
+        </div>
+      </div>
+      <p class="footer light">DREAMERS 2026 · 무대운영팀</p>
+    </section>
+
+    <!-- 5. DATETIME -->
+    <section class="slide dark" id="s-datetime" style="justify-content:center;">
+      <p class="eyebrow" style="color:var(--green);">일시 및 장소</p>
+      <div class="row gap-96">
+        <div class="col gap-14">
+          <p style="font-size:23px;color:#9fb3c8;">일시</p>
+          <h2 class="disp" style="font-size:70px;color:#fff;">2026.11.04 – 11.06</h2>
+          <p style="font-size:26px;color:var(--ink-ondark-muted);">수요일 – 금요일, 3일간</p>
+        </div>
+        <div class="col gap-14">
+          <p style="font-size:23px;color:#9fb3c8;">장소</p>
+          <h2 class="disp" style="font-size:54px;color:#fff;">평봉필드 특설무대</h2>
+          <p style="font-size:26px;color:var(--ink-ondark-muted);">한동대학교 메인 무대 및 관객 존</p>
+        </div>
+      </div>
+      <p class="footer dark">DREAMERS 2026 · 무대운영팀</p>
+    </section>
+
+    <!-- 6. TIMELINE -->
+    <!-- 7. DAY1 DIVIDER -->
+    <section class="slide dark" id="s-day1-divider">
+      <div class="row gap-80" style="height:100%;">
+        <div class="col gap-16" style="width:480px;justify-content:center;">
+          <p class="eyebrow" style="color:var(--purple);margin-bottom:0;">DAY 1 · 11.04(수)</p>
+          <h1 class="disp" style="font-size:112px;color:#fff;">한동의 꿈</h1>
+          <p style="font-size:32px;color:var(--purple);font-weight:700;">Our Roots</p>
+          <p style="font-size:23px;color:var(--ink-ondark-muted);line-height:1.5;">한동대학교가 세워지며 품었던 꿈과 공동체의 정체성을 무대 위에서 다시 꺼냅니다.</p>
+        </div>
+        <div class="col gap-28" style="flex:1;justify-content:center;">
+          <div class="row gap-24" style="align-items:flex-start;">
+            <p style="width:120px;font-size:23px;color:var(--purple);font-weight:700;">18:00</p>
+            <div class="col gap-8">
+              <h3 style="font-size:29px;color:#fff;font-weight:700;margin:0;">United Worship</h3>
+              <p style="font-size:22px;color:var(--ink-ondark-muted);">5개 예배팀이 연합하여 축제의 시작을 예배로 올려드립니다.</p>
+            </div>
+          </div>
+          <div class="row gap-24" style="align-items:flex-start;">
+            <p style="width:120px;font-size:23px;color:var(--purple);font-weight:700;">19:00</p>
+            <div class="col gap-8">
+              <h3 style="font-size:29px;color:#fff;font-weight:700;margin:0;">Back to '95</h3>
+              <p style="font-size:22px;color:var(--ink-ondark-muted);">서덕수·김완진 교수님 초청 라디오 토크쇼 — 한동대 초기의 모습과 꿈을 듣습니다.</p>
+            </div>
+          </div>
+          <div class="row gap-24" style="align-items:flex-start;">
+            <p style="width:120px;font-size:23px;color:var(--purple);font-weight:700;">20:00</p>
+            <div class="col gap-8">
+              <h3 style="font-size:29px;color:#fff;font-weight:700;margin:0;">꿈을 노래하다 (김복유 공연)</h3>
+              <p style="font-size:22px;color:var(--ink-ondark-muted);">곡과 이야기로 삶과 신앙, 꿈의 여정을 나누는 콘서트</p>
+            </div>
+          </div>
+          <div class="row gap-24" style="align-items:flex-start;">
+            <p style="width:120px;font-size:23px;color:var(--purple);font-weight:700;">21:00</p>
+            <div class="col gap-8">
+              <h3 style="font-size:29px;color:#fff;font-weight:700;margin:0;">꿈을 Dream — 1차 8강</h3>
+              <p style="font-size:22px;color:var(--ink-ondark-muted);">각자의 꿈과 이야기를 달란트로 노래하고 공연하는 경연 프로그램</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7b. DAY1 UNITED WORSHIP -->
+    <section class="slide light" id="s-day1-worship">
+      <p class="eyebrow" style="color:var(--purple);">DAY 1 · 한동의 꿈 · 18:00~</p>
+      <h2 class="disp" style="font-size:52px;margin-bottom:24px;">United Worship</h2>
+      <div style="width:1500px;margin-bottom:32px;">
+        <p style="font-size:24px;line-height:1.55;color:var(--ink-onlight-muted);">축제 오프닝 직후 메인 타이틀과 함께 사회자가 무대를 열고, 테마 설명 후 United Worship으로 무대를 인계합니다. 한동대학교의 5개 예배팀이 연합하여 축제의 시작을 하나님께 올려드리는 연합예배입니다.</p>
+      </div>
+      <div class="row gap-32">
+        <div class="card on-light" style="flex:1;">
+          <h3 class="card-title">참여 예배팀 (5팀 연합)</h3>
+          <p style="font-size:23px;color:var(--ink-onlight-muted);line-height:1.6;">강물예배 · 끝시간 · 새벽의 벌떡 · EPT · CPT</p>
+        </div>
+        <div class="card on-light" style="flex:1;">
+          <h3 class="card-title">전달하는 메시지</h3>
+          <p style="font-size:23px;color:var(--ink-onlight-muted);line-height:1.6;">한동이 하나로 연합되는 꿈이 담긴 메시지를 예배로 전달합니다 — Day 1 '한동의 꿈' 서사의 첫 순서입니다.</p>
+        </div>
+      </div>
+      <p class="footer light">DREAMERS 2026 · 무대운영팀</p>
+    </section>
+
+    <!-- 7c. DAY1 BACK TO '95 -->
+    <section class="slide light" id="s-day1-back95">
+      <p class="eyebrow" style="color:var(--purple);">DAY 1 · 한동의 꿈 · 20:00~21:15 (75분, 동아리팀 기획)</p>
+      <h2 class="disp" style="font-size:48px;margin-bottom:16px;">Back to '95</h2>
+      <div style="width:1550px;margin-bottom:16px;">
+        <p class="disp" style="font-size:26px;font-weight:400;line-height:1.5;color:#191f28;">"황무지에서 시작된 한동의 꿈은, 지금 우리에게 어떤 모습으로 이어지고 있는가?"</p>
+      </div>
+      <div style="width:1550px;margin-bottom:24px;">
+        <p style="font-size:22px;line-height:1.5;color:var(--ink-onlight-muted);">1995년 개교 학번 동문(1순위: 서덕수·김완진 교수님)을 초청한 라디오 토크쇼. 학창 시절 경험과 그 시절 품었던 꿈, 지금의 꿈을 나누며 한동의 과거·현재·미래를 연결합니다.</p>
+      </div>
+      <table class="light-table" style="font-size:19px;margin-bottom:20px;">
+        <tr><th>시간</th><th>내용</th></tr>
+        <tr><td>20:00–20:06</td><td>오프닝 · 출연자 퀴즈로 소개</td></tr>
+        <tr><td>20:06–20:31</td><td>출연자 토크쇼 · 학창 시절 경험 → 그때의 꿈·지금의 꿈</td></tr>
+        <tr><td>20:31–20:43</td><td>'95 QUIZ · 정답자 무대 초청 및 인터뷰</td></tr>
+        <tr><td>20:43–21:08</td><td>관객 질문·사연 소개 (BGM 배경)</td></tr>
+        <tr><td>21:08–21:15</td><td>클로징 및 무대 정리</td></tr>
+      </table>
+      <div class="row gap-28">
+        <div class="card on-light" style="flex:1;">
+          <h3 class="card-title">인력 구성 (8명)</h3>
+          <p style="font-size:20px;color:var(--ink-onlight-muted);line-height:1.5;">총괄/큐콜 1 · 무대진행 3 · 백스테이지 1 · 스크린 1 · BGM 1 · MC 1</p>
+        </div>
+        <div class="card on-light" style="flex:1;">
+          <h3 class="card-title">요청 사항 / 사연 공모</h3>
+          <p style="font-size:20px;color:var(--ink-onlight-muted);line-height:1.5;">디자인팀 — 사전 홍보 포스터. 사연 주제: '한동에 처음 왔을 때 꿨던 꿈'과 '현재 꿈·고민'을 신청곡과 함께 공모.</p>
+        </div>
+      </div>
+      <p class="footer light">DREAMERS 2026 · 무대운영팀</p>
+    </section>
+
+    <!-- 8. DAY1 KIMBOKU DEEP DIVE -->
+    <section class="slide light" id="s-day1-kimboku">
+      <p class="eyebrow" style="color:var(--purple);">DAY 1 · 한동의 꿈</p>
+      <div class="row gap-40" style="flex:1;min-height:0;">
+        <img src="assets/kimbokyu.jpg" alt="김복유" style="width:460px;height:100%;object-fit:cover;border-radius:20px;flex:none;">
+        <div class="col gap-18" style="flex:1;min-width:0;justify-content:center;">
+          <h2 class="disp" style="font-size:42px;margin:0;">꿈을 노래하다 — 김복유 공연</h2>
+          <p style="font-size:20px;color:var(--ink-onlight-muted);line-height:1.5;">2017년 데뷔한 CCM 싱어송라이터. 성경 이야기를 담은 '잇쉬가 잇샤에게' 등으로 20대 그리스도인들 사이에 널리 알려졌으며, 전국 투어·월간 콘서트 전석 매진을 기록했다.</p>
+          <p style="font-size:20px;line-height:1.5;color:var(--ink-onlight-muted);">곡과 곡 사이 이야기를 통해 삶과 신앙, 꿈의 여정을 나누는 콘서트형 프로그램입니다. (11/4 19:00–20:00, 총 60분)</p>
+          <table class="light-table" style="font-size:19px;">
+            <tr><th>시간</th><th>내용</th></tr>
+            <tr><td>19:00–19:02</td><td>오프닝 · 사회자 소개</td></tr>
+            <tr><td>19:02–19:55</td><td>공연 · 곡+간증</td></tr>
+            <tr><td>19:55–20:00</td><td>클로징 · 마무리 멘트 및 세팅 전환</td></tr>
+          </table>
+          <div class="row gap-16">
+            <div class="card on-light" style="flex:1;padding:20px;">
+              <h3 class="card-title" style="font-size:22px;margin:0 0 6px;">인력 구성 (9명)</h3>
+              <p style="font-size:18px;color:var(--ink-onlight-muted);line-height:1.5;">총괄무대 1 · VIP의전 1 · 백스테이지 3 · 프롬프터 1 · 안전요원 3</p>
+            </div>
+            <div class="card on-light" style="flex:1;padding:20px;">
+              <h3 class="card-title" style="font-size:22px;margin:0 0 6px;">고려 사항</h3>
+              <p style="font-size:18px;color:var(--ink-onlight-muted);line-height:1.5;">우천 시 무대 위 천막 설치. 스크린 표출 내용 사전 확인.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="footer light">DREAMERS 2026 · 무대운영팀</p>
+    </section>
+
+    <!-- 8b. DREAM CONTEST — DAY1 본선 8강 -->
+    <section class="slide light" id="s-dream-contest-day1">
+      <p class="eyebrow" style="color:var(--purple);">DAY 1 · 경연 본선 8강 · 21:00~23:00 (VIP팀 기획, 실 진행 ~22:37)</p>
+      <h2 class="disp" style="font-size:46px;margin-bottom:14px;">꿈을 Dream — 본선 8강</h2>
+      <div style="width:1550px;margin-bottom:14px;">
+        <p class="disp" style="font-size:24px;font-weight:400;line-height:1.4;color:#191f28;">"실력으로 줄 세우는 경쟁이 아닌, 이야기가 있는 사람의 꿈을 응원하는 무대"</p>
+      </div>
+      <div style="width:1550px;margin-bottom:20px;">
+        <p style="font-size:21px;line-height:1.5;color:var(--ink-onlight-muted);">8팀(밴드·댄스·랩)이 1:1 토너먼트 4라운드로 맞붙어, 이긴 4팀(TOP4)이 금요일 결선에 진출합니다. 진 팀도 무대에 남아 사회자와 꿈 사연을 나누는 시간을 갖습니다.</p>
+      </div>
+      <div class="row gap-24" style="margin-bottom:20px;">
+        <div class="card on-light" style="flex:1;">
+          <h3 class="card-title">진행 구조</h3>
+          <p style="font-size:19px;color:var(--ink-onlight-muted);line-height:1.5;">라운드당 18분(영상+소개 2' → 무대 10' → 투표·심사·발표 4' → 진팀 사연·퇴장 2'), 총 4라운드</p>
+        </div>
+        <div class="card on-light" style="flex:1;">
+          <h3 class="card-title">심사 방식</h3>
+          <p style="font-size:19px;color:var(--ink-onlight-muted);line-height:1.5;">심사위원 3인(조준모 교수님·곽찬 동문·이예빈 부디렉터) 60% + 카카오톡 오픈채팅 실시간 관객투표 40%</p>
+        </div>
+        <div class="card on-light" style="flex:1;">
+          <h3 class="card-title">관객 이벤트</h3>
+          <p style="font-size:19px;color:var(--ink-onlight-muted);line-height:1.5;">1·3라운드 종료 후 구글폼 퀴즈 정답자 대상 핀볼 추첨, 배달의민족 1만원권 3명 · 무신사 5만원권 2명</p>
+        </div>
+      </div>
+      <p style="font-size:19px;color:#4e5968;">인력 총 14명 — 밴드세팅 5 · 무대세팅 1 · 심사집계 1 · 투표집계 1 · 전체집계 1 · 경품 1 · 안전 4</p>
+      <p class="footer light">DREAMERS 2026 · 무대운영팀</p>
+    </section>
+
+    <!-- 9. DAY2 DIVIDER -->
+    <section class="slide dark" id="s-day2-divider">
+      <div class="row gap-80" style="height:100%;">
+        <div class="col gap-16" style="width:480px;justify-content:center;">
+          <p class="eyebrow" style="color:var(--yellow);margin-bottom:0;">DAY 2 · 11.05(목)</p>
+          <h1 class="disp" style="font-size:112px;color:#fff;">나의 꿈</h1>
+          <p style="font-size:32px;color:var(--yellow);font-weight:700;">My Dream</p>
+          <p style="font-size:23px;color:var(--ink-ondark-muted);line-height:1.5;">학우 개개인이 주인공이 되는 참여형·경연형 무대로 각자의 꿈과 재능을 드러냅니다.</p>
+        </div>
+        <div class="col gap-28" style="flex:1;justify-content:center;">
+          <div class="row gap-24" style="align-items:flex-start;">
+            <p style="width:120px;font-size:23px;color:var(--yellow);font-weight:700;">17:30</p>
+            <div class="col gap-8">
+              <h3 style="font-size:29px;color:#fff;font-weight:700;margin:0;">별 꿈이 다 있네 (동아리공연)</h3>
+              <p style="font-size:22px;color:var(--ink-ondark-muted);">각 동아리의 꿈을 별자리로 형상화해 발표하고 공연합니다.</p>
+            </div>
+          </div>
+          <div class="row gap-24" style="align-items:flex-start;">
+            <p style="width:120px;font-size:23px;color:var(--yellow);font-weight:700;">19:30</p>
+            <div class="col gap-8">
+              <h3 style="font-size:29px;color:#fff;font-weight:700;margin:0;">한동, 배우다 (연예인 토크쇼)</h3>
+              <p style="font-size:22px;color:var(--ink-ondark-muted);">크리스천 인플루언서 하준파파와 함께하는 꿈 토크쇼</p>
+            </div>
+          </div>
+          <div class="row gap-24" style="align-items:flex-start;">
+            <p style="width:120px;font-size:23px;color:var(--yellow);font-weight:700;">21:00</p>
+            <div class="col gap-8">
+              <h3 style="font-size:29px;color:#fff;font-weight:700;margin:0;">임지수 공연</h3>
+              <p style="font-size:22px;color:var(--ink-ondark-muted);">싱어게인3 참가자 임지수의 공연 — 꿈을 펼쳐 나가는 이야기</p>
+            </div>
+          </div>
+          <div class="row gap-24" style="align-items:flex-start;">
+            <p style="width:120px;font-size:23px;color:var(--yellow);font-weight:700;">22:00</p>
+            <div class="col gap-8">
+              <h3 style="font-size:29px;color:#fff;font-weight:700;margin:0;">적재 공연</h3>
+              <p style="font-size:22px;color:var(--ink-ondark-muted);">학우들이 각자의 꿈을 어떻게 펼칠지 생각해 보는 시간</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9b. STAR CLUB SHOW (DAY2 + DAY3) -->
+    <section class="slide light" id="s-starclub">
+      <p class="eyebrow" style="color:var(--yellow);">동아리공연 · DAY2 11/5 18:00~20:00 · DAY3 11/6 17:30~19:30 (동아리팀 기획)</p>
+      <h2 class="disp" style="font-size:44px;margin-bottom:14px;">별 꿈이 다 있네</h2>
+      <div style="width:1550px;margin-bottom:14px;">
+        <p class="disp" style="font-size:23px;font-weight:400;line-height:1.4;color:#191f28;">"한 사람의 꿈은 하나의 별이 되고, 같은 꿈을 꾸는 별들이 모여 하나의 별자리가 됩니다."</p>
+      </div>
+      <div style="width:1550px;margin-bottom:20px;">
+        <p style="font-size:20px;line-height:1.5;color:var(--ink-onlight-muted);">동아리별 공연을 '세팅·오프닝 3분 + 공연 10분 + 클로징 2분'의 별자리 애니메이션 포맷으로 구성, 이틀에 걸쳐 회차당 7개씩 총 14개 동아리가 무대에 오릅니다. 3번째 무대 후 5분 인터미션에 이벤트 참여를 리마인드합니다.</p>
+      </div>
+      <div class="row gap-24" style="margin-bottom:18px;">
+        <div class="card on-light" style="flex:1;">
+          <h3 class="card-title">관객 참여 이벤트</h3>
+          <p style="font-size:19px;color:var(--ink-onlight-muted);line-height:1.5;">오픈채팅방 입장 후 구글폼으로 가장 인상깊은 동아리에 투표 → 회차별 최다 득표 1팀 선정, 투표자 중 7명씩 추첨해 카카오톡 상품권 증정</p>
+        </div>
+        <div class="card on-light" style="flex:1;">
+          <h3 class="card-title">연출 물품</h3>
+          <p style="font-size:19px;color:var(--ink-onlight-muted);line-height:1.5;">핸드라이트 약 400개(클로징 전체 점등), LED 별 펄스틱 4색 각 100개, 동아리별 별자리 애니메이션 16종</p>
+        </div>
+      </div>
+      <p style="font-size:19px;color:#4e5968;">인력 총 8명 — 총괄/큐콜 1 · 무대진행 2 · 백스테이지 2 · 스크린 1 · 이벤트 1 · MC 1</p>
+      <p class="footer light">DREAMERS 2026 · 무대운영팀</p>
+    </section>
+
+    <!-- 10. DAY2 HANDONG BAEUDA DEEP DIVE -->
+    <section class="slide light" id="s-day2-handong">
+      <p class="eyebrow" style="color:var(--yellow);">DAY 2 · 나의 꿈</p>
+      <div class="row gap-40" style="flex:1;min-height:0;">
+        <img src="assets/hajunpapa.jpg" alt="하준파파" style="width:460px;height:100%;object-fit:cover;border-radius:20px;flex:none;">
+        <div class="col gap-16" style="flex:1;min-width:0;justify-content:center;">
+          <h2 class="disp" style="font-size:42px;margin:0;">한동, 배우다</h2>
+          <p style="font-size:20px;color:var(--ink-onlight-muted);line-height:1.5;">게스트 하준파파(본명 황태환) — 가족 유튜버 '비글부부'로 활동하는 크리스천 인플루언서. SNS 팔로워 100만 이상, 컴패션을 통해 129명의 아동을 후원 중.</p>
+          <p style="font-size:19px;line-height:1.5;color:var(--ink-onlight-muted);">크리스천 인플루언서 하준파파를 초청해 '꿈'을 나누는 토크쇼. 사전·현장 질문으로 관객이 직접 대화에 참여합니다. (11/5 20:00–21:30, 90분)</p>
+          <table class="light-table" style="font-size:17px;">
+            <tr><th>시간</th><th>내용</th></tr>
+            <tr><td>20:00–20:05</td><td>오프닝 (5') · 프로그램 소개, 티저 영상, 게스트 소개</td></tr>
+            <tr><td>20:05–20:40</td><td>Chapter 1 (35') · 일대기 토크 — Beginner → 성장 과정 → 지금의 꿈</td></tr>
+            <tr><td>20:42–21:15</td><td>Chapter 2 (33') · 질문 토크 — 사전·현장 질문 약 9개</td></tr>
+            <tr><td>21:15–21:25</td><td>마무리 및 정리 (10')</td></tr>
+          </table>
+          <div class="row gap-16">
+            <div class="card on-light" style="flex:1;padding:18px;">
+              <h3 class="card-title" style="font-size:21px;margin:0 0 6px;">인력 구성 (6명)</h3>
+              <p style="font-size:17px;color:var(--ink-onlight-muted);line-height:1.5;">사회자 1 · 사회자 보조 1 · 마이크맨 1 · 무대 인솔 3</p>
+            </div>
+            <div class="card on-light" style="flex:1;padding:18px;">
+              <h3 class="card-title" style="font-size:21px;margin:0 0 6px;">요청 사항</h3>
+              <p style="font-size:17px;color:var(--ink-onlight-muted);line-height:1.5;">무선 마이크 3개 이상, 카메라 동선 확보, 포스터·배너</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="footer light">DREAMERS 2026 · 무대운영팀</p>
+    </section>
+
+    <!-- 10b. DAY2 ARTIST PERFORMANCES -->
+    <section class="slide light" id="s-day2-artists">
+      <p class="eyebrow" style="color:var(--yellow);">DAY 2 · 나의 꿈 · 21:00~</p>
+      <h2 class="disp" style="font-size:50px;margin-bottom:28px;">임지수 · 적재 공연</h2>
+      <div class="row gap-32">
+        <div class="card on-light col gap-16" style="flex:1;padding:20px;">
+          <img src="assets/imjisoo.jpg" alt="임지수" style="width:100%;height:440px;object-fit:cover;border-radius:12px;">
+          <div class="row gap-16" style="align-items:center;">
+            <p class="pill" style="background:var(--yellow);color:#fff;margin:0;">21:00~</p>
+            <h3 class="card-title" style="margin:0;">임지수 공연</h3>
+          </div>
+          <p style="font-size:20px;color:var(--ink-onlight-muted);line-height:1.5;">버클리 음대 출신, JTBC 'Sing Again 3' 27호 가수(TOP10). 본인의 꿈을 어떻게 펼쳐 나갈지 고민해 온 과정을 노래로 나눕니다.</p>
+        </div>
+        <div class="card on-light col gap-16" style="flex:1;padding:20px;">
+          <img src="assets/jukjae.png" alt="적재" style="width:100%;height:440px;object-fit:cover;border-radius:12px;">
+          <div class="row gap-16" style="align-items:center;">
+            <p class="pill" style="background:var(--yellow);color:#fff;margin:0;">22:00~</p>
+            <h3 class="card-title" style="margin:0;">적재 공연</h3>
+          </div>
+          <p style="font-size:20px;color:var(--ink-onlight-muted);line-height:1.5;">히트곡 '별 보러 가자' '나랑 같이 걸을래'의 싱어송라이터. 본인의 꿈을 어떻게 펼쳐 나갈지 생각해 볼 시간을 제공합니다.</p>
+        </div>
+      </div>
+      <div style="width:1550px;margin-top:8px;">
+        <p style="font-size:22px;color:var(--ink-onlight-muted);line-height:1.5;">두 아티스트의 공연은 Day 2 '나의 꿈' 세션에서 동아리공연·토크쇼에 이어 배치되어, 무대의 초점을 '함께'에서 '개인의 꿈'으로 자연스럽게 좁혀갑니다.</p>
+      </div>
+      <p class="footer light">DREAMERS 2026 · 무대운영팀</p>
+    </section>
+
+    <!-- 11. DAY3 DIVIDER -->
+    <section class="slide dark" id="s-day3-divider">
+      <div class="row gap-80" style="height:100%;">
+        <div class="col gap-16" style="width:480px;justify-content:center;">
+          <p class="eyebrow" style="color:var(--pink);margin-bottom:0;">DAY 3 · 11.06(금)</p>
+          <h1 class="disp" style="font-size:112px;color:#fff;">우리의 꿈</h1>
+          <p style="font-size:32px;color:var(--pink);font-weight:700;">Our Dream</p>
+          <p style="font-size:23px;color:var(--ink-ondark-muted);line-height:1.5;">흩어져 있던 개인의 꿈이 다시 공동체의 꿈으로 모이며 축제를 마무리합니다.</p>
+        </div>
+        <div class="col gap-28" style="flex:1;justify-content:center;">
+          <div class="row gap-24" style="align-items:flex-start;">
+            <p style="width:120px;font-size:23px;color:var(--pink);font-weight:700;">17:30</p>
+            <div class="col gap-8">
+              <h3 style="font-size:29px;color:#fff;font-weight:700;margin:0;">별 꿈이 다 있네 (동아리공연 2회차)</h3>
+              <p style="font-size:22px;color:var(--ink-ondark-muted);">전날과 동일한 구성으로 각 동아리의 꿈을 발표·공연합니다.</p>
+            </div>
+          </div>
+          <div class="row gap-24" style="align-items:flex-start;">
+            <p style="width:120px;font-size:23px;color:var(--pink);font-weight:700;">19:30</p>
+            <div class="col gap-8">
+              <h3 style="font-size:29px;color:#fff;font-weight:700;margin:0;">꿈을 Dream — 4강 및 결승</h3>
+              <p style="font-size:22px;color:var(--ink-ondark-muted);">8강에서 승리한 4개 팀이 우승자를 가리고 상품을 수여합니다.</p>
+            </div>
+          </div>
+          <div class="row gap-24" style="align-items:flex-start;">
+            <p style="width:120px;font-size:23px;color:var(--pink);font-weight:700;">21:00</p>
+            <div class="col gap-8">
+              <h3 style="font-size:29px;color:#fff;font-weight:700;margin:0;">예배 (G2A 애프터액션)</h3>
+              <p style="font-size:22px;color:var(--ink-ondark-muted);">키퍼스워십 찬양팀 + 학교기도불씨운동 홍정수 목사님을 모시고 꿈과 비전을 나누며 예배로 연합합니다.</p>
+            </div>
+          </div>
+          <div class="row gap-24" style="align-items:flex-start;">
+            <p style="width:120px;font-size:23px;color:var(--pink);font-weight:700;">엔딩</p>
+            <div class="col gap-8">
+              <h3 style="font-size:29px;color:#fff;font-weight:700;margin:0;">무대 엔딩</h3>
+              <p style="font-size:22px;color:var(--ink-ondark-muted);">사회자 인사 및 디렉터의 마무리 기도로 3일간의 무대를 마칩니다.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11a1. STAR CLUB SHOW — DAY3 2차 -->
+    <section class="slide light" id="s-starclub-day3">
+      <p class="eyebrow" style="color:var(--pink);">동아리공연 2차 · DAY 3 11/6 17:30~19:30</p>
+      <h2 class="disp" style="font-size:50px;margin-bottom:24px;">별 꿈이 다 있네 — 2차 무대</h2>
+      <div style="width:1550px;">
+        <p style="font-size:24px;line-height:1.55;color:var(--ink-onlight-muted);">Day 2에 이어 두 번째로 만나는 '별 꿈이 다 있네'. 동일한 포맷(세팅·오프닝 3분 + 공연 10분 + 클로징 2분)으로 남은 7개 동아리가 무대에 올라, 이틀에 걸쳐 총 14개 동아리의 별자리를 완성합니다.</p>
+      </div>
+      <p class="footer light">DREAMERS 2026 · 무대운영팀</p>
+    </section>
+
+    <!-- 11a2. DREAM CONTEST — DAY3 결선 -->
+    <section class="slide light" id="s-dream-contest-day3">
+      <p class="eyebrow" style="color:var(--pink);">DAY 3 · 경연 결선 · 19:30~21:00 (90분, VIP팀 기획)</p>
+      <h2 class="disp" style="font-size:46px;margin-bottom:14px;">꿈을 Dream — 결선</h2>
+      <div style="width:1550px;margin-bottom:14px;">
+        <p class="disp" style="font-size:24px;font-weight:400;line-height:1.4;color:#191f28;">"개인의 꿈들이 모여 우리의 꿈으로 이어지는, 따뜻한 축제의 무대"</p>
+      </div>
+      <div style="width:1550px;margin-bottom:20px;">
+        <p style="font-size:21px;line-height:1.5;color:var(--ink-onlight-muted);">예선에서 선발된 TOP4가 4강 2경기, 이어 파이널 결승으로 최종 우승팀을 가립니다. 시상 직후 참가자 전원의 렌즈드로잉 모자이크 영상이 상영되고, 21시 정각 G2A 예배로 무대를 인계합니다.</p>
+      </div>
+      <div class="row gap-24" style="margin-bottom:20px;">
+        <div class="card on-light" style="flex:1;">
+          <h3 class="card-title">진행 순서</h3>
+          <p style="font-size:19px;color:var(--ink-onlight-muted);line-height:1.5;">오프닝(5') → 4강 2경기(각 18') → 파이널 결승(18') → 집계·경품(12') → 시상식·피날레(14')</p>
+        </div>
+        <div class="card on-light" style="flex:1;">
+          <h3 class="card-title">시상</h3>
+          <p style="font-size:19px;color:var(--ink-onlight-muted);line-height:1.5;">1등 25만원 · 2등 15만원 · 3·4등 각 10만원(배달의민족 상품권), TOP4 전원 기념 판넬 수여</p>
+        </div>
+      </div>
+      <p style="font-size:19px;color:#4e5968;">인력 총괄 1 · 백스테이지 2 · 투표집계 2 · 이벤트진행 1 · 관객관리 10 · 사회자 1</p>
+      <p class="footer light">DREAMERS 2026 · 무대운영팀</p>
+    </section>
+
+    <!-- 11b. DAY3 WORSHIP & ENDING -->
+    <section class="slide light" id="s-day3-worship-ending">
+      <p class="eyebrow" style="color:var(--pink);">DAY 3 · 우리의 꿈 · 21:00~</p>
+      <h2 class="disp" style="font-size:44px;margin-bottom:24px;">예배(G2A 애프터액션) &amp; 무대 엔딩</h2>
+      <div style="width:1600px;margin-bottom:20px;">
+        <div class="card on-light row gap-16" style="align-items:center;">
+          <p class="pill" style="background:var(--pink);color:#fff;margin:0;">21:00~</p>
+          <p style="font-size:20px;color:var(--ink-onlight-muted);line-height:1.5;margin:0;"><b style="color:#191f28;">G2A 애프터액션</b> — 한동대학교와 관련한 꿈과 비전을 나누고 예배로 하나 되는 마지막 순서. Day 1 United Worship과 짝을 이루어 3일 서사의 신앙적 연합을 완성합니다.</p>
+        </div>
+      </div>
+      <div class="row gap-32" style="flex:1;min-height:0;">
+        <div class="card on-light col gap-12" style="flex:1;padding:20px;text-align:center;">
+          <img src="assets/keepersworship.jpg" alt="키퍼스워십" style="width:100%;height:100%;object-fit:cover;border-radius:16px;flex:1;min-height:0;">
+          <h3 class="card-title" style="margin:0;font-size:24px;flex:none;">키퍼스워십</h3>
+        </div>
+        <div class="card on-light col gap-12" style="flex:1;padding:20px;text-align:center;">
+          <img src="assets/hongpastor.jpg" alt="홍정수 목사" style="width:100%;height:100%;object-fit:cover;border-radius:16px;flex:1;min-height:0;">
+          <div class="col gap-2" style="flex:none;">
+            <h3 class="card-title" style="margin:0;font-size:24px;">홍정수 목사</h3>
+            <p style="font-size:16px;color:var(--ink-onlight-muted);line-height:1.4;">학교기도불씨운동 대표 · 2016년 부산 시작, 전국 약 1,200개교로 확산</p>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:21px;color:var(--ink-onlight-muted);margin-top:12px;">무대 엔딩 — 사회자 인사 및 디렉터의 마무리 기도로 3일간의 무대를 마칩니다.</p>
+      <p class="footer light">DREAMERS 2026 · 무대운영팀</p>
+    </section>
+
+    <!-- 15b. FINAL TIMELINE REVEAL -->
+    <section class="slide light" id="s-timeline">
+      <p class="eyebrow" style="color:var(--purple);">전체 일정 공개</p>
+      <h2 class="disp" style="font-size:44px;margin-bottom:20px;">가을 창문축제 타임라인</h2>
+      <table style="border-collapse:collapse;width:100%;font-size:19px;text-align:center;">
+        <tr>
+          <th style="width:10%;padding:8px;background:#191f28;color:#fff;border:1px solid #e5e8eb;"></th>
+          <th style="width:30%;padding:8px;background:var(--purple);color:#fff;border:1px solid #e5e8eb;">Day 1<br>(한동의 꿈)</th>
+          <th style="width:30%;padding:8px;background:var(--yellow);color:#fff;border:1px solid #e5e8eb;">Day 2<br>(나의 꿈)</th>
+          <th style="width:30%;padding:8px;background:var(--pink);color:#fff;border:1px solid #e5e8eb;">Day 3<br>(우리의 꿈)</th>
+        </tr>
+        <tr>
+          <td style="padding:6px;font-weight:700;border:1px solid #e5e8eb;">17:00</td>
+          <td rowspan="2" style="padding:6px;border:1px solid #e5e8eb;">무대 리허설</td>
+          <td rowspan="2" style="padding:6px;border:1px solid #e5e8eb;">무대 리허설</td>
+          <td rowspan="2" style="padding:6px;border:1px solid #e5e8eb;">무대 리허설</td>
+        </tr>
+        <tr><td style="padding:6px;font-weight:700;border:1px solid #e5e8eb;">17:30</td></tr>
+        <tr>
+          <td style="padding:6px;font-weight:700;border:1px solid #e5e8eb;">18:00</td>
+          <td rowspan="2" style="padding:6px;border:1px solid #e5e8eb;">United Worship</td>
+          <td rowspan="4" style="padding:6px;border:1px solid #e5e8eb;background:#1b64da33;">별 꿈이 다 있네</td>
+          <td rowspan="4" style="padding:6px;border:1px solid #e5e8eb;background:#2272eb33;">별 꿈이 다있네</td>
+        </tr>
+        <tr><td style="padding:6px;font-weight:700;border:1px solid #e5e8eb;">18:30</td></tr>
+        <tr>
+          <td style="padding:6px;font-weight:700;border:1px solid #e5e8eb;">19:00</td>
+          <td rowspan="2" style="padding:6px;border:1px solid #e5e8eb;">꿈을 노래하다<br>(김복유 공연)</td>
+        </tr>
+        <tr><td style="padding:6px;font-weight:700;border:1px solid #e5e8eb;">19:30</td></tr>
+        <tr>
+          <td style="padding:6px;font-weight:700;border:1px solid #e5e8eb;">20:00</td>
+          <td rowspan="2" style="padding:6px;border:1px solid #e5e8eb;">Back to '95</td>
+          <td rowspan="2" style="padding:6px;border:1px solid #e5e8eb;">한동, 배우다</td>
+          <td rowspan="2" style="padding:6px;border:1px solid #e5e8eb;">꿈을 Dream 결선</td>
+        </tr>
+        <tr><td style="padding:6px;font-weight:700;border:1px solid #e5e8eb;">20:30</td></tr>
+        <tr>
+          <td style="padding:6px;font-weight:700;border:1px solid #e5e8eb;">21:00</td>
+          <td rowspan="4" style="padding:6px;border:1px solid #e5e8eb;background:#3182f633;">꿈을 Dream<br>본선 8강</td>
+          <td rowspan="2" style="padding:6px;border:1px solid #e5e8eb;">임지수 공연</td>
+          <td rowspan="4" style="padding:6px;border:1px solid #e5e8eb;background:#2272eb33;">예배<br>(G2A 애프터액션)</td>
+        </tr>
+        <tr><td style="padding:6px;font-weight:700;border:1px solid #e5e8eb;">21:30</td></tr>
+        <tr>
+          <td style="padding:6px;font-weight:700;border:1px solid #e5e8eb;">22:00</td>
+          <td rowspan="2" style="padding:6px;border:1px solid #e5e8eb;">적재 공연</td>
+        </tr>
+        <tr><td style="padding:6px;font-weight:700;border:1px solid #e5e8eb;">22:30</td></tr>
+        <tr>
+          <td style="padding:6px;font-weight:700;border:1px solid #e5e8eb;">23:00</td>
+          <td rowspan="2" style="padding:6px;border:1px solid #e5e8eb;">무대 철수</td>
+          <td rowspan="2" style="padding:6px;border:1px solid #e5e8eb;">무대 철수</td>
+          <td rowspan="2" style="padding:6px;border:1px solid #e5e8eb;">무대 철수</td>
+        </tr>
+        <tr><td style="padding:6px;font-weight:700;border:1px solid #e5e8eb;">23:30</td></tr>
+      </table>
+      <p class="footer light">DREAMERS 2026 · 무대운영팀 · 세부 시간은 최종 큐시트 확정 시 변동될 수 있습니다.</p>
+    </section>
+
+    <!-- 16. CLOSING -->
+    <section class="slide dark" id="s-closing" style="align-items:center;justify-content:center;text-align:center;">
+      <div class="row gap-16" style="margin-bottom:40px;">
+        <div class="swatch" style="background:var(--green);"></div>
+        <div class="swatch" style="background:var(--yellow);border-radius:28px;"></div>
+        <div class="swatch" style="background:var(--purple);"></div>
+        <div class="swatch" style="background:var(--pink);border-radius:28px;"></div>
+      </div>
+      <h1 class="disp" style="font-size:96px;color:#fff;margin-bottom:32px;">우리는 모두 Dreamers</h1>
+      <p style="font-size:27px;color:var(--ink-ondark-muted);">무대운영팀 · 팀장 이이삭 / 부팀장 정예은</p>
+    </section>
+
+  </div>
+</div>
+
+<div id="nav">
+  <button id="btn-prev">← 이전</button>
+  <span id="counter">1 / 20</span>
+  <button id="btn-next">다음 →</button>
+  <button id="btn-print">인쇄/PDF</button>
+</div>
+<div class="click-zone" id="zone-prev"></div>
+<div class="click-zone" id="zone-next"></div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let idx = 0;
+
+  function render(){
+    slides.forEach((s,i)=> s.classList.toggle('active', i===idx));
+    document.getElementById('counter').textContent = (idx+1) + ' / ' + slides.length;
+  }
+  function next(){ if(idx < slides.length-1){ idx++; render(); } }
+  function prev(){ if(idx > 0){ idx--; render(); } }
+
+  document.getElementById('btn-next').addEventListener('click', next);
+  document.getElementById('btn-prev').addEventListener('click', prev);
+  document.getElementById('zone-next').addEventListener('click', next);
+  document.getElementById('zone-prev').addEventListener('click', prev);
+  document.getElementById('btn-print').addEventListener('click', ()=> window.print());
+
+  window.addEventListener('keydown', (e)=>{
+    if(['ArrowRight','ArrowDown','PageDown',' '].includes(e.key)) next();
+    else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].includes(e.key)) prev();
+  });
+
+  function toFallback(img){
+    const ph = document.createElement('div');
+    ph.className = 'img-fallback';
+    ph.setAttribute('style', img.getAttribute('style'));
+    ph.textContent = img.alt;
+    img.replaceWith(ph);
+  }
+  document.querySelectorAll('.slide img').forEach(img=>{
+    if(img.complete && img.naturalWidth === 0) toFallback(img);
+    else img.addEventListener('error', ()=> toFallback(img), {once:true});
+  });
+
+  function fitStage(){
+    const stage = document.getElementById('stage');
+    const scaler = document.getElementById('scaler');
+    const scale = Math.min(stage.clientWidth/1920, stage.clientHeight/1080);
+    scaler.style.transform = 'scale(' + scale + ')';
+  }
+  window.addEventListener('resize', fitStage);
+  fitStage();
+  render();
+</script>
+
+</body>
+</html>
