@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>BACK TO '95 제안서</title>
+<style>
+  @page { size: A4; margin: 0; }
+  :root{
+    --navy:#14213d; --navy2:#1f3160; --cream:#fbf6ec; --paper:#fffdf8;
+    --amber:#e8a33d; --coral:#d9573b; --ink:#23262f; --muted:#6b6f7a; --line:#e6dccb;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#fff}
+  body{font-family:"Noto Sans KR",sans-serif;color:var(--ink);font-size:10pt;line-height:1.72;word-break:keep-all;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .page{width:210mm;height:297mm;position:relative;overflow:hidden;background:var(--paper);page-break-after:always}
+  .page:last-child{page-break-after:auto}
+  .serif{font-family:"Noto Serif KR",serif}
+
+  /* running header/footer */
+  .run{position:absolute;left:18mm;right:18mm;top:10mm;display:flex;justify-content:space-between;font-size:7.5pt;letter-spacing:.18em;color:var(--muted);text-transform:uppercase}
+  .foot{position:absolute;left:18mm;right:18mm;bottom:9mm;display:flex;justify-content:space-between;align-items:center;font-size:7.5pt;color:var(--muted);border-top:1px solid var(--line);padding-top:3mm}
+  .foot b{color:var(--navy);font-weight:700;letter-spacing:.1em}
+  .body{position:absolute;left:18mm;right:18mm;top:20mm;bottom:20mm}
+
+  /* section heading */
+  .sec{display:flex;align-items:baseline;gap:4mm;margin:0 0 3.5mm}
+  .sec .no{font-family:"Noto Serif KR",serif;font-weight:900;font-size:22pt;color:var(--amber);line-height:1}
+  .sec h2{font-size:15pt;font-weight:900;color:var(--navy);letter-spacing:-.01em}
+  .sec .en{font-size:7.5pt;letter-spacing:.25em;color:var(--muted);margin-left:auto;text-transform:uppercase}
+  p{margin:0 0 2.6mm;text-align:justify}
+  .hl{background:linear-gradient(transparent 58%, rgba(232,163,61,.35) 58%);font-weight:500}
+  strong{color:var(--navy);font-weight:700}
+
+  /* ===== PAGE 1 ===== */
+  .hero{position:absolute;left:0;right:0;top:0;height:118mm;background:var(--navy);color:#fff;overflow:hidden}
+  .hero .grain{position:absolute;inset:0;background:
+      radial-gradient(circle at 85% 20%, rgba(232,163,61,.35), transparent 45%),
+      radial-gradient(circle at 10% 110%, rgba(217,87,59,.35), transparent 50%);}
+  .hero .big95{position:absolute;right:-6mm;bottom:-22mm;font-family:"Noto Serif KR",serif;font-weight:900;font-size:190pt;line-height:1;color:rgba(255,255,255,.06);letter-spacing:-.04em}
+  .hero .tag{position:absolute;left:18mm;top:14mm;display:flex;gap:2.5mm;align-items:center;font-size:7.5pt;letter-spacing:.3em;color:var(--amber);font-weight:700}
+  .hero .tag i{display:inline-block;width:10mm;height:1px;background:var(--amber)}
+  .hero .kicker{position:absolute;left:18mm;top:27mm;font-size:10.5pt;color:#dfe4ef;font-weight:300}
+  .hero h1{position:absolute;left:17mm;top:34mm;font-family:"Noto Serif KR",serif;font-weight:900;font-size:56pt;letter-spacing:-.02em;line-height:1}
+  .hero h1 span{color:var(--amber)}
+  .hero .sub{position:absolute;left:18mm;top:62mm;font-family:"Noto Serif KR",serif;font-size:13.5pt;font-weight:600;color:#fff;line-height:1.55}
+  .hero .sub em{font-style:normal;color:var(--amber)}
+  .chips{position:absolute;left:18mm;right:18mm;top:88mm;display:flex;gap:3mm}
+  .chip{flex:1;border:1px solid rgba(255,255,255,.22);border-radius:2.5mm;padding:2.6mm 3.5mm;background:rgba(255,255,255,.04)}
+  .chip .k{font-size:6.8pt;letter-spacing:.22em;color:var(--amber);font-weight:700}
+  .chip .v{font-size:9.6pt;font-weight:500;color:#fff;line-height:1.4;margin-top:.6mm}
+  /* film strip */
+  .strip{position:absolute;left:0;right:0;top:118mm;height:6mm;background:#0d1730;
+     background-image:repeating-linear-gradient(90deg, transparent 0 5mm, var(--paper) 5mm 8mm, transparent 8mm 11mm);
+     background-size:11mm 2.2mm;background-repeat:repeat-x;background-position:0 1.9mm}
+
+  .p1body{position:absolute;left:18mm;right:18mm;top:131mm;bottom:20mm}
+  .addr{margin-bottom:7mm !important;display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1.5px solid var(--navy);padding-bottom:2.5mm;margin-bottom:4.5mm}
+  .addr .to{font-family:"Noto Serif KR",serif;font-size:12.5pt;font-weight:700;color:var(--navy)}
+  .addr .to small{display:block;font-family:"Noto Sans KR";font-size:7.5pt;letter-spacing:.25em;color:var(--muted);font-weight:500}
+  .addr .from{text-align:right;font-size:8.3pt;color:var(--muted);line-height:1.5}
+  .letter p{font-size:10.2pt;line-height:1.85;margin-bottom:3.5mm;text-align:left}
+  .sign{margin-top:1mm;font-family:"Noto Serif KR",serif;color:var(--navy);font-weight:600;text-align:right;font-size:9.6pt}
+  .box{margin-top:8mm;background:var(--cream);border-left:1.2mm solid var(--amber);padding:4mm 5mm 2mm;border-radius:0 2mm 2mm 0}
+  .box .sec{margin-bottom:2mm}
+  .box .sec .no{font-size:17pt}
+  .box .sec h2{font-size:12.5pt}
+  .box p{font-size:9.9pt;line-height:1.85;text-align:left}
+
+  /* ===== PAGE 2 ===== */
+  .quote{position:relative;background:var(--navy);color:#fff;border-radius:3mm;padding:7mm 9mm 6mm 18mm;margin:2mm 0 8mm;overflow:hidden}
+  .quote:before{content:"“";position:absolute;left:5mm;top:-4mm;font-family:"Noto Serif KR",serif;font-size:62pt;color:var(--amber);font-weight:900}
+  .quote .q{font-family:"Noto Serif KR",serif;font-size:14.5pt;font-weight:700;line-height:1.6}
+  .quote .q span{color:var(--amber)}
+  .quote .src{margin-top:2mm;font-size:7.8pt;letter-spacing:.2em;color:#aeb7cc}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:7mm}.twocol p{text-align:left;font-size:10pt;line-height:1.85}
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:3.5mm;margin:7mm 0 8mm}
+  .pil{background:#fff;border:1px solid var(--line);border-radius:2.5mm;padding:4mm 4mm 3mm;position:relative}
+  .pil:before{content:"";position:absolute;left:0;right:0;top:0;height:1.2mm;border-radius:2.5mm 2.5mm 0 0;background:var(--c,var(--amber))}
+  .pil .en{font-size:6.8pt;letter-spacing:.25em;color:var(--c,var(--amber));font-weight:700}
+  .pil h3{font-family:"Noto Serif KR",serif;font-size:13pt;color:var(--navy);font-weight:900;margin:.5mm 0 1.5mm}
+  .pil p{font-size:9pt;line-height:1.7;margin:0;text-align:left;color:#3a3e48}
+  .why{display:grid;grid-template-columns:42mm 1fr;gap:6mm;background:var(--cream);border-radius:3mm;padding:7mm 7mm;align-items:center}
+  .why .badge{text-align:center;border-right:1px dashed #d4c6ab;padding-right:5mm}
+  .why .badge .y{font-family:"Noto Serif KR",serif;font-weight:900;font-size:30pt;color:var(--coral);line-height:1}
+  .why .badge .arrow{font-size:9pt;color:var(--muted);margin:1mm 0}
+  .why .badge .y2{font-family:"Noto Serif KR",serif;font-weight:900;font-size:30pt;color:var(--navy);line-height:1}
+  .why .badge .cap{font-size:7.4pt;color:var(--muted);margin-top:2mm;line-height:1.45}
+  .why h3{font-size:11pt;color:var(--navy);font-weight:900;margin-bottom:1.5mm}
+  .why p{font-size:9.6pt;line-height:1.8;margin-bottom:2mm;text-align:left}
+
+  /* ===== PAGE 3 ===== */
+  .tl{border:1px solid var(--line);border-radius:3mm;overflow:hidden;margin-bottom:5mm;background:#fff}
+  .tl .row{display:grid;grid-template-columns:27mm 12mm 1fr 30mm;align-items:center;padding:2.1mm 4mm;border-top:1px solid var(--line);font-size:8.8pt}
+  .tl .row:first-child{border-top:0;background:var(--navy);color:#fff;font-size:7.2pt;letter-spacing:.15em;font-weight:700;padding:2mm 4mm}
+  .tl .t{font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
+  .tl .d{color:var(--muted);font-size:8pt}
+  .tl .c b{font-weight:700;color:var(--ink)}
+  .tl .c small{display:block;color:var(--muted);font-size:7.8pt;line-height:1.45}
+  .tl .role{justify-self:end;font-size:7.2pt;font-weight:700;padding:.6mm 2.4mm;border-radius:10mm;white-space:nowrap}
+  .role.main{background:var(--coral);color:#fff}
+  .role.sub{background:#fbe7c6;color:#8a5a12}
+  .role.none{background:#eef0f4;color:var(--muted)}
+  .tl .row.star{background:#fff7ea}
+  .effects{display:grid;grid-template-columns:repeat(3,1fr);gap:3.5mm;margin-bottom:5mm}
+  .eff{border-radius:2.5mm;padding:4mm;background:var(--cream)}
+  .eff .n{font-family:"Noto Serif KR",serif;font-size:8pt;font-weight:900;color:var(--coral);letter-spacing:.15em}
+  .eff h3{font-size:10.3pt;color:var(--navy);font-weight:900;margin:.5mm 0 1.2mm;line-height:1.4}
+  .eff p{font-size:8.7pt;line-height:1.6;margin:0;text-align:left;color:#3a3e48}
+  .ask{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm 5mm;margin-bottom:4mm}
+  .ask div{display:flex;gap:2.5mm;font-size:8.9pt;line-height:1.6}
+  .ask div .ck{flex:none;width:4.6mm;height:4.6mm;border-radius:50%;background:var(--navy);color:var(--amber);font-size:6.5pt;font-weight:900;display:flex;align-items:center;justify-content:center;margin-top:.5mm}
+  .ask b{color:var(--navy)}
+  .closing{background:var(--navy);color:#fff;border-radius:3mm;padding:5mm 7mm;display:flex;justify-content:space-between;align-items:center;gap:6mm}
+  .closing .msg{font-family:"Noto Serif KR",serif;font-size:11pt;font-weight:600;line-height:1.6}
+  .closing .msg span{color:var(--amber)}
+  .closing .who{text-align:right;font-size:7.8pt;color:#c7cee0;line-height:1.6;white-space:nowrap}
+  .closing .who b{color:#fff;font-size:9pt}
+</style>
+</head>
+<body>
+
+<!-- ================= PAGE 1 ================= -->
+<section class="page">
+  <div class="hero">
+    <div class="grain"></div>
+    <div class="big95">’95</div>
+    <div class="tag"><i></i>2026 HANDONG FESTIVAL · TALK SHOW PANEL PROPOSAL</div>
+    <div class="kicker">한동의 첫 학번과 오늘의 한동인이 만나는 75분</div>
+    <h1>BACK TO <span>’95</span></h1>
+    <div class="sub serif">건물 한 동에서 시작된 꿈,<br><em>서른한 해</em>가 지난 오늘의 한동에게 말을 걸다</div>
+    <div class="chips">
+      <div class="chip"><div class="k">DATE</div><div class="v">2026. 11. 4.(수)<br>20:00 – 21:15</div></div>
+      <div class="chip"><div class="k">VENUE</div><div class="v">평봉필드<br>특설무대</div></div>
+      <div class="chip"><div class="k">FORMAT</div><div class="v">토크쇼 · 퀴즈 인터뷰<br>사연 나눔</div></div>
+      <div class="chip"><div class="k">PANEL</div><div class="v">김완진 교수님<br>서덕수 교수님</div></div>
+    </div>
+  </div>
+  <div class="strip"></div>
+
+  <div class="p1body">
+    <div class="addr">
+      <div class="to"><small>TO</small>김완진 교수님 · 서덕수 교수님께</div>
+      <div class="from">2026 한동대학교 축제 TFT<br>무대운영팀 드림</div>
+    </div>
+
+    <div class="letter">
+      <p>존경하는 교수님, 안녕하십니까. 2026년 한동대학교 축제의 무대 프로그램을 준비하고 있는 축제 TFT 무대운영팀입니다. 올해 축제에서 저희는 <strong>한동이 처음 세워지던 1995년의 이야기</strong>를 오늘의 학생들에게 다시 들려드리고자 합니다. 그리고 그 이야기를 가장 진실하게 전해 주실 수 있는 분이 바로 <span class="hl">한동의 시작을 학생으로 경험하시고, 지금은 교수로서 한동의 오늘을 지키고 계신 두 분 교수님</span>이라고 믿습니다.</p>
+      <p>이에 축제 토크쇼 <strong>〈BACK TO ’95〉</strong>의 패널로 두 분 교수님을 정중히 모시고자 이 제안서를 올립니다. 바쁘신 가운데 귀한 시간을 내어 읽어 주시기를 부탁드립니다.</p>
+    </div>
+
+    <div class="box">
+      <div class="sec"><span class="no">01</span><h2>프로그램 소개</h2><span class="en">About</span></div>
+      <p><strong>BACK TO ’95</strong>는 한동대학교가 ‘하나님의 대학’으로 세워진 1995년에 입학한 선배 동문을 초청하여, 한동의 시작과 그 안에 담긴 꿈과 비전을 함께 나누는 축제 토크쇼입니다. 무대 위에서 일방적으로 과거를 회상하는 강연이 아니라, <span class="hl">한동의 시작을 살아낸 선배와 지금의 한동을 살아가는 학생이 직접 만나 대화하는 자리</span>로 기획했습니다.</p>
+      <p>토크쇼, ’95 퀴즈와 무대 인터뷰, 학생들이 미리 보낸 ‘꿈’에 관한 사연 나눔으로 이어지는 75분 동안, 교수님께서 들려주실 1995년의 장면들은 2026년 학생들의 고민과 만나 <strong>한동의 과거·현재·미래를 하나로 잇는 대화</strong>가 될 것입니다.</p>
+    </div>
+  </div>
+
+  <div class="foot"><b>BACK TO ’95</b><span>토크쇼 패널 섭외 제안서</span><span>1 / 3</span></div>
+</section>
+
+<!-- ================= PAGE 2 ================= -->
+<section class="page">
+  <div class="run"><span>Back to ’95 · Proposal</span><span>Planning Intent</span></div>
+  <div class="body">
+    <div class="sec"><span class="no">02</span><h2>기획 의도</h2><span class="en">Why this stage</span></div>
+
+    <div class="quote">
+      <div class="q">한동의 꿈은 결국 하나님께서 한동을 세우신 의도,<br>즉 <span>하나님의 꿈</span>이다.</div>
+      <div class="src">— BACK TO ’95 CORE MESSAGE</div>
+    </div>
+
+    <div class="twocol">
+      <div>
+        <p>1995년의 한동은 건물 한 동이 서 있는 땅에서 시작되었다고 전해집니다. 갖춰진 것은 많지 않았고, 겉으로 보기엔 작고 초라했을지도 모릅니다. 그러나 바로 그곳에서 첫 한동인들은 서로의 꿈을 나누고, 한동의 비전을 함께 품으며 오늘의 한동대학교를 일구어 왔습니다. <span class="hl">‘꿈을 꾸고, 그 꿈을 함께 이루어 가는 문화’</span>는 그렇게 시작되었습니다.</p>
+      </div>
+      <div>
+        <p>그로부터 서른한 해가 지난 지금, 한동의 학생들은 여전히 뜨겁지만 동시에 많이 지쳐 있습니다. 진로와 취업, 성적과 비교 속에서 많은 학생들이 <strong>‘무엇을 꿈꾸는가’보다 ‘어떻게 살아남을까’</strong>를 먼저 묻습니다. 저희는 이 질문의 자리에 한동의 첫 이야기를 다시 놓고 싶었습니다.</p>
+      </div>
+    </div>
+
+    <div class="pillars">
+      <div class="pil" style="--c:var(--amber)"><div class="en">REMEMBER</div><h3>기억하다</h3><p>책과 연혁으로만 알던 한동의 시작을, 그 시간을 직접 살아낸 분의 목소리로 생생하게 듣습니다. 기록 너머의 비하인드가 한동의 정체성을 다시 살아 있게 합니다.</p></div>
+      <div class="pil" style="--c:var(--coral)"><div class="en">CONNECT</div><h3>잇다</h3><p>95학번 선배와 오늘의 후배들이 같은 무대에서 같은 질문 앞에 섭니다. 세대는 달라도 ‘한동에 오며 품었던 꿈’이라는 공통의 언어로 서로를 이해합니다.</p></div>
+      <div class="pil" style="--c:var(--navy2)"><div class="en">DREAM AGAIN</div><h3>다시 꿈꾸다</h3><p>꿈보다 미래를 걱정하는 오늘의 한동인이 ‘한동의 꿈은 곧 하나님의 꿈’이라는 고백 안에서, 자신의 꿈을 다시 꺼내어 볼 용기를 얻습니다.</p></div>
+    </div>
+
+    <div class="why">
+      <div class="badge">
+        <div class="y">1995</div>
+        <div class="cap" style="margin:1.5mm 0 1mm">첫 신입생으로 맞이한<br>한동의 시작</div><div class="arrow">↓</div>
+        <div class="y2">2026</div>
+        <div class="cap">교수로서 지켜 온<br>한동의 오늘</div>
+      </div>
+      <div>
+        <h3>왜 두 분 교수님이어야 하는가</h3>
+        <p>두 분 교수님은 한동의 첫 신입생으로서 그 시작을 몸소 경험하셨고, 이제는 강의실에서 매일 지금의 한동 학생들을 만나고 계십니다. <span class="hl">한동의 ‘처음’과 ‘지금’을 모두 아시는 분</span>은 많지 않습니다.</p>
+        <p>학생들에게 교수님은 늘 강단 위의 스승이셨지만, 이번 무대에서는 <strong>같은 캠퍼스에서 같은 고민을 먼저 지나온 선배</strong>로 만나 뵙고자 합니다. 교수님의 스무 살 이야기는 그 어떤 강연보다 학생들의 마음에 깊이 닿을 것이라 확신합니다.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><b>BACK TO ’95</b><span>토크쇼 패널 섭외 제안서</span><span>2 / 3</span></div>
+</section>
+
+<!-- ================= PAGE 3 ================= -->
+<section class="page">
+  <div class="run"><span>Back to ’95 · Proposal</span><span>Program &amp; Impact</span></div>
+  <div class="body">
+    <div class="sec"><span class="no">03</span><h2>프로그램 구성</h2><span class="en">75 min · Run of show</span></div>
+    <div class="tl">
+      <div class="row"><span>TIME</span><span>MIN</span><span>PROGRAM</span><span style="justify-self:end">교수님 참여</span></div>
+      <div class="row"><span class="t">20:00 – 20:06</span><span class="d">6′</span><span class="c"><b>오프닝 · 출연자 소개</b><small>사회자가 교수님 관련 퀴즈로 소개한 뒤 무대로 모십니다.</small></span><span class="role sub">입장</span></div>
+      <div class="row star"><span class="t">20:06 – 20:21</span><span class="d">15′</span><span class="c"><b>토크쇼 ① 학창 시절, 한동에서의 경험</b><small>건물 한 동의 캠퍼스, 첫 학번의 일상과 잊지 못할 장면들</small></span><span class="role main">메인 토크</span></div>
+      <div class="row star"><span class="t">20:21 – 20:31</span><span class="d">10′</span><span class="c"><b>토크쇼 ② 그때의 꿈, 지금의 꿈</b><small>95학번은 어떤 꿈을 안고 한동에 왔고, 지금은 어떤 꿈을 꾸고 있을까?</small></span><span class="role main">메인 토크</span></div>
+      <div class="row"><span class="t">20:31 – 20:43</span><span class="d">12′</span><span class="c"><b>’95 QUIZ · 무대 인터뷰</b><small>초창기 한동 퀴즈 5문항, 정답자 학생과 교수님의 즉석 대화</small></span><span class="role sub">인터뷰</span></div>
+      <div class="row star"><span class="t">20:43 – 21:08</span><span class="d">25′</span><span class="c"><b>질문 · 사연 나눔</b><small>‘한동에 처음 왔을 때의 꿈’, ‘지금의 꿈과 고민’ 사연에 교수님이 답해 주십니다.</small></span><span class="role main">응답 · 조언</span></div>
+      <div class="row"><span class="t">21:08 – 21:15</span><span class="d">7′</span><span class="c"><b>클로징 · 소감 나눔</b><small>교수님 퇴장 후 QR코드로 관객 소감을 모읍니다.</small></span><span class="role none">퇴장</span></div>
+    </div>
+
+    <div class="sec"><span class="no">04</span><h2>기대효과</h2><span class="en">Impact</span></div>
+    <div class="effects">
+      <div class="eff"><div class="n">FOR STUDENTS</div><h3>꿈을 다시 말할 수 있는 용기</h3><p>미래에 대한 불안 속에 있는 학생들이 선배의 진솔한 이야기를 통해 시야를 넓히고, 남은 대학생활을 기대감으로 바라보게 됩니다.</p></div>
+      <div class="eff"><div class="n">FOR HANDONG</div><h3>한동의 정신이 자연스럽게 이어짐</h3><p>한동의 시작에 담긴 꿈과 가치가 강의나 문서가 아닌 ‘대화’로 전해져, 세대를 잇는 살아 있는 전통이 됩니다.</p></div>
+      <div class="eff"><div class="n">FOR FESTIVAL</div><h3>자부심으로 즐기는 축제</h3><p>‘우리가 어떤 학교에 와 있는가’를 다시 발견한 학생들이 한동인이라는 자부심을 가지고 축제를 함께 누립니다.</p></div>
+    </div>
+
+    <div class="sec"><span class="no">05</span><h2>교수님께 드리는 부탁과 준비 사항</h2></div>
+    <div class="ask">
+      <div><span class="ck">✓</span><span><b>사전 미팅 1회</b> — 10월 중 교수님 일정에 맞춰 30분 내외로 진행 방향과 토크 주제를 함께 나눕니다.</span></div>
+      <div><span class="ck">✓</span><span><b>질문지 사전 전달</b> — 토크쇼 질문과 선별된 사연을 미리 보내 드려 부담 없이 준비하실 수 있도록 하겠습니다.</span></div>
+      <div><span class="ck">✓</span><span><b>추억의 자료 (가능하시다면)</b> — 1995년 무렵의 사진이나 물품을 빌려 주시면 무대 화면과 소품으로 소중히 활용하겠습니다.</span></div>
+      <div><span class="ck">✓</span><span><b>편안한 진행</b> — 전반 진행은 사회자가 맡으며, 우천 시에도 캐노피를 설치한 특설무대에서 안전하게 진행합니다.</span></div>
+    </div>
+
+    <div class="closing">
+      <div class="msg">교수님께서 들려주실 1995년의 이야기가<br>2026년의 한동인에게 <span>가장 큰 축제의 선물</span>이 될 것입니다.</div>
+      <div class="who"><b>2026 한동대학교 축제 TFT 무대운영팀</b><br>담당: [이름] · [연락처] · [이메일]</div>
+    </div>
+  </div>
+  <div class="foot"><b>BACK TO ’95</b><span>토크쇼 패널 섭외 제안서</span><span>3 / 3</span></div>
+</section>
+</body>
+</html>
