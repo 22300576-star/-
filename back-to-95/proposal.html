@@ -33,6 +33,22 @@
   .cover .bottom{padding-bottom:10mm}
   .cover .date{font-size:12pt;margin-bottom:4mm}
   .cover .org{font-size:15pt;font-weight:700}
+  :root{--pink:#D35185;--blue:#8891C3;--green:#A0D096;--yellow:#F5E25A;--gray:#DBDAD7}
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  th{background:var(--gray) !important}
+  h2{display:flex;align-items:center;gap:2.5mm}
+  h2:before{content:"";width:3.2mm;height:3.2mm;background:var(--c,var(--pink));transform:rotate(-8deg);flex:none}
+  h2:nth-of-type(1){--c:var(--pink)} h2:nth-of-type(2){--c:var(--blue)} h2:nth-of-type(3){--c:var(--green)} h2:nth-of-type(4){--c:var(--yellow)} h2:nth-of-type(5){--c:var(--pink)}
+  .quote{border-left:1.2mm solid var(--pink);background:#f6f6f4;padding:2.5mm 4mm;text-align:left !important}
+  .strip{display:flex;height:1.6mm}
+  .strip i{flex:1}
+  .strip i:nth-child(1){background:var(--green)} .strip i:nth-child(2){background:var(--pink)} .strip i:nth-child(3){background:var(--blue)} .strip i:nth-child(4){background:var(--yellow)}
+  .cover .motif{margin:0 auto 8mm;width:62mm}
+  .cover .label{color:#555}
+  .cover .ttl{border-top:2px solid #000;border-bottom:2px solid #000}
+  .cover .fest{font-size:9.5pt;color:#777;letter-spacing:.15em;margin-top:3mm}
+  .cover .strip{width:60mm;margin:0 auto 6mm}
+  .sign-strip{width:40mm;margin:0 0 2mm auto}
   .brk{page-break-before:always}
 </style>
 </head>
@@ -40,6 +56,16 @@
 
 <div class="cover">
   <div class="top">
+    <svg class="motif" viewBox="0 0 120 50" xmlns="http://www.w3.org/2000/svg">
+      <g stroke="#000" stroke-width=".5">
+        <polygon points="6,22 30,18 31,42 7,45" fill="#A0D096"/>
+        <polygon points="26,14 34,10 78,6 80,30 32,40" fill="#D35185"/>
+        <polygon points="70,18 92,12 96,34 74,40" fill="#8891C3"/>
+        <circle cx="100" cy="16" r="11" fill="#F5E25A"/>
+        <circle cx="109" cy="27" r="3" fill="#F5E25A"/>
+      </g>
+      <circle cx="114" cy="33" r="1.8" fill="#F5E25A" stroke="#000" stroke-width=".5"/>
+    </svg>
     <div class="label">토크쇼 패널 섭외 제안서</div>
     <div class="ttl">BACK TO ’95</div>
     <div class="sub">건물 한 동에서 시작된 꿈, 서른한 해가 지난 오늘의 한동에게 말을 걸다</div>
@@ -51,8 +77,10 @@
     <tr><th>장소</th><td>한동대학교 평봉필드 특설무대</td></tr>
   </table>
   <div class="bottom">
+    <div class="strip"><i></i><i></i><i></i><i></i></div>
     <div class="date">2026년 10월</div>
     <div class="org">2026 한동대학교 축제 TFT 무대운영팀</div>
+    <div class="fest">2026 HANDONG FESTIVAL · DREAMERS</div>
   </div>
 </div>
 
@@ -117,6 +145,7 @@
 <p style="margin-top:5mm">교수님께서 들려주실 1995년의 이야기가 2026년의 한동인에게 가장 큰 축제의 선물이 될 것입니다. 바쁘신 가운데 귀한 시간을 내어 주시기를 간곡히 부탁드립니다.</p>
 
 <div class="right">
+  <div class="strip sign-strip"><i></i><i></i><i></i><i></i></div>
   <p style="text-align:right">2026. 10.</p>
   <p style="text-align:right"><b>2026 한동대학교 축제 TFT 무대운영팀</b><br>담당자: [이름] / 연락처: [연락처] / 이메일: [이메일]</p>
 </div>
