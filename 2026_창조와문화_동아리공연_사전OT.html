@@ -91,14 +91,15 @@ svg.el { position: absolute; overflow: visible; pointer-events: none; }
 /* deadline table */
 .dtab { border-collapse: collapse; }
 .dtab th { text-align: left; font: 700 22px/1 "Point", "Base", sans-serif; color: var(--gray); letter-spacing: .06em; padding: 0 0 18px; border-bottom: 1.5px solid #fff; }
-.dtab td { border-bottom: 1.5px solid var(--rule); padding: 26px 0; vertical-align: middle; }
+.dtab td { border-bottom: 1.5px solid var(--rule); padding: 20px 0; vertical-align: middle; }
 .dtab td.dl { vertical-align: top; padding-top: 30px; border-right: 1.5px solid var(--rule); }
 .dtab .tg { display: inline-block; font: 700 22px/1 "Point", sans-serif; color: #000; padding: 7px 12px; }
-.dtab .dt { font-size: 92px; font-weight: 700; line-height: 1; margin-top: 18px; }
+.dtab .dt { font-size: 84px; font-weight: 700; line-height: 1; margin-top: 18px; }
 .dtab .dd { font-size: 26px; color: var(--gray); margin-top: 12px; }
 .dtab td.it { padding-left: 50px; font-size: 38px; font-weight: 500; }
 .dtab td.it span { font-size: 26px; font-weight: 300; color: var(--gray); margin-left: 8px; }
 .dtab td.mt { font-size: 30px; }
+.dtab td.it em.v { font-style: normal; font: 700 20px/1 "Point","Base",sans-serif; color: #000; background: var(--yellow); padding: 5px 10px; margin-left: 12px; vertical-align: 6px; }
 .dtab td.mt i { display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 14px; vertical-align: 4px; }
 .slot { position: absolute; border: 2px dashed var(--dim); display: grid; place-items: center; text-align: center; color: var(--gray); font-size: 26px; line-height: 1.6; }
 
@@ -365,11 +366,11 @@ svg.el { position: absolute; overflow: visible; pointer-events: none; }
   <table class="dtab" style="position:absolute;left:110px;right:110px;top:300px;width:1700px">
     <thead><tr><th style="width:470px">제출 기한</th><th>제출 자료</th><th style="width:420px">제출 방법</th></tr></thead>
     <tbody>
-    <tr><td class="dl" rowspan="3"><span class="tg" style="background:var(--yellow)">DEADLINE 1</span><p class="pt dt">10.17</p><p class="dd">토요일 23:59 · 이번 주</p></td><td class="it">무대 큐시트 <span>(엑셀 파일)</span></td><td class="mt"><i style="background:#f6e25a"></i>구글 드라이브</td></tr><tr><td class="it">스크립트 <span>(사회자 소개 멘트)</span></td><td class="mt"><i style="background:#a0d096"></i>구글폼</td></tr><tr><td class="it">동아리의 꿈</td><td class="mt"><i style="background:#a0d096"></i>구글폼</td></tr>
-    <tr><td class="dl" rowspan="2"><span class="tg" style="background:var(--green)">DEADLINE 2</span><p class="pt dt">10.28</p><p class="dd">수요일 · 9주차 (공연 1주일 전)</p></td><td class="it">공연 음원 파일</td><td class="mt"><i style="background:#f6e25a"></i>구글 드라이브</td></tr><tr><td class="it">가사 PPT</td><td class="mt"><i style="background:#f6e25a"></i>구글 드라이브</td></tr>
+    <tr><td class="dl" rowspan="3"><span class="tg" style="background:var(--yellow)">DEADLINE 1</span><p class="pt dt">10.17</p><p class="dd">토요일 23:59 · 7주차</p></td><td class="it">무대 큐시트 <em class="v">1차</em></td><td class="mt"><i style="background:#f6e25a"></i>구글 드라이브</td></tr><tr><td class="it">스크립트 <span>(사회자 소개 멘트)</span></td><td class="mt"><i style="background:#a0d096"></i>구글폼</td></tr><tr><td class="it">동아리의 꿈 소개</td><td class="mt"><i style="background:#a0d096"></i>구글폼</td></tr>
+    <tr><td class="dl" rowspan="3"><span class="tg" style="background:var(--green)">DEADLINE 2</span><p class="pt dt">10.23</p><p class="dd">금요일 23:59 · 8주차</p></td><td class="it">무대 큐시트 <em class="v" style="background:var(--green)">최종</em></td><td class="mt"><i style="background:#f6e25a"></i>구글 드라이브</td></tr><tr><td class="it">공연 음원 파일</td><td class="mt"><i style="background:#f6e25a"></i>구글 드라이브</td></tr><tr><td class="it">가사 PPT</td><td class="mt"><i style="background:#f6e25a"></i>구글 드라이브</td></tr>
     </tbody></table>
   <svg class="el" viewBox="0 0 280 135" preserveAspectRatio="none" style="left:1610px;top:170px;width:190px;height:92px"><use href="#chapel" fill="#f6e25a"/></svg>
-  <p class="abs" style="left:110px;top:950px;font-size:24px;color:#8a8a8a">구글폼 링크는 OT 마무리 때, 구글 드라이브 링크 · 리스트 · 기한은 OT 후 카톡방으로 공유합니다.</p>
+  <p class="abs" style="left:110px;top:962px;font-size:24px;color:#8a8a8a">큐시트는 1차(10.17)와 최종(10.23) 두 번 제출합니다. 구글폼 링크는 OT 마무리 때, 구글 드라이브 링크 · 리스트 · 기한은 OT 후 카톡방으로 공유합니다.</p>
 </section>
 
 <section class="slide">
@@ -394,7 +395,7 @@ svg.el { position: absolute; overflow: visible; pointer-events: none; }
 <section class="slide">
   <p class="bar-l">04 요청사항 | REQUESTS</p><p class="bar-r"><b class="pg"></b></p>
   <svg class="el" viewBox="0 0 182 185" style="left:1690px;top:170px;width:110px;height:112px"><use href="#bubG" fill="#f6e25a"/></svg>
-  <div class="hd"><span class="no c-yellow">04</span><h2>큐시트 작성 가이드</h2><span class="sep">|</span><span class="ds">가장 시급한 제출 자료</span></div>
+  <div class="hd"><span class="no c-yellow">04</span><h2>큐시트 작성 가이드</h2><span class="sep">|</span><span class="ds">1차 10.17(토) · 최종 10.23(금)</span></div>
   <div class="rows" style="top:300px">
     <div class="r" style="grid-template-columns:220px 1fr"><span style="font-size:32px;font-weight:500">단시</span><span style="font-size:28px;color:#8a8a8a">공연별 세부 타임라인 참고 (3′ / 10′ / 2′)</span></div>
     <div class="r" style="grid-template-columns:220px 1fr"><span style="font-size:32px;font-weight:500">구분</span><span style="font-size:28px;color:#8a8a8a">동아리공연 (동아리명)</span></div>
@@ -475,7 +476,7 @@ svg.el { position: absolute; overflow: visible; pointer-events: none; }
   <div class="flow nol" style="top:830px;grid-template-columns:repeat(3,1fr)">
     <div class="st" style="display:grid;grid-template-columns:96px 1fr;align-items:start"><div class="n" style="background:var(--yellow)">1</div><div><h4 style="margin-top:2px">양식 다운로드</h4><p>‘0. 자료 양식’ 폴더에서 양식 받기</p></div></div>
     <div class="st" style="display:grid;grid-template-columns:96px 1fr;align-items:start"><div class="n" style="background:var(--yellow)">2</div><div><h4 style="margin-top:2px">작성</h4><p>작성 가이드와 예시 참고</p></div></div>
-    <div class="st" style="display:grid;grid-template-columns:96px 1fr;align-items:start"><div class="n" style="background:var(--yellow)">3</div><div><h4 style="margin-top:2px">동아리 폴더에 업로드</h4><p>큐시트 <b style="color:#fff">10.17(토)</b> · 음원 · 가사 PPT <b style="color:#fff">10.28(수)</b></p></div></div>
+    <div class="st" style="display:grid;grid-template-columns:96px 1fr;align-items:start"><div class="n" style="background:var(--yellow)">3</div><div><h4 style="margin-top:2px">동아리 폴더에 업로드</h4><p>큐시트 1차 <b style="color:#fff">10.17(토)</b> · 최종 <b style="color:#fff">10.23(금)</b><br>음원 · 가사 PPT <b style="color:#fff">10.23(금)</b></p></div></div>
   </div>
 </section>
 
@@ -483,7 +484,7 @@ svg.el { position: absolute; overflow: visible; pointer-events: none; }
   <p class="bar-l">04 요청사항 | REQUESTS</p><p class="bar-r"><b class="pg"></b></p>
   <div class="hd"><span class="no c-yellow">04</span><h2>꼭 확인해주세요</h2></div>
   <div class="grid" style="top:330px;grid-template-columns:repeat(3,1fr)">
-    <div class="card" style="height:520px"><svg class="el" viewBox="0 0 182 185" style="left:40px;top:40px;width:90px;height:92px"><use href="#bubG" fill="var(--yellow)"/></svg><span class="pt" style="position:absolute;left:40px;top:40px;width:80px;height:80px;display:grid;place-items:center;color:#000;font-size:28px;font-weight:700">01</span><h4 style="margin-top:130px">제출 기한 재확인</h4><p>10.17(토) 23:59<br>10.28(수)</p></div>
+    <div class="card" style="height:520px"><svg class="el" viewBox="0 0 182 185" style="left:40px;top:40px;width:90px;height:92px"><use href="#bubG" fill="var(--yellow)"/></svg><span class="pt" style="position:absolute;left:40px;top:40px;width:80px;height:80px;display:grid;place-items:center;color:#000;font-size:28px;font-weight:700">01</span><h4 style="margin-top:130px">제출 기한 재확인</h4><p style="line-height:1.5"><b class="pt" style="color:#fff">10.17(토) 23:59</b><br>큐시트 1차 · 스크립트 · 꿈 소개<br><b class="pt" style="color:#fff;display:inline-block;margin-top:12px">10.23(금) 23:59</b><br>큐시트 최종 · 음원 · 가사 PPT</p></div>
     <div class="card" style="height:520px"><svg class="el" viewBox="0 0 182 185" style="left:40px;top:40px;width:90px;height:92px"><use href="#bubG" fill="var(--green)"/></svg><span class="pt" style="position:absolute;left:40px;top:40px;width:80px;height:80px;display:grid;place-items:center;color:#000;font-size:28px;font-weight:700">02</span><h4 style="margin-top:130px">카톡방 공지 필독</h4><p>무대운영팀의 공지와 안내를<br>꼭 확인해주세요</p></div>
     <div class="card" style="height:520px"><svg class="el" viewBox="0 0 182 185" style="left:40px;top:40px;width:90px;height:92px"><use href="#bubG" fill="var(--pink)"/></svg><span class="pt" style="position:absolute;left:40px;top:40px;width:80px;height:80px;display:grid;place-items:center;color:#000;font-size:28px;font-weight:700">03</span><h4 style="margin-top:130px">리허설 일정 체크</h4><p>DAY2 · DAY3 리허설 시간을<br>다시 한번 확인해주세요</p></div>
   </div>
