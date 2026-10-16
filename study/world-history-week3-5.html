@@ -1,0 +1,602 @@
+<title>세계사와 근현대 사상 시험노트</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: 좁은 본문 칼럼 + 상단 고정 탭. 각 주차는 "핵심 → 흐름 → 비교표 → 체크" 순서. */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --ink:#18202b; --muted:#5a6575; --line:#d9dee6;
+  --accent:#1f3f8f; --accent-soft:#e3e9f7; --mark:#c0362c; --mark-soft:#fbe9e7; --ok:#2f7a4f;
+  --display:"Gowun Batang","Noto Serif KR",serif;
+  --body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11161e; --surface:#19202b; --ink:#e6eaf0; --muted:#9aa5b5; --line:#2c3644;
+  --accent:#8fb0ff; --accent-soft:#1e2a44; --mark:#ff8a7e; --mark-soft:#3a1f1d; --ok:#6fcf97; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161e; --surface:#19202b; --ink:#e6eaf0; --muted:#9aa5b5; --line:#2c3644;
+  --accent:#8fb0ff; --accent-soft:#1e2a44; --mark:#ff8a7e; --mark-soft:#3a1f1d; --ok:#6fcf97; color-scheme:dark}
+
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15.5px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:860px;margin:0 auto;padding-block:28px 80px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.3;margin:0}
+h1{font-size:clamp(1.7rem,4.5vw,2.3rem)}
+h2{font-size:1.45rem;margin-top:44px;padding-bottom:8px;border-bottom:2px solid var(--ink)}
+h3{font-size:1.13rem;margin-top:28px;color:var(--accent)}
+p{margin:.5em 0}
+ul{margin:.4em 0;padding-left:1.25em}
+li{margin:.2em 0}
+b,strong{font-weight:700}
+.eyebrow{font-size:.78rem;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.lede{color:var(--muted);max-width:62ch}
+.k{background:var(--mark-soft);color:var(--mark);font-weight:700;padding:0 .25em;border-radius:3px}
+.d{font-family:var(--mono);font-size:.88em;color:var(--accent);white-space:nowrap}
+.note{font-size:.88rem;color:var(--muted)}
+.warn{border-left:3px solid var(--mark);background:var(--mark-soft);padding:8px 12px;border-radius:0 6px 6px 0;font-size:.9rem;margin:12px 0}
+
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:6px;flex-wrap:wrap;padding:12px 0;margin-top:18px;border-bottom:1px solid var(--line)}
+nav.tabs button{font:inherit;font-size:.92rem;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 14px;border-radius:999px;cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+nav.tabs button:focus-visible,.card:focus-visible,button:focus-visible{outline:2px solid var(--mark);outline-offset:2px}
+
+.top10{list-style:none;padding:0;display:grid;gap:8px;counter-reset:t}
+.top10 li{counter-increment:t;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px 10px 46px;position:relative}
+.top10 li::before{content:counter(t);position:absolute;left:14px;top:10px;font-family:var(--mono);color:var(--mark);font-weight:500}
+
+.tbl{overflow-x:auto;margin:12px 0;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:520px}
+th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+thead th{background:var(--accent-soft);font-weight:700}
+tbody th{font-weight:600;color:var(--muted);white-space:nowrap}
+tr:last-child td,tr:last-child th{border-bottom:0}
+
+.flow{list-style:none;padding:0;margin:12px 0;border-left:2px solid var(--line)}
+.flow li{position:relative;padding:4px 0 10px 18px}
+.flow li::before{content:"";position:absolute;left:-6px;top:12px;width:10px;height:10px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.flow li.hot::before{background:var(--mark);border-color:var(--mark)}
+
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:12px 0}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;min-width:0}
+.box h4{margin:0 0 4px;font-size:1rem}
+blockquote{margin:10px 0;padding:8px 14px;border-left:3px solid var(--accent);background:var(--surface);font-size:.92rem}
+blockquote cite{display:block;font-style:normal;color:var(--muted);font-size:.82rem;margin-top:4px}
+
+/* 플래시카드 */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.toolbar button{font:inherit;font-size:.88rem;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:5px 12px;border-radius:6px;cursor:pointer}
+.toolbar .count{font-family:var(--mono);font-size:.85rem;color:var(--muted);margin-left:auto}
+.cards{display:grid;gap:8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:start}
+.card .q{font-weight:600}
+.card .tag{font-size:.72rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px;white-space:nowrap}
+.card .a{grid-column:1/-1;color:var(--accent);border-top:1px dashed var(--line);padding-top:6px}
+.card .row{grid-column:1/-1;display:flex;justify-content:flex-end}
+.card .got{font:inherit;font-size:.8rem;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:6px;padding:2px 10px;cursor:pointer}
+.card.known{opacity:.55}
+.card.known .got{color:var(--ok);border-color:var(--ok)}
+
+.essay details{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0}
+.essay summary{cursor:pointer;font-weight:600}
+.essay details[open] summary{margin-bottom:6px}
+
+@media (prefers-reduced-motion:no-preference){.card{transition:opacity .2s}}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">GEK-10115 · 한동대 글로벌리더십학부 · 신승엽 교수</div>
+  <h1>세계사와 근현대 사상의 이해<br>시험 대비 노트 (Week 3–5)</h1>
+  <p class="lede">3주차 「프랑스혁명」과 4–5주차 「민족주의 (1)」 강의 슬라이드를 시험용으로 정리했습니다. <span class="k">빨간 표시</span>는 출제 가능성이 높은 키워드, <span class="d">파란 숫자</span>는 외워둘 연도입니다.</p>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="core" aria-selected="true">핵심 요약</button>
+    <button role="tab" data-tab="w3">3주 프랑스혁명</button>
+    <button role="tab" data-tab="w4">4–5주 민족주의</button>
+    <button role="tab" data-tab="time">통합 연표</button>
+    <button role="tab" data-tab="quiz">암기 카드</button>
+    <button role="tab" data-tab="essay">서술형 대비</button>
+  </nav>
+
+<!-- ============ 핵심 요약 ============ -->
+<section id="core" role="tabpanel">
+  <h2>시험 직전에 볼 핵심 12</h2>
+  <ol class="top10">
+    <li><b>민주주의 vs 공화주의</b>: 민주주의 = Demos+Kratos, 다수결·평등, 대립 = 왕정, 위협 = <span class="k">다수의 폭정</span>. 공화주의 = Res publica, 법의 지배·공공선, 대립 = 독재·과두정, 위협 = <span class="k">엘리트주의</span>.</li>
+    <li><b>혁명 원인</b>: 앙시앵 레짐 신분제(1·2신분 2% 미만이 토지 30%↑ + 면세) + 7년 전쟁 패배·미국 독립 지원(약 20억 리브르) + 영불 통상조약 + 왕실 사치 + 1775년부터의 불황.</li>
+    <li><b>1789년 흐름</b>: 삼부회(5월, <span class="k">175년 만</span>) → 표결 방식 대립 → 국민의회·<span class="k">테니스코트의 서약</span> → <span class="d">7.14</span> 바스티유 습격 → <span class="d">8.4</span> 봉건제 폐지 → <span class="d">8.26</span> 인권 선언.</li>
+    <li><b>급진화</b>: 10월 베르사유 행진 → 아시냐 발행 → <span class="k">바렌 사건</span>(1791, 왕의 도주) → 샹 드 마르스 학살 → 1791 헌법(입헌군주제) → 제1공화국 → 루이 16세 처형(<span class="d">1793.1.21</span>) → 로베스피에르 공포정치.</li>
+    <li><b>혁명 이후</b>: 테르미도르 반동(<span class="d">1794.7.27</span>) → 총재정부(1795) → <span class="k">브뤼메르 18일 쿠데타</span>(<span class="d">1799.11.9</span>) → 통령정부 → 황제(1804).</li>
+    <li><b>나폴레옹 지지 이유 3가지</b>: ① 10년간 혼란·공포에 대한 피로감 ② <span class="k">나폴레옹 법전</span>(1804)으로 혁명 가치 보장 ③ 전쟁 승리로 민족의식·애국심 고취.</li>
+    <li><b>빈 체제</b>(1814–15, 메테르니히): ① 복고주의 ② 세력 균형 ③ 4국 동맹(영·러·오·프로이센).</li>
+    <li><b>민족주의 정의 3인</b>: 한스 콘 = <span class="k">심리 상태</span>(최고 충성은 민족국가에) / 겔너 = <span class="k">정치적 단위 = 민족적 단위</span>라는 정치 원리 / 스미스 = 자율성·통일성·정체성을 추구하는 <span class="k">이데올로기적 운동</span>.</li>
+    <li><b>로마</b>: 혈통 기반 "민족(나티오)"이 아니라 법으로 묶인 "시민(포풀루스)". 민족은 조롱의 대상이었음.</li>
+    <li><b>근대 민족주의의 시초 4사건</b>: ① 100년 전쟁 ② 30년 전쟁·<span class="k">베스트팔렌 조약</span>(1648) ③ 프랑스혁명·나폴레옹 전쟁 ④ 독일 통일.</li>
+    <li><b>프랑스식 vs 독일식</b>: 시에예스 = <span class="k">공통의 법</span>으로 묶인 시민적 민족 / 피히테 = <span class="k">언어·혈통</span>의 종족 민족주의. 헤르더 = 모든 민족의 평등(문화 민족주의, 반제국주의).</li>
+    <li><b>독일 통일</b>: 프랑크푸르트 국민의회(1848–49, 소독일주의, 실패) → 비스마르크 <span class="k">철혈 정책</span> → 세 번의 전쟁(1864·1866·1870) → <span class="d">1871.1.18</span> 베르사유 거울의 방에서 독일 제국 선포.</li>
+  </ol>
+</section>
+
+<!-- ============ 3주차 ============ -->
+<section id="w3" role="tabpanel" hidden>
+  <h2>Week 3. 프랑스혁명: 기원, 전개, 결과 및 의의</h2>
+  <p class="note">수업 목표: ① 혁명의 사회·경제적 원인, 전개, 의의 ② 혁명기 유럽에 퍼진 정치 이념 ③ 세계사 속 프랑스혁명의 위치와 나폴레옹의 삶</p>
+
+  <h3>1. 용어: 민주주의 vs 공화주의</h3>
+  <div class="tbl"><table>
+    <thead><tr><th></th><th>민주주의 (Democracy)</th><th>공화주의 (Republicanism)</th></tr></thead>
+    <tbody>
+      <tr><th>정의</th><td>재산·출신·성별과 무관하게 모든 시민이 동등한 권리로 의사 결정에 참여</td><td>사익을 배제하고 공공 이익을 위해 권력 독점·장기 집권을 막는 견제와 균형</td></tr>
+      <tr><th>어원</th><td>그리스어 Demos(민중) + Kratos(지배)</td><td>라틴어 Res publica(공공의 것)</td></tr>
+      <tr><th>대립 질서</th><td>왕정</td><td>독재 & 과두정</td></tr>
+      <tr><th>핵심 원리</th><td>다수결 & 평등</td><td>법의 지배 & 공공선</td></tr>
+      <tr><th>권력의 근거</th><td>다수의 의지</td><td>헌법과 법률</td></tr>
+      <tr><th>시민의 역할</th><td>투표</td><td>의무의 이행</td></tr>
+      <tr><th>위협·한계</th><td><b>다수의 폭정</b></td><td><b>엘리트주의</b></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>2. 혁명 이전의 상황</h3>
+  <ul>
+    <li>1730년대부터 경제 성장: 신대륙 발견 이후 새 작물 수입과 상업 발달 → 해외 무역으로 <b>신흥 부르주아</b>가 부를 축적, 그들의 세금으로 왕권 강화.</li>
+    <li><span class="k">절대 왕정</span> 루이 14세: ① "태양왕"(아폴로와 동일시) ② <b>왕권신수설</b> ③ 베르사유 궁전 건설로 권력 과시·행정 중앙집중.</li>
+    <li>루이 15세: <b>7년 전쟁(1756–1763)</b>에서 영국에 패배 → 막대한 빚, 위신 추락. 정부(情婦) 퐁파두르·뒤 바리의 국정 개입 스캔들.</li>
+    <li><b>1775년부터 불황</b>: 흉작, 식량 부족, 물가 상승(10년간 연평균 65%), 실질 임금 감소.</li>
+  </ul>
+
+  <h3>3. 구체제(앙시앵 레짐)의 모순</h3>
+  <div class="grid2">
+    <div class="box"><h4>제1신분 · 성직자</h4>약 13만 명. 면세, 교회 재산 수입·십일조 독점, 왕실과 결탁. 단, 지방의 <b>가난한 하층 신부</b>는 생활이 제3신분과 비슷해 혁명 때 제3신분 편에 섬.</div>
+    <div class="box"><h4>제2신분 · 세습 귀족</h4>약 40만 명. 면세, 지방 영지 소유, 농민에게 조세·부역 부과, 관직 독점.</div>
+    <div class="box"><h4>제3신분 · 평민</h4>약 2,500만 명. 대다수가 빈곤, 각종 의무 수행. 그 안의 <b>부르주아</b>(의사·변호사·대상인)가 지식과 부를 바탕으로 <span class="k">혁명을 주도</span>.</div>
+  </div>
+  <p>정리: 인구 <b>2% 이하의 특권층이 토지 30% 이상</b>을 차지하고 관직을 독점하면서 세금은 내지 않음.</p>
+
+  <h3>4. 혁명의 발발 (1789)</h3>
+  <ul class="flow">
+    <li>7년 전쟁 복수심으로 <b>미국 독립 지원</b>: 약 20억 리브르(1년 예산의 4배).</li>
+    <li><b>영불 통상 조약</b>: 프랑스는 곡물 수출, 영국은 공업제품 수출 → 프랑스 곡물 가격 폭등.</li>
+    <li>왕실 사치: 국가 채무가 1774년 약 15억 리브르에서 15년 만에 3배.</li>
+    <li class="hot"><span class="d">1789.5</span> 루이 16세가 세금을 더 걷으려 베르사유에서 <b>삼부회</b> 소집 (<span class="k">175년 만</span>).</li>
+    <li>표결 방식 대립: <b>신분별 표결(1:1:1)</b>은 1·2신분 연합이 제3신분을 압도 / <b>머릿수 표결(300:300:600)</b>은 1·2신분 내 동조자가 있어 제3신분에 유리.
+      <div class="warn">슬라이드에는 "머릿 수 표결 (1:1:1) VS 신분별 표결 (300:300:600)"로 적혀 있지만, 설명 문장과 일반적인 역사 서술상 <b>1:1:1 = 신분별 표결, 300:300:600 = 머릿수 표결</b>이 맞습니다. 시험에서는 "제3신분에 유리한 쪽 = 머릿수(개인별) 표결"로 기억하세요.</div></li>
+    <li class="hot">합의 실패 → 제3신분이 <b>국민의회</b> 구성 → <span class="k">테니스코트의 서약</span>: "우리가 국민의 대표이며 새 헌법을 만들겠다."</li>
+    <li class="hot">왕의 강제 해산 시도 → <span class="d">1789.7.14</span> 시민들이 <span class="k">바스티유 감옥 습격</span> = 혁명의 시작.</li>
+    <li><span class="d">8.4</span> 봉건제 폐지 선언 → <span class="d">8.26</span> <span class="k">인간과 시민의 권리 선언</span>.</li>
+  </ul>
+
+  <h3>5. 「인간과 시민의 권리 선언」 핵심 키워드</h3>
+  <div class="grid2">
+    <div class="box"><h4>자유·평등</h4>인간은 자유롭고 평등하게 태어남. 사회적 차별은 공동 이익을 위해서만.</div>
+    <div class="box"><h4>자연권 4가지</h4><b>자유, 재산, 안전, 압제에 대한 저항권</b> (시효로 소멸 불가)</div>
+    <div class="box"><h4>국민주권</h4>모든 주권의 근원은 <b>국민</b>에게 있음.</div>
+    <div class="box"><h4>법</h4>법은 <b>일반 의지의 표현</b>(루소). 법 앞의 평등, 능력·덕성에 따른 공직 취임.</div>
+    <div class="box"><h4>적법 절차·표현의 자유</h4>법 절차 없이 체포·구금 불가. 사상과 의견의 자유로운 전달 = 가장 귀중한 권리.</div>
+    <div class="box"><h4>소유권</h4><b>신성불가침</b>. 공공 필요와 정당한 사전 배상 없이는 침탈 불가.</div>
+  </div>
+
+  <h3>6. 혁명의 전개</h3>
+  <ul class="flow">
+    <li>왕은 인권 선언 승인 거부. 국민의회 안에서 <b>보수파(입헌군주제)</b> vs <b>급진파(공화제)</b> 대립.</li>
+    <li><span class="d">1789.10.5</span> 생활고에 지친 파리 <b>부녀자들과 국민방위대 시위</b>(베르사유 행진) → 왕이 인권 선언 승인, 왕 부부를 파리 <b>튈르리 궁</b>으로 옮겨 감시.</li>
+    <li>국민의회의 경제 대책: ① 가톨릭 교회 재산 몰수·매각 ② 그 자산을 담보로 <span class="k">아시냐</span>(정부 보증 지폐) 발행 → 이후 가치 하락, 초인플레이션.</li>
+    <li class="hot"><span class="d">1791.6.20</span> <span class="k">바렌 사건</span>: 왕 일가가 오스트리아 국경(몽메디)으로 도주하다 하루 만에 체포 → "왕은 배신자" 여론, <b>급진파(공화제) 세력 강화</b>.</li>
+    <li><span class="d">1791.7.17</span> <span class="k">샹 드 마르스 학살</span>: 왕 폐위·공화정 요구 시위에 라파예트의 국민위병이 발포.</li>
+    <li><span class="d">1791.8.27</span> 필니츠 선언(오스트리아·프로이센의 전쟁 위협).</li>
+    <li><span class="d">1791.9.3</span> 프랑스 최초의 헌법, <b>입헌군주제</b> 도입 → 왕의 거부권 남용으로 1년 만에 실패.</li>
+    <li><span class="d">1792.4.20</span> 프랑스가 오스트리아에 선전포고 (<b>지롱드파</b>는 전쟁이 국민을 단결시킬 것이라 기대). <span class="d">1792.7.25</span> 브라운슈바이크 선언.</li>
+    <li class="hot">왕권 정지 → <b>국민공회</b> 소집 → 왕정 폐지, <span class="k">제1공화국</span> 선포 (9월 21일).
+      <div class="warn">슬라이드에는 "1791년 9월 21일"로 적혀 있지만 역사적으로는 <b>1792년 9월 21일</b>(국민공회 첫 회의, 이튿날 공화국 선포)입니다. 1791년 9월 헌법 이후의 일이므로 순서로 기억하면 헷갈리지 않습니다.</div></li>
+    <li>분열: 푀양파 vs 자코뱅파 → 지롱드파 vs <b>산악파</b>.</li>
+    <li class="hot"><span class="d">1793.1.21</span> 산악파 주도로 <span class="k">루이 16세 처형</span>.</li>
+    <li><span class="d">1793.2.1</span> 영국·네덜란드·스페인·오스트리아·프로이센의 <b>대불동맹</b>.</li>
+    <li><span class="d">1793.5.31</span> 로베스피에르가 지롱드파 축출 → <span class="d">9.5</span> <span class="k">공포정치</span> 시작.</li>
+  </ul>
+
+  <h3>7. 공포정치 → 테르미도르 반동 → 나폴레옹 등장</h3>
+  <ul class="flow">
+    <li>로베스피에르: 약 <b>3만 명</b> 처형. 목표 ① 외부 적에 맞서 국론 통일을 위해 내부의 적 제거 ② 부패한 자를 없애 도덕적으로 깨끗한 공화국 건설(극단적 이상주의).</li>
+    <li class="hot"><span class="d">1794.7.27</span> <span class="k">테르미도르 반동</span>: 국민공회가 로베스피에르 체포, 다음 날 처형 → 공포정치 종료.</li>
+    <li><span class="d">1795.10.27</span> <b>총재정부</b>: 양원제 입법부 + 5인 총재. 최고가격제 폐지, 아시냐 남발 → 인플레이션·흉작, 왕당파 결집. 무능 노출.</li>
+    <li>나폴레옹 이집트 원정(1798.5) 실패 후 귀국.</li>
+    <li class="hot"><span class="d">1799.11.9</span> <span class="k">브뤼메르 18일 쿠데타</span>: 총재 <b>시에예스</b>가 나폴레옹과 결탁 → <b>통령정부</b> 수립.</li>
+  </ul>
+
+  <h3>8. 나폴레옹 시대</h3>
+  <ul class="flow">
+    <li>통령 3명 중 나폴레옹이 1통령(시에예스는 2통령, 들러리). 1800년 지방자치 폐지·관료와 재판관 직접 임명.</li>
+    <li><span class="d">1802.8</span> 헌법 개정, <b>종신 통령</b>.</li>
+    <li class="hot"><span class="d">1804</span> 국민투표 99.9% 찬성 → <span class="d">12.2</span> 황제 대관식. 같은 해 <span class="k">나폴레옹 법전</span> 공포.</li>
+    <li><span class="d">1805.10</span> <b>트라팔가 해전</b>에서 영국 넬슨에게 패배. 이후 오스트리아·프로이센 격파.</li>
+    <li>절정기(1807–1812): 가족을 정복지의 왕으로(형 = 스페인, 동생 = 네덜란드, 매제 = 나폴리).</li>
+    <li class="hot"><span class="d">1806.11.21</span> <span class="k">대륙 봉쇄령</span>: 굴복시키지 못한 영국과 유럽의 무역 금지.</li>
+  </ul>
+  <div class="box">
+    <h4>★ 혁명을 일으킨 프랑스인이 왜 나폴레옹 제정을 지지했나? (서술형 예상)</h4>
+    <ol>
+      <li>10년 넘는 공화정·총재정부의 무능, 사회 혼란, 공포정치, 계속된 전쟁에 대한 <b>극심한 피로감</b></li>
+      <li><b>나폴레옹 법전</b>(1804)으로 혁명의 핵심 가치를 보장: 봉건제·특권 폐지, 종교의 자유, 사유재산권</li>
+      <li>해외 전쟁 승리로 국가에 대한 자긍심, 즉 <b>민족 의식</b>을 고취</li>
+    </ol>
+  </div>
+
+  <h3>9. 몰락과 빈 체제</h3>
+  <ul class="flow">
+    <li>대륙 봉쇄로 러시아가 영국에 밀·목재·대마·수지를 팔지 못해 손실 → 봉쇄령을 어기고 영국과 교역.</li>
+    <li class="hot"><span class="d">1812.6</span> <b>러시아 원정</b>(60만 대군) → 9월 모스크바 입성 → 겨울 추위·보급 차단으로 후퇴, 약 3만 명만 생존.</li>
+    <li><span class="d">1814.4</span> 퇴위 → <b>엘바 섬</b> 유배 → <span class="d">1815.2</span> 탈출, 루이 18세를 몰아내고 복귀.</li>
+    <li class="hot"><span class="d">1815.6</span> <span class="k">워털루 전투</span> 패배(영국·프로이센 연합군) → <b>세인트헬레나</b> 유배, 그곳에서 사망.</li>
+  </ul>
+  <div class="box">
+    <h4>빈 회의 (1814.9–1815.6) · 주도: 오스트리아 수상 <span class="k">메테르니히</span></h4>
+    <ol>
+      <li><b>복고주의</b>: 쫓겨난 왕들을 복귀(프랑스·스페인·나폴리)</li>
+      <li><b>세력 균형</b>: 프랑스 견제를 위해 주변국 영토 확장(네덜란드·프로이센)</li>
+      <li><b>4국 동맹</b>: 영국·러시아·오스트리아·프로이센</li>
+    </ol>
+    <p class="note">목적은 자유주의·민주주의 확산 억제. 하지만 참여국의 이해관계가 달랐고, 자유를 경험한 유럽인들의 요구가 커지면서 흔들림.</p>
+  </div>
+
+  <h3>10. 나폴레옹 이후 프랑스 정치 체제 (표 암기)</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>시기</th><th>체제</th><th>통치자</th><th>핵심 / 끝난 이유</th></tr></thead>
+    <tbody>
+      <tr><td class="d">1815–1824</td><td>입헌군주제</td><td>루이 18세</td><td>"1814년 헌장", 강경파와 개혁파 사이 균형, 재정 정비·경제 성장</td></tr>
+      <tr><td class="d">1824–1830</td><td>입헌군주제(사실상 제정)</td><td>샤를 10세</td><td>왕권신수설 집착, 귀족 재산 보상, 언론 탄압 → <b>7월 혁명</b>으로 퇴위</td></tr>
+      <tr><td class="d">1830–1848</td><td>입헌군주제</td><td>루이 필리프 1세</td><td>산업혁명·금융자본주의, 납세액 기준 선거권(약 20만 명) → 선거권 확대 요구 → <b>2월 혁명</b>, 망명</td></tr>
+      <tr><td class="d">1848–1852</td><td>제2공화국</td><td>루이 나폴레옹</td><td>최초의 <b>성인 남성 보통선거</b>, 74% 득표로 대통령(4년 단임), 파리 대개조·만국박람회</td></tr>
+      <tr><td class="d">1852–1870</td><td>제2제정</td><td>나폴레옹 3세</td><td>1851.12.2 친위 쿠데타 → 국민투표로 황제 → <b>보불전쟁</b> 패배, 포로</td></tr>
+      <tr><td class="d">1871.3.18–5.28</td><td>사회주의·무정부주의</td><td>노동자 자치</td><td>1870.9.4 제정 폐지·제3공화국 선포 → 임시정부의 항복에 반대해 <b>파리 코뮌</b> 수립 → 진압</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">흐름 한 줄: 루이 18세 → 샤를 10세 →(7월 혁명)→ 루이 필리프 →(2월 혁명)→ 제2공화국 → 제2제정 →(보불전쟁)→ 파리 코뮌 / 제3공화국</p>
+</section>
+
+<!-- ============ 4-5주차 ============ -->
+<section id="w4" role="tabpanel" hidden>
+  <h2>Week 4–5. 민족주의 (1): 나폴레옹 이후 유럽 민족주의의 확산</h2>
+  <p class="note">수업 목표: ① 민족의 의미, 민족주의의 정의, 민족 정체성의 기원 ② 고대·중세·근대 유럽 민족주의의 전개 ③ 근대 유럽 민족주의의 두 경로와 그 명암</p>
+
+  <h3>1. 민족주의의 정의 (학자 3인, 누가 무엇을 말했는지 짝 맞추기)</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>학자</th><th>저서</th><th>민족주의란?</th><th>키워드</th></tr></thead>
+    <tbody>
+      <tr><td><b>한스 콘</b></td><td>『민족주의』(1974)</td><td>개인의 최고 충성이 민족 국가에 바쳐져야 한다고 느끼는 <b>심리 상태</b>. 근대적 민족주의는 <b>18세기 말</b>에 공인된 감정이 됨.</td><td><span class="k">심리 상태</span></td></tr>
+      <tr><td><b>어네스트 겔너</b></td><td>『민족과 민족주의』(1983)</td><td><b>정치적 단위와 민족적 단위가 일치해야 한다</b>는 정치적 원리. 감정은 원리 위반 시 분노, 충족 시 만족.</td><td><span class="k">정치적 원리</span></td></tr>
+      <tr><td><b>앤서니 스미스</b></td><td>『족류 상징주의와 민족주의』(2009)</td><td>한 주민을 위해 <b>자율성·통일성·정체성</b>을 달성·유지하려는 <b>이데올로기적 운동</b>. 단순한 정서가 아닌 능동적 운동.</td><td><span class="k">이데올로기적 운동</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>2. 기원: 종족과 로마</h3>
+  <ul>
+    <li><b>종족 = 민족의 배아(胚芽)</b>. 종족이 곧 민족은 아니지만 민족이 생겨날 사회·역사적 바탕.</li>
+    <li>종족 정체성이 본격 형성된 때: <b>게르만족 대이동기(4세기 말–6세기 중반)</b>. 앵글로색슨·프랑크·고트·롬바르드·수에비·반달 등이 왕국 건설.</li>
+    <li>로마인: 정체성을 혈연이 아니라 <b>법률</b>로 이해. 스스로를 로마 "민족(<b>나티오</b>)"이 아닌 하나의 법으로 통합된 "시민(<b>포풀루스</b>)"으로 인식.</li>
+    <li>로마에서 "민족"은 가족보다 크고 시민보다 작은 개념, 출생으로 묶인 외국인·이방인을 가리키는 <b>조롱의 대상</b>. 게르만족을 미개하게 봄.</li>
+    <li>로마 제국의 성공 비결: <b>유연하고 개방적인 시민권 정책</b>(비로마인 엘리트에게 시민권 부여).</li>
+  </ul>
+
+  <h3>3. 중세: 원시적 민족 감각의 등장</h3>
+  <ul class="flow">
+    <li><span class="d">476</span> 서로마 멸망 → 게르만 부족들이 분할 지배.</li>
+    <li><span class="d">481</span> <b>클로비스 1세</b> 즉위, 부족 통합 → <b>샤를마뉴 대제</b> 때 프랑크 왕국 전성기.</li>
+    <li class="hot"><span class="d">843</span> <b>베르뎅 조약</b> & <span class="d">870</span> <b>메르센 조약</b>: 서프랑크(프랑스)·중프랑크(이탈리아)·동프랑크(독일)로 분할 → 민족에 대한 원시적 인식 시작 (아직은 지역·신분·종교 정체성이 더 강함).</li>
+  </ul>
+
+  <h3>4. "근대 민족주의"의 시초가 된 4가지 사건</h3>
+
+  <div class="box">
+    <h4>(1) 100년 전쟁 (1337–1453)</h4>
+    <ul>
+      <li>카롤링거 혈통 단절 → 어머니가 프랑스 공주인 영국 <b>에드워드 3세</b>가 왕위 계승권 주장(플랑드르 지방).</li>
+      <li>지배층 다툼으로 시작했지만 <b>화약·대포</b> 사용 → <b>기사 계급 몰락</b>, 농민·대중 참여.</li>
+      <li>봉건제 붕괴 시작, "<b>영국인</b>/<b>프랑스인</b>"이라는 국민 정체성 형성 → 근대 국가 탄생.</li>
+      <li>이 해석의 학자: <b>조르주 뒤비, 크리스토퍼 올맨드</b>.</li>
+    </ul>
+  </div>
+
+  <div class="box" style="margin-top:12px">
+    <h4>(2) 30년 전쟁 (1618–1648)과 베스트팔렌 조약 (1648)</h4>
+    <ul>
+      <li>"<b>보편적 제국</b>"(신성로마제국 황제와 교황이 정점) → "<b>개별 주권 국가</b>"로 전환.</li>
+      <li>원칙: <span class="k">Cuius regio, eius religio</span> = "한 지역의 종교는 그 지역 통치자가 결정" → 외부 간섭 없는 <b>주권</b>.</li>
+      <li><b>국가 이익</b> 개념 대두(종교보다 국익), 언어·문화 경계 고착.</li>
+      <li><b>찰스 틸리</b>『강제, 자본, 그리고 유럽의 국가들』: 145명 대표, 스위스·네덜란드 주권 승인, 합스부르크 통합 저지, 신성로마제국의 종말 → <b>유럽 국민국가 체제 공고화</b>.</li>
+    </ul>
+  </div>
+
+  <div class="box" style="margin-top:12px">
+    <h4>(3) 프랑스혁명과 나폴레옹의 정복 전쟁</h4>
+    <ul>
+      <li>인권 선언(1789): 주권은 왕이 아닌 <b>국민</b>에게.</li>
+      <li><span class="k">엠마누엘 시에예스</span>: 제3신분 출신 가톨릭 사제, 인권 선언 초안 작성, 주권·인권·대의제 개념 고안, 나중에 나폴레옹 즉위를 도움.</li>
+      <li>소책자 <b>『제3신분이란 무엇인가?』</b>(1789.1): 로크·루소의 사회계약론 영향. 국가는 혈통·특권이 아닌 <b>법과 노동</b>으로 유지된다.</li>
+      <li>"혈통"이 아닌 <b>"공통의 법"</b>이 민족의 조건 = <b>법치주의적·시민적 민족 관념</b>. 프랑크족 혈통을 내세운 귀족을 민족에서 제외하고 <b>민족 = 제3신분</b>.</li>
+      <li>그러나 1792년 이후 전쟁이 심해지며 보편주의적 개념이 퇴색 → 공통 전통·언어·문화를 가진 "민족"으로 의미 변화. 방어 전쟁 → 침략 전쟁, <b>보통 교육과 징집</b>으로 "프랑스인" 재구성. (예: 바레르 보고서, 1792 – 적과 같은 언어를 쓰는 알자스인 비난)</li>
+      <li>나폴레옹이 정복지에 법전을 이식하고 봉건제 폐지 → <b>역설적으로 평등·주권 개념 확산</b> + 지배에 대한 <b>저항 의식</b>으로 각국 민족주의 각성.</li>
+      <li><span class="d">1805.12</span> 아우스터리츠 전투(오·러 연합군 격파), 16개 제후국 탈퇴 → <span class="d">1806.8</span> 프란츠 2세가 <b>신성로마제국 해산</b> 선언 → 독일 민족주의 폭발.</li>
+    </ul>
+  </div>
+
+  <div class="box" style="margin-top:12px">
+    <h4>(4) 독일의 통일과 민족주의의 형성</h4>
+    <ul>
+      <li><span class="d">1806.10</span> 예나-아우어슈테트 전투에서 프로이센 패배, 베를린 점령.</li>
+      <li><span class="k">요한 피히테</span>: <b>종족 민족주의(Ethnic Nationalism)</b>의 이론적 기틀. 1807.12–1808.3 매주 일요일 베를린 강연 (<b>『독일 국민에게 고함』</b>).</li>
+      <li>패망 원인 = 이기심과 도덕적 타락 → <b>국민 교육</b>으로 재건.</li>
+      <li>피히테 민족주의 핵심 3가지: ① <b>독일어의 순수성</b> ② 국민 교육으로 이기심 극복·민족에 헌신 ③ <b>문화적 사명을 띤 독일 민족</b>.</li>
+    </ul>
+    <blockquote>"하나의 민족이란 단순히 동일한 정부 아래 거주하는 개인들의 무리가 아니라, 동일한 언어와 역사, 그리고 도덕적 목적을 공유하는 공동체이다."<cite>피히테 제1강</cite></blockquote>
+    <blockquote>"독일 국민에게 필요한 것은 복수가 아니라 갱생이며, 정복이 아니라 성품이다."<cite>피히테 제5강</cite></blockquote>
+  </div>
+
+  <h3>5. 헤르더 · 피히테 · 다레 비교 (출제 1순위 비교표)</h3>
+  <div class="tbl"><table>
+    <thead><tr><th></th><th>요한 헤르더 (1744–1803)</th><th>요한 피히테 (1762–1814)</th><th>리하르트 다레 (1895–1953)</th></tr></thead>
+    <tbody>
+      <tr><th>키워드</th><td><b>민족 정신(Volksgeist)</b>, 평등한 다양성</td><td><b>선택된 민족</b>, 투쟁적 전환</td><td><b>피와 흙</b>, 생물학적 결정론</td></tr>
+      <tr><th>유형</th><td>문화 민족주의, 낭만주의</td><td>종족 민족주의</td><td>나치 극단적 민족 우월론</td></tr>
+      <tr><th>민족관</th><td>자연이 만든 가족, 수천 년 역사·언어·문화를 공유한 <b>살아 있는 유기체</b></td><td>언어적 동질성 → <b>언어적 우월성</b>. 독일어만 살아 있는 위대한 언어</td><td>헤르더의 <b>유기체</b> + 피히테의 <b>우월성</b> 결합</td></tr>
+      <tr><th>타 민족</th><td><b>모든 민족은 평등</b>, 반제국주의(소수민족 민요·신화 수집)</td><td>독일인만이 인류를 구원할 사명</td><td>흙(영토 수호) + 피(순수 게르만 혈통)</td></tr>
+      <tr><th>계몽주의</th><td>합리·이성 중심 개인관 비판, 개인과 민족은 상호 보완</td><td>전쟁 상황에서 민족주의를 이념적 무기화</td><td>—</td></tr>
+      <tr><th>한계</th><td>유기체론의 생물학적·배타적 성격, 민족 운명론이 훗날 전체주의의 밑거름</td><td>헤르더 사상을 공격적·급진적으로 개조</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">헤르더 대표 저작: 『언어의 기원에 관한 논문』(1772), 『인류 역사 철학에 대한 또 하나의 구상』(1774), 『인류 역사 철학에 대한 구상』(1784–91, 민족 정신 구체화), 『인본주의 촉진을 위한 서신』(1793–97)</p>
+  <p class="note">외우는 법: <b>헤르더(평등) → 피히테(우월) → 다레(혈통)</b>. 갈수록 배타적·공격적으로 변함.</p>
+
+  <h3>6. 프랑스식 vs 독일식 민족주의</h3>
+  <div class="tbl"><table>
+    <thead><tr><th></th><th>프랑스식 (시민적)</th><th>독일식 (종족·문화적)</th></tr></thead>
+    <tbody>
+      <tr><th>대표 인물</th><td>시에예스</td><td>헤르더, 피히테 (→ 비스마르크가 국가로 실현)</td></tr>
+      <tr><th>민족의 조건</th><td><b>공통의 법</b>, 공통의 권리와 주권</td><td><b>언어·역사·문화</b>, 혈통</td></tr>
+      <tr><th>사상적 배경</th><td>계몽주의, 로크·루소 사회계약론</td><td>계몽주의 비판, 낭만주의</td></tr>
+      <tr><th>계기</th><td>프랑스혁명 (1789)</td><td>나폴레옹 침략의 굴욕, 독일 통일 (1871)</td></tr>
+      <tr><th>국가 형성</th><td>시민이 주권자로서 국가를 구성</td><td>민족(문화 공동체)이 먼저 있고 국가를 만들어야 함</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>7. 독일 통일의 과정</h3>
+  <ul class="flow">
+    <li class="hot"><span class="d">1848.5–1849.6</span> <b>프랑크푸르트 국민의회</b>: 프랑스 1848년 혁명의 영향. 주로 지식인 대표.
+      <ul><li><b>대독일주의</b>(오스트리아 포함) vs <b>소독일주의</b>(오스트리아 제외, 프로이센 중심) → <span class="k">소독일주의 우세</span></li>
+      <li>프로이센 왕 <b>프리드리히 빌헬름 4세</b>를 황제로 추대했으나 입헌군주제를 거부 → 뷔르템베르크 군대에 의해 해산, 봉기 진압 = <b>자유주의적 통일 실패</b></li></ul></li>
+    <li class="hot"><span class="k">비스마르크</span>(철혈 수상): 전쟁을 통한 국가 건설. 1862.9.30 예산위원회 연설: "지금의 대문제는 언론이나 다수결이 아니라 오로지 <b>철과 피</b>로 해결된다."</li>
+    <li>세 번의 전쟁 모두 승리: ① <span class="d">1864</span> 프로이센-덴마크 ② <span class="d">1866</span> 프로이센-오스트리아 ③ <span class="d">1870</span> 프로이센-프랑스(보불전쟁).</li>
+    <li class="hot"><span class="d">1871.1.18</span> 베르사유 궁전 <b>거울의 방</b>에서 독일 제국 선포, <b>빌헬름 1세</b>가 초대 황제.</li>
+  </ul>
+  <div class="warn">연결 포인트: 보불전쟁(1870)은 3주차의 <b>나폴레옹 3세 몰락 → 파리 코뮌(1871)</b>과 같은 사건입니다. 두 주차를 잇는 문제로 나오기 좋습니다. 그리고 독일 제국이 하필 <b>베르사유</b>에서 선포된 점도 상징적입니다.</div>
+</section>
+
+<!-- ============ 통합 연표 ============ -->
+<section id="time" role="tabpanel" hidden>
+  <h2>통합 연표</h2>
+  <p class="note">3주차(혁명)와 4–5주차(민족주의)를 한 줄로 합쳤습니다. 굵은 줄이 핵심 연도입니다.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>연도</th><th>사건</th><th>주차</th></tr></thead>
+    <tbody id="tl"></tbody>
+  </table></div>
+</section>
+
+<!-- ============ 암기 카드 ============ -->
+<section id="quiz" role="tabpanel" hidden>
+  <h2>암기 카드</h2>
+  <p class="note">카드를 누르면 정답이 보입니다. 외운 카드는 "외웠음"을 눌러 두면 흐리게 표시되고, 이 브라우저에 기억됩니다.</p>
+  <div class="toolbar">
+    <button id="f-all" type="button">전체</button>
+    <button id="f-w3" type="button">3주</button>
+    <button id="f-w4" type="button">4–5주</button>
+    <button id="f-left" type="button">못 외운 것만</button>
+    <button id="shuffle" type="button">섞기</button>
+    <button id="reveal" type="button">정답 모두 보기</button>
+    <button id="reset" type="button">기록 초기화</button>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="cards" id="cards"></div>
+</section>
+
+<!-- ============ 서술형 ============ -->
+<section id="essay" role="tabpanel" hidden class="essay">
+  <h2>서술형 대비: "수업 전 질문" 답안 골자</h2>
+  <p class="note">교수님이 슬라이드에 넣은 토론 질문들입니다. 서술형으로 나올 가능성이 높으니 근거가 되는 사실을 같이 묶어 두었습니다. 펼쳐서 확인하세요.</p>
+
+  <h3>3주차</h3>
+  <details><summary>혁명은 단순한 개혁·진보와 어떻게 다른가?</summary>
+    <ul><li>지배층 교체가 아니라 사회의 <b>질서와 가치관 자체</b>가 뒤집힘: 신분제·왕권신수설 → 국민주권·법 앞의 평등.</li>
+    <li>근거: 8.4 봉건제 폐지, 인권 선언(주권은 국민에게), 왕정 폐지와 공화국 수립, 국왕 처형.</li></ul></details>
+  <details><summary>왜 프랑스혁명이 유독 전 세계에 큰 영향을 미쳤나?</summary>
+    <ul><li>인권 선언이 특정 신분이 아닌 <b>보편적 인간</b>의 권리를 선언.</li>
+    <li>혁명전쟁과 나폴레옹 정복으로 <b>나폴레옹 법전</b>(법 앞의 평등, 종교 자유, 사유재산)이 유럽에 이식됨.</li>
+    <li>점령지의 저항이 각국의 <b>민족주의</b>를 깨움 → 4–5주차 내용과 연결.</li>
+    <li>1830·1848·1871로 이어지며 사회적 권리 요구로 확대.</li></ul></details>
+  <details><summary>공포정치: 공공 안전이 개인 인권보다 우선할 수 있는가?</summary>
+    <ul><li>로베스피에르의 두 명분: 외부의 적 앞에서 국론 통일, 부패 없는 도덕적 공화국.</li>
+    <li>결과: 약 3만 명 처형 → 테르미도르 반동으로 종료. 인권 선언의 "적법 절차" 원칙과 정면 충돌.</li>
+    <li>공화주의의 한계(엘리트주의)·민주주의의 한계(다수의 폭정) 개념을 활용해 입장을 쓰면 좋음.</li></ul></details>
+  <details><summary>나폴레옹: 해방자인가 정복자인가? 그 지배가 유럽에 남긴 것은?</summary>
+    <ul><li>해방감: 봉건제 폐지, 법전 이식 → 평등·주권 개념 확산.</li>
+    <li>민족적 분노: 신성로마제국 해산(1806), 프로이센 패배 → 피히테 강연 등 독일 민족주의 폭발.</li>
+    <li>결과: 빈 체제의 복고에도 불구하고 자유주의·민족주의 요구 확대 → 독일 통일(1871).</li></ul></details>
+  <details><summary>1789–1871, 80년의 혁명이 현대 민주주의에 남긴 의미</summary>
+    <ul><li>정치적 권리: 입헌군주제 → 납세 기준 선거권(약 20만 명) → 2월 혁명 → <b>성인 남성 보통선거</b>(1848).</li>
+    <li>사회적 권리: 파리 코뮌(1871)의 노동자 자치 → 국가가 평등한 삶을 보장해야 한다는 요구.</li></ul></details>
+
+  <h3>4–5주차</h3>
+  <details><summary>민족과 민족주의는 무엇이며, 둘의 관계는?</summary>
+    <ul><li>콘(심리 상태) / 겔너(정치 단위 = 민족 단위 원리) / 스미스(이데올로기적 운동) 세 정의를 비교해서 서술.</li>
+    <li>콘: 근대적 민족주의는 18세기 말부터. 겔너와 스미스 모두 민족주의를 단순한 감정 이상으로 봄.</li></ul></details>
+  <details><summary>민족은 타고나는가, 만들어지는가?</summary>
+    <ul><li>만들어진다는 근거: 로마는 민족이 아닌 법적 시민(포풀루스)으로 결속, 혁명 정부는 <b>보통 교육과 징집</b>으로 "프랑스인"을 재구성, 피히테도 <b>국민 교육</b>을 강조.</li>
+    <li>타고난다는 쪽: 헤르더는 민족성을 자연이 부과한 당연한 감정으로 봄, 다레의 "피" 강조.</li>
+    <li>민족주의와 애국심의 차이: 콘의 정의처럼 최고의 충성을 민족국가에 바치고, 각 민족이 자기 국가를 가져야 한다는 주장까지 포함.</li></ul></details>
+  <details><summary>전쟁은 민족 정체성 형성에 어떤 역할을 했나?</summary>
+    <ul><li>100년 전쟁: 화약·대포로 기사 몰락, 대중 참여 → "영국인/프랑스인" 정체성.</li>
+    <li>30년 전쟁: 베스트팔렌 조약으로 주권 국가 체제.</li>
+    <li>혁명전쟁·나폴레옹 전쟁: 프랑스에서는 민족 개념이 문화적으로 좁아지고, 피정복국에서는 저항 민족주의가 생김.</li>
+    <li>비스마르크의 세 전쟁 → 독일 통일. 공통점: 외부의 적이 "우리"를 만든다.</li></ul></details>
+  <details><summary>프랑스식과 독일식 민족주의는 어떻게 다르며, 각 사건에 어떤 역할을 했나?</summary>
+    <ul><li>프랑스(1789): 시에예스, 공통의 법 → 신분제를 무너뜨리고 국민주권을 세우는 힘.</li>
+    <li>독일(1871): 헤르더·피히테, 언어와 문화 → 흩어진 제후국을 하나로 묶는 힘. 다만 자유주의적 통일(프랑크푸르트)은 실패하고 비스마르크의 철혈 정책으로 완성.</li>
+    <li>명암: 국가 건설의 동력이지만, 배타성이 다레 같은 극단주의(나치)로 이어짐.</li></ul></details>
+</section>
+
+  <p class="note" style="margin-top:48px">출처: 신승엽 교수, 「세계사와 근현대 사상의 이해」 Week 3, Week 4–5 강의 슬라이드. 슬라이드의 연도 표기가 역사적 사실과 다른 곳 두 군데(표결 방식, 제1공화국 선포 연도)에는 노란 박스로 표시했습니다. 피히테 제4강 날짜도 슬라이드에는 "1807년 1월 3일"로 되어 있으나 강연 기간상 1808년 1월 3일입니다.</p>
+</div>
+
+<script>
+(function(){
+  // ---------- 탭 ----------
+  const tabs=[...document.querySelectorAll('nav.tabs button')];
+  function show(id){
+    tabs.forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===id));
+    document.querySelectorAll('section[role=tabpanel]').forEach(s=>s.hidden=s.id!==id);
+    try{localStorage.setItem('tab',id)}catch(e){}
+  }
+  tabs.forEach(b=>b.addEventListener('click',()=>{show(b.dataset.tab);window.scrollTo({top:0})}));
+  let start='core';
+  const h=location.hash.slice(1);
+  if(tabs.some(b=>b.dataset.tab===h)) start=h; else { try{const t=localStorage.getItem('tab'); if(t&&tabs.some(b=>b.dataset.tab===t)) start=t;}catch(e){} }
+  show(start);
+
+  // ---------- 연표 ----------
+  const TL=[
+    ['476','서로마 제국 멸망','4–5',0],['481','클로비스 1세 즉위, 프랑크 부족 통합','4–5',0],
+    ['843 / 870','베르뎅 조약 / 메르센 조약: 프랑크 왕국 3분할','4–5',1],
+    ['1337–1453','100년 전쟁: 국민 정체성 형성','4–5',1],
+    ['1618–1648','30년 전쟁','4–5',0],['1648','베스트팔렌 조약: 주권 국가 체제','4–5',1],
+    ['1756–1763','7년 전쟁, 프랑스 패배','3',0],['1775~','프랑스 경제 불황 시작','3',0],
+    ['1789.1','시에예스 『제3신분이란 무엇인가?』','4–5',1],
+    ['1789.5','삼부회 소집 (175년 만)','3',1],['1789.6','국민의회, 테니스코트의 서약','3',0],
+    ['1789.7.14','바스티유 습격, 혁명 시작','3',1],['1789.8.4','봉건제 폐지','3',0],
+    ['1789.8.26','인간과 시민의 권리 선언','3',1],['1789.10.5','베르사유 행진, 왕을 튈르리 궁으로','3',0],
+    ['1791.6.20','바렌 사건','3',1],['1791.7.17','샹 드 마르스 학살','3',0],
+    ['1791.8.27','필니츠 선언','3',0],['1791.9.3','최초의 헌법, 입헌군주제','3',0],
+    ['1792.4.20','오스트리아에 선전포고','3',0],['1792.7.25','브라운슈바이크 선언','3',0],
+    ['1792.9.21','왕정 폐지, 제1공화국 (슬라이드엔 1791)','3',1],
+    ['1793.1.21','루이 16세 처형','3',1],['1793.2.1','대불동맹','3',0],
+    ['1793.9.5','로베스피에르 공포정치 시작','3',1],['1794.7.27','테르미도르 반동','3',1],
+    ['1795.10.27','총재정부 출범','3',0],['1798.5','이집트 원정','3',0],
+    ['1799.11.9','브뤼메르 18일 쿠데타, 통령정부','3',1],['1802.8','나폴레옹 종신 통령','3',0],
+    ['1804','나폴레옹 법전, 황제 즉위(12.2)','3',1],['1805.10','트라팔가 해전 패배','3',0],
+    ['1805.12','아우스터리츠 전투 승리','4–5',0],['1806.8','신성로마제국 해산','4–5',1],
+    ['1806.10','예나-아우어슈테트 전투, 베를린 점령','4–5',0],['1806.11.21','대륙 봉쇄령','3',1],
+    ['1807.12–1808.3','피히테 베를린 강연','4–5',1],
+    ['1812.6','러시아 원정','3',1],['1814.4','나폴레옹 퇴위, 엘바 섬','3',0],
+    ['1814.9–1815.6','빈 회의 (메테르니히)','3',1],['1815.6','워털루 전투, 세인트헬레나 유배','3',1],
+    ['1815–1824','루이 18세 (입헌군주제)','3',0],['1830','7월 혁명 → 루이 필리프','3',1],
+    ['1848','2월 혁명 → 제2공화국, 성인 남성 보통선거','3',1],
+    ['1848.5–1849.6','프랑크푸르트 국민의회 (소독일주의)','4–5',1],
+    ['1852','나폴레옹 3세, 제2제정','3',0],['1862.9.30','비스마르크 "철과 피" 연설','4–5',1],
+    ['1864','프로이센-덴마크 전쟁','4–5',0],['1866','프로이센-오스트리아 전쟁','4–5',0],
+    ['1870','보불전쟁, 나폴레옹 3세 포로·제정 폐지','3·4–5',1],
+    ['1871.1.18','독일 제국 선포 (베르사유 거울의 방)','4–5',1],
+    ['1871.3.18–5.28','파리 코뮌','3',1]
+  ];
+  document.getElementById('tl').innerHTML=TL.map(r=>`<tr${r[3]?' style="font-weight:700"':''}><td class="d">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+
+  // ---------- 암기 카드 ----------
+  const C=[
+    ['w3','민주주의의 어원과 잠재적 위협은?','그리스어 Demos(민중)+Kratos(지배) / 다수의 폭정'],
+    ['w3','공화주의의 어원과 잠재적 위협은?','라틴어 Res publica(공공의 것) / 엘리트주의'],
+    ['w3','민주주의와 공화주의 각각이 대립하는 정치 질서는?','민주주의 ↔ 왕정, 공화주의 ↔ 독재·과두정'],
+    ['w3','루이 14세 절대왕정의 세 가지 특징은?','태양왕(아폴로와 동일시), 왕권신수설, 베르사유 궁전 건설'],
+    ['w3','루이 15세 때 프랑스가 영국에 패해 큰 빚을 진 전쟁은?','7년 전쟁 (1756–1763)'],
+    ['w3','앙시앵 레짐에서 특권층의 비율과 토지 점유율은?','인구 2% 이하가 토지 30% 이상, 면세'],
+    ['w3','제3신분 중 혁명을 주도한 계층은?','부르주아 (의사, 변호사, 대상인 등)'],
+    ['w3','미국 독립 지원에 쓴 비용은?','약 20억 리브르 (프랑스 1년 예산의 4배)'],
+    ['w3','프랑스 곡물 가격 폭등을 부른 조약은?','영불 통상 조약'],
+    ['w3','1789년 5월 삼부회는 몇 년 만에 열렸나?','175년 만'],
+    ['w3','삼부회에서 제3신분에 유리했던 표결 방식은?','머릿수(개인별) 표결 300:300:600'],
+    ['w3','제3신분이 국민의회를 만들고 "새 헌법을 만들겠다"고 한 것은?','테니스코트의 서약'],
+    ['w3','프랑스혁명의 시작으로 보는 사건과 날짜는?','바스티유 감옥 습격, 1789년 7월 14일'],
+    ['w3','1789년 8월 4일과 8월 26일에 있었던 일은?','8.4 봉건제 폐지 선언 / 8.26 인간과 시민의 권리 선언'],
+    ['w3','인권 선언이 말한 시효로 소멸되지 않는 자연권 4가지는?','자유, 재산, 안전, 압제에 대한 저항권'],
+    ['w3','인권 선언에서 "법은 ___의 표현이다"?','일반 의지'],
+    ['w3','국민의회가 교회 재산을 담보로 발행한 지폐는?','아시냐 (Assignat) → 초인플레이션'],
+    ['w3','왕 일가가 국경으로 도주하다 체포된 사건과 그 결과는?','바렌 사건(1791.6.20) → 급진파(공화제) 세력 강화'],
+    ['w3','라파예트의 국민위병이 공화정 요구 시위대에 발포한 사건은?','샹 드 마르스 학살 (1791.7.17)'],
+    ['w3','1791년 9월 헌법이 도입한 체제는?','입헌군주제 (1년 만에 실패)'],
+    ['w3','전쟁이 프랑스를 단결시킬 거라 기대하며 개전을 주도한 파는?','지롱드파'],
+    ['w3','루이 16세 처형을 주도한 파와 날짜는?','산악파, 1793년 1월 21일'],
+    ['w3','로베스피에르 공포정치의 두 가지 목표는?','① 외부 적에 맞서 내부의 적 제거(국론 통일) ② 도덕적으로 깨끗한 공화국'],
+    ['w3','로베스피에르를 처형해 공포정치를 끝낸 사건은?','테르미도르 반동 (1794.7.27)'],
+    ['w3','5인 총재가 이끈 정부는?','총재정부 (1795.10.27)'],
+    ['w3','나폴레옹이 통령정부를 세운 쿠데타와 협력자는?','브뤼메르 18일 쿠데타(1799.11.9), 시에예스'],
+    ['w3','혁명을 일으킨 프랑스인들이 나폴레옹 제정을 지지한 이유 3가지는?','① 혼란·공포·전쟁에 대한 피로감 ② 나폴레옹 법전으로 혁명 가치 보장 ③ 민족 의식 고취'],
+    ['w3','나폴레옹 법전이 보장한 혁명 가치는?','봉건제·특권 계급 폐지, 종교의 자유, 사유재산권'],
+    ['w3','나폴레옹이 영국 넬슨에게 패한 해전은?','트라팔가 해전 (1805.10)'],
+    ['w3','영국과 유럽의 무역을 금지한 조치는?','대륙 봉쇄령 (1806.11.21)'],
+    ['w3','러시아 원정의 원인은?','러시아가 대륙 봉쇄령을 어기고 영국과 교역'],
+    ['w3','나폴레옹의 최종 패배와 유배지는?','워털루 전투(1815.6), 세인트헬레나'],
+    ['w3','빈 회의의 3원칙과 주도 인물은?','복고주의, 세력 균형, 4국 동맹 / 메테르니히'],
+    ['w3','4국 동맹의 4국은?','영국, 러시아, 오스트리아, 프로이센'],
+    ['w3','샤를 10세를 몰아낸 혁명은?','7월 혁명 (1830)'],
+    ['w3','루이 필리프 시기 선거권은 누구에게 있었나?','일정액 이상 납세자, 약 20만 명 → 2월 혁명(1848)'],
+    ['w3','제2공화국에서 처음 실시된 선거와 대통령은?','성인 남성 보통선거, 루이 나폴레옹(74%)'],
+    ['w3','나폴레옹 3세가 몰락한 전쟁은?','보불전쟁 (1870)'],
+    ['w3','1871년 노동자 자치 정부는?','파리 코뮌 (1871.3.18–5.28)'],
+    ['w4','"민족주의는 개인의 최고 충성이 민족 국가에 바쳐져야 한다고 느끼는 심리 상태"라고 한 학자는?','한스 콘'],
+    ['w4','"정치적 단위와 민족적 단위가 일치해야 한다는 정치적 원리"라고 한 학자는?','어네스트 겔너'],
+    ['w4','민족주의를 자율성·통일성·정체성을 추구하는 "이데올로기적 운동"이라 한 학자는?','앤서니 스미스'],
+    ['w4','종족 정체성이 본격적으로 형성된 시기는?','게르만족 대이동기 (4세기 말–6세기 중반)'],
+    ['w4','로마인이 스스로를 인식한 방식은? (나티오 vs 포풀루스)','혈통의 "민족(나티오)"이 아니라 법으로 통합된 "시민(포풀루스)"'],
+    ['w4','로마가 제국으로 성장한 비결은?','유연하고 개방적인 시민권 정책'],
+    ['w4','프랑크 왕국을 서·중·동으로 나눈 조약은?','베르뎅 조약(843), 메르센 조약(870)'],
+    ['w4','근대 민족주의의 시초가 된 4가지 사건은?','100년 전쟁, 30년 전쟁·베스트팔렌 조약, 프랑스혁명·나폴레옹 전쟁, 독일 통일'],
+    ['w4','100년 전쟁에서 기사 계급이 몰락한 이유는?','화약과 대포의 사용, 농민·대중의 참여'],
+    ['w4','100년 전쟁을 근대 민족주의의 계기로 본 학자는?','조르주 뒤비, 크리스토퍼 올맨드'],
+    ['w4','Cuius regio, eius religio의 뜻은?','한 지역의 종교는 그 지역 통치자의 결정에 따른다 (베스트팔렌)'],
+    ['w4','베스트팔렌 조약이 국민국가 체제를 공고히 했다고 분석한 학자와 책은?','찰스 틸리, 『강제, 자본, 그리고 유럽의 국가들』'],
+    ['w4','『제3신분이란 무엇인가?』의 저자는?','엠마누엘 시에예스 (1789.1)'],
+    ['w4','시에예스가 본 민족의 조건은?','혈통이 아닌 "공통의 법" (법치주의적 민족 관념)'],
+    ['w4','시에예스는 민족(국민)을 어느 신분과 동일시했나?','제3신분 (프랑크족 혈통을 내세운 귀족은 제외)'],
+    ['w4','혁명 정부가 "프랑스인"을 재구성한 두 수단은?','보통 교육과 군대 징집'],
+    ['w4','신성로마제국이 해산된 해와 마지막 황제는?','1806년, 프란츠 2세'],
+    ['w4','종족 민족주의의 이론적 기틀을 만든 철학자는?','요한 피히테'],
+    ['w4','피히테 민족주의의 핵심 3가지는?','독일어의 순수성, 국민 교육을 통한 이기심 극복, 문화적 사명을 띤 독일 민족'],
+    ['w4','피히테가 본 신성로마제국 패망의 원인과 해법은?','이기심과 도덕적 타락 / 국민 교육'],
+    ['w4','헤르더의 핵심 개념은?','민족 정신 (Volksgeist), 살아 있는 유기체로서의 민족'],
+    ['w4','헤르더가 다른 민족과 제국주의를 보는 입장은?','모든 민족은 평등, 반제국주의 (소수민족 민요·신화 수집)'],
+    ['w4','헤르더 사상의 한계로 지적된 점은?','유기체론의 생물학적·배타적 성격, 민족 운명론이 전체주의의 밑거름'],
+    ['w4','피와 흙을 내세운 나치 이론가는?','리하르트 다레 (헤르더의 유기체 + 피히테의 우월성)'],
+    ['w4','프랑크푸르트 국민의회에서 우세했던 통일 방식은?','소독일주의 (오스트리아 제외, 프로이센 중심)'],
+    ['w4','프랑크푸르트 국민의회의 황제 추대를 거부한 인물은?','프리드리히 빌헬름 4세 (입헌군주제 거부)'],
+    ['w4','"철과 피"를 주장한 인물과 연설 시점은?','비스마르크, 1862년 9월 30일 예산위원회'],
+    ['w4','독일 통일을 이끈 세 번의 전쟁은?','1864 덴마크, 1866 오스트리아, 1870 프랑스'],
+    ['w4','독일 제국 선포 날짜·장소·초대 황제는?','1871.1.18, 베르사유 궁전 거울의 방, 빌헬름 1세']
+  ];
+  let known={};
+  try{known=JSON.parse(localStorage.getItem('known')||'{}')}catch(e){}
+  const save=()=>{try{localStorage.setItem('known',JSON.stringify(known))}catch(e){}};
+  let order=C.map((_,i)=>i), filter='all', revealAll=false;
+  const box=document.getElementById('cards'), cnt=document.getElementById('count');
+  function render(){
+    const list=order.filter(i=>filter==='all'||(filter==='left'?!known[i]:C[i][0]===filter));
+    box.innerHTML=list.map(i=>`<div class="card${known[i]?' known':''}" tabindex="0" data-i="${i}">
+      <span class="q">${C[i][1]}</span><span class="tag">${C[i][0]==='w3'?'3주':'4–5주'}</span>
+      <div class="a" ${revealAll?'':'hidden'}>${C[i][2]}</div>
+      <div class="row"><button class="got" type="button">${known[i]?'✓ 외웠음':'외웠음'}</button></div></div>`).join('');
+    const k=Object.keys(known).filter(i=>known[i]).length;
+    cnt.textContent=`${list.length}장 표시 · 외운 카드 ${k}/${C.length}`;
+  }
+  box.addEventListener('click',e=>{
+    const card=e.target.closest('.card'); if(!card) return;
+    const i=+card.dataset.i;
+    if(e.target.closest('.got')){known[i]=!known[i];save();render();return;}
+    const a=card.querySelector('.a'); a.hidden=!a.hidden;
+  });
+  box.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList.contains('card')){e.preventDefault();const a=e.target.querySelector('.a');a.hidden=!a.hidden;}});
+  const set=f=>()=>{filter=f;render()};
+  document.getElementById('f-all').onclick=set('all');
+  document.getElementById('f-w3').onclick=set('w3');
+  document.getElementById('f-w4').onclick=set('w4');
+  document.getElementById('f-left').onclick=set('left');
+  document.getElementById('shuffle').onclick=()=>{for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]]}render()};
+  document.getElementById('reveal').onclick=e=>{revealAll=!revealAll;e.target.textContent=revealAll?'정답 숨기기':'정답 모두 보기';render()};
+  document.getElementById('reset').onclick=()=>{known={};save();render()};
+  render();
+})();
+</script>
