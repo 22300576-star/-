@@ -1,0 +1,448 @@
+<title>생명과학 서술형 모의고사</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: 답안지(답안 칸 + 여백 채점란) 한 장을 세로로 이어 붙인 형태. 상단 고정 바 = 타이머·진행률·제출 */
+:root{
+  --bg:#eef2f0; --paper:#ffffff; --ink:#16231f; --muted:#5b6b66; --line:#d3ddd9; --rule:#e4ebe8;
+  --accent:#0f6b5c; --accent-soft:#dcefea; --good:#1d7a3e; --good-soft:#e2f3e7; --warn:#a15c00; --warn-soft:#fbefdc; --bad:#b4312a; --bad-soft:#f9e3e1;
+  --display:"Gowun Dodum","IBM Plex Sans KR",sans-serif;
+  --body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1715; --paper:#16211e; --ink:#e3ece9; --muted:#97a8a2; --line:#2a3a35; --rule:#22302c;
+  --accent:#5fc4ae; --accent-soft:#163631; --good:#6fd08f; --good-soft:#173322; --warn:#f0b35c; --warn-soft:#3a2c14; --bad:#ff8f86; --bad-soft:#3b1e1c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1715; --paper:#16211e; --ink:#e3ece9; --muted:#97a8a2; --line:#2a3a35; --rule:#22302c;
+  --accent:#5fc4ae; --accent-soft:#163631; --good:#6fd08f; --good-soft:#173322; --warn:#f0b35c; --warn-soft:#3a2c14; --bad:#ff8f86; --bad-soft:#3b1e1c; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.65;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+button,select,textarea,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border-bottom:1px solid var(--line);margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px))}
+.bar-in{max-width:880px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.bar h1{font-family:var(--display);font-size:1.15rem;margin:0;font-weight:400;flex:1 1 220px;min-width:0}
+.clock{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:1.05rem;padding:2px 10px;border-radius:6px;background:var(--accent-soft);color:var(--accent)}
+.clock.over{background:var(--bad-soft);color:var(--bad)}
+.prog{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.btn{border:1px solid var(--line);background:var(--paper);padding:6px 14px;border-radius:7px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--paper);font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+
+.wrap{max-width:880px;margin:0 auto;padding-top:22px;display:grid;gap:18px}
+.intro{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:grid;gap:10px}
+.intro p{margin:0;color:var(--muted);max-width:68ch}
+.controls{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.controls label{display:flex;gap:6px;align-items:center;font-size:.92rem}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:5px 12px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--paper)}
+select{border:1px solid var(--line);background:var(--paper);border-radius:6px;padding:4px 8px}
+
+.q{background:var(--paper);border:1px solid var(--line);border-radius:10px;display:grid;grid-template-columns:1fr 132px;overflow:hidden}
+.q-main{padding:16px 18px;min-width:0;display:grid;gap:10px}
+.q-side{border-left:1px dashed var(--line);padding:14px 12px;display:grid;align-content:start;gap:8px;text-align:center;background:var(--bg)}
+.q-head{display:flex;gap:10px;align-items:baseline}
+.q-no{font-family:var(--mono);color:var(--accent);font-weight:600;white-space:nowrap}
+.q-text{font-weight:600;margin:0}
+.q-type{font-size:.75rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:0 8px;white-space:nowrap;margin-left:auto}
+textarea{width:100%;min-height:110px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--paper);line-height:1.7;
+  background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(1.7em + 9px),var(--rule) calc(1.7em + 9px),var(--rule) calc(1.7em + 10px));background-attachment:local}
+textarea.short{min-height:64px}
+textarea:read-only{opacity:.9}
+.meta-row{display:flex;justify-content:space-between;gap:8px;font-size:.8rem;color:var(--muted);flex-wrap:wrap}
+.choices{display:grid;gap:6px}
+.choices label{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:7px;padding:7px 10px}
+.score-box{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.score-box .big{font-size:1.5rem;font-weight:600;line-height:1.2}
+.score-box .of{color:var(--muted);font-size:.8rem}
+.side-label{font-size:.72rem;letter-spacing:.06em;color:var(--muted)}
+.chk{font-size:.82rem}
+
+.fb{border-top:1px solid var(--rule);padding-top:10px;display:grid;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:.8rem;border-radius:999px;padding:1px 9px;border:1px solid}
+.chip.hit{color:var(--good);background:var(--good-soft);border-color:transparent}
+.chip.miss{color:var(--bad);background:var(--bad-soft);border-color:transparent}
+.model{background:var(--accent-soft);border-radius:8px;padding:10px 12px}
+.model b{display:block;font-size:.8rem;color:var(--accent);margin-bottom:2px}
+.note{font-size:.82rem;color:var(--warn);background:var(--warn-soft);border-radius:6px;padding:6px 10px}
+.ai{border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.ai b{font-size:.8rem;color:var(--muted);display:block}
+
+.result{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:grid;gap:12px}
+.result h2{font-family:var(--display);font-weight:400;margin:0;font-size:1.3rem}
+.tally{display:flex;flex-wrap:wrap;gap:18px;align-items:baseline}
+.tally .total{font-family:var(--mono);font-size:2.2rem;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
+.grid16{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+.cell{border-radius:6px;padding:6px 4px;text-align:center;font-family:var(--mono);font-size:.78rem;border:1px solid var(--line);background:var(--paper)}
+.cell.good{background:var(--good-soft);color:var(--good);border-color:transparent}
+.cell.mid{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.cell.low{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.row-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.status{font-size:.85rem;color:var(--muted)}
+.foot{font-size:.8rem;color:var(--muted);text-align:center}
+
+@media (max-width:620px){
+  .q{grid-template-columns:1fr}
+  .q-side{border-left:0;border-top:1px dashed var(--line);display:flex;justify-content:space-between;align-items:center;text-align:left}
+  .grid16{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media (prefers-reduced-motion:no-preference){.cell,.chip{transition:background .2s}}
+</style>
+
+<header class="bar">
+  <div class="bar-in">
+    <h1>생명과학 중간고사 · 서술형 16문항</h1>
+    <span class="prog" id="prog">작성 0 / 16</span>
+    <span class="clock" id="clock">00:00</span>
+    <button class="btn primary" id="submitBtn" type="button">답안 제출</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="intro">
+    <p>답안지에 직접 서술한 뒤 <b>답안 제출</b>을 누르면 핵심 단어 기준으로 바로 채점되고, 모범답안과 빠진 키워드가 문항마다 표시됩니다. 원하면 Claude에게 문장 전체를 읽고 채점·첨삭해 달라고 할 수 있습니다. 작성 중인 답안은 이 브라우저에 자동 저장됩니다.</p>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="모드">
+        <button type="button" id="modeExam" aria-pressed="true">시험 모드</button>
+        <button type="button" id="modePractice" aria-pressed="false">연습 모드</button>
+      </div>
+      <label for="limitSel">제한 시간
+        <select id="limitSel">
+          <option value="0">없음</option>
+          <option value="30">30분</option>
+          <option value="50" selected>50분</option>
+          <option value="60">60분</option>
+        </select>
+      </label>
+      <label for="shuffleChk"><input type="checkbox" id="shuffleChk"> 문항 순서 섞기</label>
+      <button class="btn" type="button" id="resetBtn">새로 시작</button>
+      <span class="status" id="resetMsg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section class="result" id="result" hidden>
+    <h2>채점 결과</h2>
+    <div class="tally">
+      <span class="total" id="totalPct">0점</span>
+      <span class="status" id="totalRaw"></span>
+    </div>
+    <div class="grid16" id="grid16"></div>
+    <div class="row-actions">
+      <button class="btn primary" type="button" id="aiBtn" hidden>Claude에게 전체 채점·첨삭 받기</button>
+      <button class="btn" type="button" id="aiStop" hidden>중지</button>
+      <button class="btn" type="button" id="retryWrong">틀린 문항만 다시 풀기</button>
+      <span class="status" id="aiStatus" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <div id="qs" style="display:grid;gap:18px"></div>
+
+  <p class="foot">문항과 모범답안: 생명과학 중간고사 16문항 서술형 답안(첨부 PPT 1~5장 기준). 키워드 채점은 참고용이며, 표현이 달라도 뜻이 맞으면 Claude 채점이 더 정확합니다.</p>
+</main>
+
+<script>
+(function(){
+const Q = [
+ {id:1,type:"서술",pts:10,q:"백신의 종류 세 가지와 특징은?",
+  a:"백신에는 약독화 백신, 불활성화 백신, 서브유닛 백신이 있다. 약독화 백신은 병원성을 약화시킨 살아 있는 병원체를 사용하고, 불활성화 백신은 죽이거나 불활성화한 병원체를 사용한다. 서브유닛 백신은 병원체의 항원 일부만 사용한다.",
+  k:[["약독화 백신",["약독화","약화백신","생백신"]],["살아 있는 병원체",["살아있","생백신","살아있는"]],["불활성화 백신",["불활성화","사백신"]],["죽인 병원체",["죽인","죽여","죽이","사멸"]],["서브유닛 백신",["서브유닛","subunit","아단위","소단위"]],["항원 일부",["일부"]]]},
+ {id:2,type:"서술",pts:10,q:"PCR이란 무엇이며 어떤 과정으로 진행되는가?",
+  a:"PCR은 특정 DNA 구간을 대량으로 증폭하는 기술이다. 먼저 변성 단계에서 94~96°C로 가열하여 DNA 두 가닥을 분리한다. 다음 결합 단계에서 50~65°C로 낮추어 프라이머를 결합시킨다. 마지막 신장 단계에서 70~75°C의 온도로 Taq 중합효소가 새 DNA를 합성하게 하며, 이 과정을 반복한다.",
+  k:[["DNA 증폭",["증폭"]],["변성 단계",["변성"]],["94~96°C",["94","95","96"]],["결합(어닐링)",["결합","어닐링","annealing"]],["프라이머",["프라이머","primer"]],["50~65°C",["50","55","60","65"]],["신장 단계",["신장","연장","extension"]],["70~75°C",["70","72","75"]],["Taq 중합효소",["taq","중합효소","폴리머레이스","polymerase"]],["반복",["반복","사이클","cycle"]]]},
+ {id:3,type:"서술",pts:10,q:"DNA와 RNA의 차이점 세 가지는?",
+  a:"첫째, DNA의 당은 디옥시리보스이고 RNA의 당은 리보스이다. 둘째, DNA는 A·T·G·C를 가지지만 RNA는 T 대신 U(유라실)을 가진다. 셋째, DNA는 보통 이중가닥이고 RNA는 보통 단일가닥이다.",
+  k:[["디옥시리보스",["디옥시리보스","데옥시리보스","deoxyribose"]],["리보스",["리보스","ribose"]],["티민(T)",["티민","t"]],["우라실(U)",["우라실","유라실","u"]],["이중가닥",["이중가닥","이중나선","두가닥"]],["단일가닥",["단일가닥","한가닥","단일"]]]},
+ {id:4,type:"서술",pts:10,q:"원핵세포와 진핵세포의 차이점 세 가지는?",
+  a:"첫째, 원핵세포는 핵막이 없지만 진핵세포는 핵막으로 둘러싸인 핵이 있다. 둘째, 원핵세포에는 막성 소기관이 없지만 진핵세포에는 있다. 셋째, 원핵세포는 일반적으로 진핵세포보다 크기가 작다. 리보솜은 두 세포 모두 가지고 있다.",
+  k:[["핵막 유무",["핵막"]],["막성 소기관",["막성소기관","소기관","세포소기관"]],["크기 차이",["크기","작"]],["리보솜은 둘 다",["리보솜"]]]},
+ {id:5,type:"서술",pts:10,q:"제한효소, 플라스미드, DNA 벡터란?",
+  a:"제한효소는 특정 DNA 서열을 인식하여 자르는 효소이다. 플라스미드는 염색체와 별개로 존재하며 스스로 복제되는 DNA이다. DNA 벡터는 외래 DNA를 숙주 세포로 전달하는 운반체이며, 플라스미드를 벡터로 사용할 수 있다.",
+  k:[["특정 서열 인식",["서열","인식"]],["DNA를 자름",["자르","자른","절단"]],["염색체와 별개",["별개","독립","염색체외"]],["스스로 복제",["복제"]],["외래 DNA 운반체",["운반","전달","운반체"]],["숙주 세포",["숙주"]]]},
+ {id:6,type:"서술",pts:10,q:"돌연변이의 종류 세 가지와 특징은?",
+  a:"PPT에서 제시한 종류에는 점돌연변이, 유전적 돌연변이, 후천적 돌연변이가 있다. 점돌연변이는 단일 염기 수준에서 생기는 변화이다. 유전적 돌연변이는 생식세포를 통해 자손에게 전달되는 변이이다. 후천적 돌연변이는 체세포에서 발생하며 일반적으로 자손에게 전달되지 않는다.",
+  note:"세 종류는 분류 기준이 서로 다릅니다(점돌연변이는 변화의 크기, 유전적·후천적은 전달 여부). 낫세포빈혈은 후천적이 아니라 유전적 변이의 예입니다.",
+  k:[["점돌연변이",["점돌연변이"]],["단일 염기 변화",["단일염기","염기하나","한염기","단일"]],["유전적 돌연변이",["유전적"]],["생식세포·자손 전달",["생식세포","자손"]],["후천적 돌연변이",["후천적"]],["체세포",["체세포"]]]},
+ {id:7,type:"서술",pts:10,q:"핵의 DNA에서 단백질이 만들어지는 과정은?",
+  a:"핵에서 DNA를 주형으로 전사가 일어나 RNA가 만들어진다. RNA는 인트론 제거와 엑손 연결 등의 가공을 거쳐 성숙 mRNA가 된 뒤 세포질로 이동한다. 리보솜은 mRNA를 읽고 tRNA가 운반한 아미노산을 연결하는 번역을 수행한다. 생성된 폴리펩타이드는 접힘과 필요한 가공을 거쳐 기능성 단백질이 된다.",
+  k:[["전사",["전사"]],["mRNA",["mrna"]],["RNA 가공(인트론 제거)",["가공","인트론","스플라이싱"]],["세포질 이동",["세포질"]],["리보솜",["리보솜"]],["번역",["번역"]],["tRNA·아미노산",["trna","아미노산"]],["폴리펩타이드",["폴리펩타이드","펩타이드","폴리펩티드"]],["접힘",["접힘","접히","폴딩","folding"]]]},
+ {id:8,type:"서술",pts:10,q:"항체가 항원에 결합할 때의 보호 기작 세 가지는?",
+  a:"항체의 보호 기작에는 응집, 중화, 옵소닌화가 있다. 응집은 항원을 뭉치게 하여 식세포의 제거를 돕는다. 중화는 병원체가 세포에 부착하거나 독소가 작용하는 것을 막는다. 옵소닌화는 병원체 표면을 항체로 덮어 식세포의 인식과 포식을 촉진한다.",
+  k:[["응집",["응집"]],["뭉치게 함",["뭉치","덩어리"]],["중화",["중화"]],["부착·독소 차단",["부착","독소","막"]],["옵소닌화",["옵소닌"]],["식세포 포식 촉진",["식세포","포식","대식세포"]]]},
+ {id:9,type:"서술",pts:10,q:"크로마토그래피와 크기 배제·이온교환 방식은?",
+  a:"크로마토그래피는 혼합물의 성분을 성질 차이에 따라 분리·정제하는 기술이다. 크기 배제 방식에서는 큰 단백질이 수지의 구멍에 덜 들어가 먼저 나오고, 작은 단백질은 구멍을 드나들어 늦게 나온다. 이온교환 방식은 단백질과 수지 사이의 전하에 따른 결합 차이를 이용한다.",
+  k:[["분리·정제",["분리","정제"]],["성질 차이",["성질","차이"]],["크기 배제",["크기배제","겔여과","크기"]],["큰 단백질이 먼저",["먼저"]],["작은 단백질은 늦게",["늦게","나중"]],["이온교환",["이온교환"]],["전하",["전하"]]]},
+ {id:10,type:"단답",pts:5,q:"형질세포가 생성하는 방어 단백질은?",
+  a:"형질세포가 생성하는 방어 단백질은 항체이다. 항체는 항원에 특이적으로 결합하여 면역 방어에 관여한다.",
+  k:[["항체",["항체","antibody","면역글로불린"]]]},
+ {id:11,type:"단답",pts:5,q:"DNA를 구성하는 네 가지 염기는?",
+  a:"DNA의 네 가지 염기는 아데닌(Adenine, A), 티민(Thymine, T), 구아닌(Guanine, G), 시토신(Cytosine, C)이다.",
+  k:[["아데닌",["아데닌","adenine"]],["티민",["티민","thymine"]],["구아닌",["구아닌","guanine"]],["시토신",["시토신","사이토신","cytosine"]]]},
+ {id:12,type:"단답",pts:5,q:"생물이 가진 모든 유전 정보를 무엇이라 하는가?",
+  a:"생물이 가진 모든 유전 정보를 유전체(Genome)라고 한다.",
+  k:[["유전체(게놈)",["유전체","게놈","genome"]]]},
+ {id:13,type:"단답",pts:5,q:"재생의학에서 여러 세포로 분화할 수 있는 세포는?",
+  a:"해당 세포는 줄기세포이다. 줄기세포는 자가 재생 능력과 다른 종류의 세포로 분화할 수 있는 능력을 가진 미분화 세포이다.",
+  k:[["줄기세포",["줄기세포","stemcell"]],["분화 능력",["분화"]],["자가 재생",["자가재생","자기재생","재생"]]]},
+ {id:14,type:"단답",pts:5,q:"인트론과 엑손은 무엇인가?",
+  a:"인트론은 RNA 가공 시 제거되는 서열이고, 엑손은 남아 연결되는 서열이다. 엑손에는 단백질을 암호화하지 않는 부분도 포함될 수 있다.",
+  k:[["인트론은 제거",["제거","잘려","빠지"]],["엑손은 남아 연결",["연결","남","이어"]]]},
+ {id:15,type:"단답",pts:5,q:"재조합 DNA를 세균 안에 넣는 기술은?",
+  a:"재조합 DNA를 세균 안에 넣는 기술은 형질전환이다. 이는 세균이 외부 DNA를 받아들이도록 하는 것으로, 재조합 플라스미드를 도입할 때 사용한다.",
+  k:[["형질전환",["형질전환","transformation"]]]},
+ {id:16,type:"객관",pts:5,q:"mRNA · jRNA · tRNA · miRNA 중 RNA 종류가 아닌 것은?",
+  choices:["① mRNA","② jRNA","③ tRNA","④ miRNA"],correct:1,
+  a:"정답은 ② jRNA이다. mRNA는 단백질 합성의 주형이고, tRNA는 아미노산을 운반하며, miRNA는 유전자 발현을 조절한다."}
+];
+const TOTAL = Q.reduce((s,x)=>s+x.pts,0);
+const KEY = "bioExam.v1";
+const $ = id => document.getElementById(id);
+
+// ---------- 상태 ----------
+let st = {answers:{}, order:Q.map(x=>x.id), mode:"exam", limit:50, start:null, submitted:false, scores:{}, ai:{}, shuffle:false, only:null};
+try{ const raw = localStorage.getItem(KEY); if(raw) st = Object.assign(st, JSON.parse(raw)); }catch(e){}
+const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(st)); }catch(e){} };
+
+const norm = s => String(s||"").toLowerCase().replace(/[\s·,.\-_()~°'"‘’“”/:;!?]/g,"");
+function keywordScore(q, ans){
+  if(q.type==="객관"){
+    const ok = Number(ans)===q.correct;
+    return {score: ok?q.pts:0, hits: ok?["정답"]:[], misses: ok?[]:["정답: "+q.choices[q.correct]]};
+  }
+  const t = norm(ans);
+  const hits=[], misses=[];
+  for(const [label, alts] of q.k){
+    const found = alts.some(a=>{
+      const n = norm(a);
+      if(n.length<=1) return new RegExp("(^|[^a-z])"+n+"([^a-z]|$)").test(String(ans||"").toLowerCase());
+      return t.includes(n);
+    });
+    (found?hits:misses).push(label);
+  }
+  const score = t ? Math.round(q.pts * hits.length / q.k.length * 2)/2 : 0;
+  return {score, hits, misses};
+}
+
+// ---------- 렌더 ----------
+const qsEl = $("qs");
+function render(){
+  qsEl.textContent = "";
+  const list = st.only ? st.order.filter(id=>st.only.includes(id)) : st.order;
+  list.forEach((id, idx) => {
+    const q = Q.find(x=>x.id===id);
+    const card = document.createElement("article");
+    card.className = "q"; card.id = "q"+id;
+    const graded = st.submitted || st.scores[id];
+    const res = st.scores[id];
+    const main = document.createElement("div"); main.className="q-main";
+    main.innerHTML = `<div class="q-head"><span class="q-no">${String(idx+1).padStart(2,"0")}</span><p class="q-text"></p><span class="q-type">${q.type} · ${q.pts}점</span></div>`;
+    main.querySelector(".q-text").textContent = q.q;
+    if(q.type==="객관"){
+      const box = document.createElement("div"); box.className="choices"; box.setAttribute("role","radiogroup");
+      q.choices.forEach((c,i)=>{
+        const lab = document.createElement("label");
+        lab.innerHTML = `<input type="radio" name="mc${id}" id="mc${id}_${i}" value="${i}"> <span></span>`;
+        lab.querySelector("span").textContent = c;
+        const inp = lab.querySelector("input");
+        inp.checked = String(st.answers[id])===String(i);
+        inp.disabled = !!(st.submitted);
+        inp.addEventListener("change",()=>{ st.answers[id]=i; save(); updateProg(); });
+        box.append(lab);
+      });
+      main.append(box);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.id = "ans"+id; ta.className = q.type==="단답"?"short":"";
+      ta.placeholder = q.type==="단답" ? "단답 또는 한두 문장으로 쓰세요." : "핵심 개념과 특징을 문장으로 서술하세요.";
+      ta.value = st.answers[id] || "";
+      ta.readOnly = !!st.submitted;
+      const meta = document.createElement("div"); meta.className="meta-row";
+      const cnt = document.createElement("span");
+      const setCnt = ()=>{ cnt.textContent = (ta.value.replace(/\s/g,"").length) + "자"; };
+      setCnt();
+      ta.addEventListener("input",()=>{ st.answers[id]=ta.value; setCnt(); save(); updateProg(); });
+      meta.append(cnt);
+      if(st.mode==="practice" && !st.submitted){
+        const b = document.createElement("button"); b.type="button"; b.className="btn"; b.textContent = res ? "다시 채점" : "이 문항 채점";
+        b.addEventListener("click",()=>{ st.scores[id]=keywordScore(q, st.answers[id]); save(); render(); });
+        meta.append(b);
+      }
+      main.append(ta, meta);
+    }
+    if(graded && res) main.append(feedback(q,res));
+    const side = document.createElement("div"); side.className="q-side";
+    side.innerHTML = `<span class="side-label">채점란</span><div class="score-box"><div class="big">${res? fmt(aiScore(id) ?? res.score) : "–"}</div><div class="of">/ ${q.pts}</div></div>`;
+    if(res && st.ai[id]) side.insertAdjacentHTML("beforeend",`<span class="chk">Claude 채점</span>`);
+    card.append(main, side);
+    qsEl.append(card);
+  });
+  updateProg();
+  renderResult();
+  syncControls();
+}
+const fmt = n => (Math.round(n*10)/10).toString();
+const aiScore = id => st.ai[id] && typeof st.ai[id].score==="number" ? st.ai[id].score : null;
+
+function feedback(q,res){
+  const fb = document.createElement("div"); fb.className="fb";
+  if(q.type!=="객관"){
+    const chips = document.createElement("div"); chips.className="chips";
+    res.hits.forEach(h=>{ const c=document.createElement("span"); c.className="chip hit"; c.textContent="✓ "+h; chips.append(c); });
+    res.misses.forEach(h=>{ const c=document.createElement("span"); c.className="chip miss"; c.textContent="빠짐: "+h; chips.append(c); });
+    fb.append(chips);
+  } else {
+    const c=document.createElement("div"); c.className="chips";
+    const s=document.createElement("span"); s.className = res.score? "chip hit":"chip miss"; s.textContent = res.score? "정답":"오답 · "+res.misses[0]; c.append(s); fb.append(c);
+  }
+  const ai = st.ai[q.id];
+  if(ai && ai.feedback){
+    const d=document.createElement("div"); d.className="ai";
+    d.innerHTML = "<b>Claude 첨삭</b><span></span>"; d.querySelector("span").textContent = ai.feedback;
+    fb.append(d);
+  }
+  const m = document.createElement("div"); m.className="model";
+  m.innerHTML="<b>모범답안</b><span></span>"; m.querySelector("span").textContent=q.a;
+  fb.append(m);
+  if(q.note){ const n=document.createElement("div"); n.className="note"; n.textContent=q.note; fb.append(n); }
+  return fb;
+}
+
+function updateProg(){
+  const n = Q.filter(q=> q.type==="객관" ? st.answers[q.id]!==undefined && st.answers[q.id]!=="" : (st.answers[q.id]||"").trim()).length;
+  $("prog").textContent = `작성 ${n} / ${Q.length}`;
+}
+
+function renderResult(){
+  const box = $("result");
+  const ids = Object.keys(st.scores);
+  if(!st.submitted && !ids.length){ box.hidden = true; return; }
+  box.hidden = false;
+  let got=0, max=0;
+  const g = $("grid16"); g.textContent="";
+  st.order.forEach((id,idx)=>{
+    const q = Q.find(x=>x.id===id); const r = st.scores[id];
+    const cell = document.createElement("a"); cell.href="#q"+id; cell.className="cell";
+    if(r){ const s = aiScore(id) ?? r.score; got+=s; max+=q.pts; const p=s/q.pts; cell.classList.add(p>=.8?"good":p>=.5?"mid":"low"); cell.textContent=`${idx+1}번 ${fmt(s)}/${q.pts}`; }
+    else cell.textContent=`${idx+1}번 –`;
+    g.append(cell);
+  });
+  const pct = max? Math.round(got/max*100) : 0;
+  $("totalPct").textContent = pct+"점";
+  $("totalRaw").textContent = `${fmt(got)} / ${max} (채점한 문항 기준, 만점 ${TOTAL})` + (Object.keys(st.ai).length? " · Claude 채점 반영":"");
+  $("retryWrong").hidden = !st.submitted;
+}
+
+function syncControls(){
+  $("modeExam").setAttribute("aria-pressed", st.mode==="exam");
+  $("modePractice").setAttribute("aria-pressed", st.mode==="practice");
+  $("limitSel").value = String(st.limit);
+  $("shuffleChk").checked = !!st.shuffle;
+  $("submitBtn").disabled = !!st.submitted;
+  $("submitBtn").textContent = st.submitted ? "제출 완료" : "답안 제출";
+  $("aiBtn").hidden = !(sampleFn && Object.keys(st.scores).length);
+}
+
+// ---------- 타이머 ----------
+function tick(){
+  const el = $("clock");
+  if(!st.start){ el.textContent = st.limit? `${String(st.limit).padStart(2,"0")}:00` : "00:00"; el.classList.remove("over"); return; }
+  const end = st.submitted && st.end ? st.end : Date.now();
+  const sec = Math.floor((end - st.start)/1000);
+  if(st.limit){
+    const left = st.limit*60 - sec; const a=Math.abs(left);
+    el.textContent = (left<0?"-":"") + `${String(Math.floor(a/60)).padStart(2,"0")}:${String(a%60).padStart(2,"0")}`;
+    el.classList.toggle("over", left<0);
+  } else {
+    el.textContent = `${String(Math.floor(sec/60)).padStart(2,"0")}:${String(sec%60).padStart(2,"0")}`;
+  }
+}
+setInterval(tick, 1000);
+document.addEventListener("input", ()=>{ if(!st.start && !st.submitted){ st.start=Date.now(); save(); } }, true);
+document.addEventListener("change", ()=>{ if(!st.start && !st.submitted){ st.start=Date.now(); save(); } }, true);
+
+// ---------- 동작 ----------
+$("submitBtn").addEventListener("click", ()=>{
+  st.submitted = true; st.end = Date.now();
+  Q.forEach(q=>{ st.scores[q.id] = keywordScore(q, st.answers[q.id]); });
+  st.only = null; save(); render(); tick();
+  $("result").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto":"smooth"});
+});
+$("modeExam").addEventListener("click", ()=>{ st.mode="exam"; save(); render(); });
+$("modePractice").addEventListener("click", ()=>{ st.mode="practice"; save(); render(); });
+$("limitSel").addEventListener("change", e=>{ st.limit=Number(e.target.value); save(); tick(); });
+$("shuffleChk").addEventListener("change", e=>{
+  st.shuffle = e.target.checked;
+  st.order = Q.map(x=>x.id);
+  if(st.shuffle) for(let i=st.order.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [st.order[i],st.order[j]]=[st.order[j],st.order[i]]; }
+  save(); render();
+});
+let resetArmed = false;
+$("resetBtn").addEventListener("click", ()=>{
+  if(!resetArmed){ resetArmed=true; $("resetBtn").textContent="한 번 더 누르면 답안이 지워집니다"; setTimeout(()=>{ resetArmed=false; $("resetBtn").textContent="새로 시작"; }, 4000); return; }
+  resetArmed=false; $("resetBtn").textContent="새로 시작";
+  const keep = {mode:st.mode, limit:st.limit, shuffle:st.shuffle};
+  st = Object.assign({answers:{}, order:Q.map(x=>x.id), start:null, submitted:false, scores:{}, ai:{}, only:null}, keep);
+  if(st.shuffle) for(let i=st.order.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [st.order[i],st.order[j]]=[st.order[j],st.order[i]]; }
+  save(); render(); tick(); $("resetMsg").textContent="새 답안지를 준비했습니다."; setTimeout(()=>$("resetMsg").textContent="",3000);
+  window.scrollTo({top:0});
+});
+$("retryWrong").addEventListener("click", ()=>{
+  const wrong = Q.filter(q=>{ const r=st.scores[q.id]; const s = aiScore(q.id) ?? (r?r.score:0); return s < q.pts*0.8; }).map(q=>q.id);
+  if(!wrong.length){ $("aiStatus").textContent="80% 미만인 문항이 없습니다."; return; }
+  wrong.forEach(id=>{ delete st.answers[id]; delete st.scores[id]; delete st.ai[id]; });
+  st.submitted=false; st.start=Date.now(); st.end=null; st.only=wrong; st.mode="practice";
+  save(); render(); tick();
+  $("aiStatus").textContent = `${wrong.length}문항을 다시 풉니다. 문항별 채점 버튼을 쓰세요.`;
+});
+
+// ---------- Claude 채점 ----------
+let sampleFn = null, ctl = null;
+(async ()=>{
+  try{ sampleFn = window.claude ? await window.claude.use("sample") : null; }catch(e){ sampleFn=null; }
+  syncControls();
+})();
+$("aiStop").addEventListener("click", ()=> ctl?.abort());
+$("aiBtn").addEventListener("click", async ()=>{
+  if(!sampleFn) return;
+  const items = Q.filter(q=>st.scores[q.id] && q.type!=="객관");
+  if(!items.length){ $("aiStatus").textContent="채점할 서술형 답안이 없습니다."; return; }
+  const payload = items.map(q=>({id:q.id, 문항:q.q, 배점:q.pts, 모범답안:q.a, 핵심요소:q.k.map(k=>k[0]), 학생답안:(st.answers[q.id]||"").slice(0,1500)}));
+  const prompt = "당신은 대학 교양 '생명과학' 중간고사 서술형 채점자입니다. 아래 JSON의 각 문항에 대해 학생답안을 모범답안과 핵심요소에 비추어 채점하세요.\n"
+    + "규칙: 표현이 달라도 의미가 맞으면 인정, 사실 오류는 감점, 빈 답안은 0점, 점수는 0.5점 단위로 0~배점 사이.\n"
+    + "feedback은 한국어 2~3문장: 잘한 점, 빠지거나 틀린 내용, 고쳐 쓸 문장 예시를 구체적으로.\n"
+    + "다른 설명 없이 JSON 배열만 답하세요. 형식 예: [{\"id\":1,\"score\":7.5,\"feedback\":\"...\"}]\n\n"
+    + JSON.stringify(payload);
+  ctl = new AbortController();
+  $("aiBtn").disabled = true; $("aiStop").hidden = false; $("aiStatus").textContent = "Claude가 답안을 읽는 중입니다…";
+  try{
+    const out = await sampleFn.json(prompt, {signal: ctl.signal, cache:false});
+    if(!Array.isArray(out)) throw {code:"invalid_json"};
+    let n=0;
+    out.forEach(r=>{
+      const q = Q.find(x=>x.id===Number(r.id)); if(!q || !st.scores[q.id]) return;
+      const s = Math.max(0, Math.min(q.pts, Number(r.score)));
+      st.ai[q.id] = {score: isFinite(s)? s : null, feedback: String(r.feedback||"").slice(0,800)}; n++;
+    });
+    save(); render();
+    $("aiStatus").textContent = `Claude 채점을 ${n}문항에 반영했습니다.`;
+  }catch(e){
+    const msg = {cancelled:"채점을 중지했습니다.", not_granted:"Claude 사용이 허용되지 않아 키워드 채점만 표시합니다.", sampling_disabled:"이 계정에서는 Claude 채점을 쓸 수 없습니다.", rate_limited:"요청이 많습니다. 잠시 후 다시 눌러 주세요.", invalid_json:"채점 결과를 읽지 못했습니다. 다시 눌러 주세요.", session_expired:"다시 로그인해야 합니다."}[e && e.code] || "채점 중 문제가 생겼습니다. 다시 눌러 주세요.";
+    $("aiStatus").textContent = msg;
+    if(e && (e.code==="not_granted" || e.code==="sampling_disabled")){ sampleFn=null; }
+  }finally{
+    $("aiBtn").disabled = false; $("aiStop").hidden = true; ctl=null; syncControls();
+  }
+});
+
+render(); tick();
+})();
+</script>
