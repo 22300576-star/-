@@ -3,135 +3,149 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>키퍼스워십 셋리스트</title>
-<meta name="description" content="2026 가을창문축제 키퍼스워십 예배 셋리스트와 곡 링크">
+<title>Go Beyond 셋리스트</title>
+<meta name="description" content="Go Beyond (Keepers Worship) 예배의 찬양을 미리 들어보세요 · 2026 창문축제 Dreamers">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&display=swap">
 <style>
+  /* Dreamers 디자인 가이드라인 — BG: #000000 / #dbdad7, Point: #a0d096 #f6e25a #8891c3 #d35185
+     기본체 YoonA 윤체(웹폰트 미제공 → Pretendard 대체), 포인트체 Scatterplot VF(→ Unbounded 대체) */
   :root{
-    --bg:#f2f4f6;
-    --card:#ffffff;
-    --ink:#191f28;
-    --ink-muted:#4e5968;
-    --ink-faint:#8b95a1;
-    --border:#e5e8eb;
-    --primary:#3182f6;
-    --primary-press:#1b64da;
-    --weak-bg:#e8f3ff;
-    --weak-fg:#1b64da;
-    --disabled-bg:#f2f4f6;
-    --disabled-fg:#b0b8c1;
-    --sheet-dim:rgba(0,0,0,.45);
-    --shadow:0 1px 2px rgba(0,0,0,.04);
+    --green:#a0d096;
+    --yellow:#f6e25a;
+    --purple:#8891c3;
+    --pink:#d35185;
+    --on-point:#040000;
+
+    --bg:#efefef;
+    --ink:#040000;
+    --ink-muted:#504f4f;
+    --line:#040000;
+    --line-soft:rgba(4,0,0,.18);
+    --surface:#ffffff;
+    --dim:rgba(4,0,0,.5);
+
+    --font-base:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    --font-point:'Unbounded','Pretendard Variable',Pretendard,sans-serif;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
-      --bg:#101012;
-      --card:#1c1c20;
-      --ink:#f2f4f6;
-      --ink-muted:#b0b8c1;
-      --ink-faint:#7e8794;
-      --border:#2c2c33;
-      --primary:#3182f6;
-      --primary-press:#4b93f7;
-      --weak-bg:#1c2b44;
-      --weak-fg:#79aefb;
-      --disabled-bg:#26262c;
-      --disabled-fg:#5c6370;
-      --sheet-dim:rgba(0,0,0,.65);
-      --shadow:none;
+      --bg:#000000; --ink:#dbdad7; --ink-muted:#8a8986; --line:#dbdad7;
+      --line-soft:rgba(219,218,215,.22); --surface:#0d0d0d; --dim:rgba(0,0,0,.7);
     }
   }
   :root[data-theme="dark"]{
-    --bg:#101012; --card:#1c1c20; --ink:#f2f4f6; --ink-muted:#b0b8c1; --ink-faint:#7e8794;
-    --border:#2c2c33; --primary:#3182f6; --primary-press:#4b93f7; --weak-bg:#1c2b44; --weak-fg:#79aefb;
-    --disabled-bg:#26262c; --disabled-fg:#5c6370; --sheet-dim:rgba(0,0,0,.65); --shadow:none;
+    --bg:#000000; --ink:#dbdad7; --ink-muted:#8a8986; --line:#dbdad7;
+    --line-soft:rgba(219,218,215,.22); --surface:#0d0d0d; --dim:rgba(0,0,0,.7);
   }
 
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
-  body{
-    background:var(--bg);color:var(--ink);
-    font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-    -webkit-font-smoothing:antialiased;
-    min-height:100vh;
-  }
-  .wrap{max-width:560px;margin:0 auto;padding:0 16px calc(48px + env(safe-area-inset-bottom));}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font-base);-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden;}
+  .wrap{max-width:560px;margin:0 auto;padding:0 16px calc(56px + env(safe-area-inset-bottom));}
 
-  header{padding:40px 4px 24px;}
-  .eyebrow{display:inline-block;font-size:13px;font-weight:700;color:var(--weak-fg);background:var(--weak-bg);
-    padding:6px 10px;border-radius:8px;margin-bottom:14px;}
-  h1{font-size:26px;line-height:1.35;font-weight:800;letter-spacing:-.5px;margin:0 0 8px;}
-  .sub{font-size:15px;color:var(--ink-muted);margin:0;line-height:1.5;}
+  /* ── Hero: 로고 조형(채플 사다리꼴 · 사각 · 상상풍선)을 배치 ── */
+  .hero{position:relative;padding:36px 4px 28px;}
+  .shapes{position:relative;height:150px;margin:0 -4px 8px;}
+  .shapes svg{position:absolute;overflow:visible;}
+  .shapes .s-trap{left:18%;top:18px;width:62%;transform:rotate(-8deg);}
+  .shapes .s-sq{left:4%;top:62px;width:24%;transform:rotate(-17deg);}
+  .shapes .s-rect{left:66%;top:66px;width:24%;transform:rotate(-14deg);}
+  .shapes .s-bub{left:78%;top:6px;width:20%;}
+  .shapes .label{position:absolute;left:24%;top:58px;font-family:var(--font-point);font-weight:800;font-size:clamp(30px,10vw,48px);
+    color:var(--on-point);letter-spacing:-1px;transform:rotate(-8deg);white-space:nowrap;}
+  .verse{font-family:var(--font-point);font-size:11px;color:var(--ink-muted);margin:0 0 18px;transform:rotate(-4deg);transform-origin:left;}
 
-  /* segmented tabs */
-  .tabs{position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0 12px;}
-  .seg{display:flex;background:var(--card);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow);}
-  .seg button{flex:1;border:0;background:transparent;color:var(--ink-faint);font:inherit;font-size:15px;font-weight:700;
-    padding:11px 0;border-radius:10px;cursor:pointer;transition:background .15s,color .15s;}
-  .seg button[aria-selected="true"]{background:var(--weak-bg);color:var(--weak-fg);}
-  .seg .count{font-weight:600;margin-left:4px;opacity:.8;}
+  h1{margin:0;font-weight:700;letter-spacing:-.5px;word-break:keep-all;}
+  h1 .en{display:block;font-family:var(--font-point);font-weight:800;font-size:clamp(34px,11vw,48px);line-height:1.05;letter-spacing:-1.5px;}
+  h1 .team{display:inline-block;font-family:var(--font-point);font-weight:400;font-size:15px;letter-spacing:0;
+    border:1px solid var(--line);border-radius:999px;padding:5px 12px;margin:12px 0 10px;}
+  h1 .ko{display:block;font-size:22px;line-height:1.4;}
+  .sub{font-size:14px;color:var(--ink-muted);margin:10px 0 0;}
+
+  /* ── Session tabs ── */
+  .tabs{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 14px;}
+  .seg{display:flex;gap:8px;}
+  .seg button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border:1px solid var(--line);background:transparent;
+    color:var(--ink);font-family:var(--font-point);font-size:15px;font-weight:600;border-radius:999px;cursor:pointer;transition:background .15s,color .15s,transform .12s;}
+  .seg button:active{transform:scale(.97);}
+  .seg button .n{font-family:var(--font-base);font-size:13px;font-weight:600;opacity:.7;}
+  .seg button[aria-selected="true"]{background:var(--c);border-color:var(--c);color:var(--on-point);}
+  .seg button[aria-selected="true"] .n{opacity:.75;}
 
   .panel{display:none;}
-  .panel.active{display:block;animation:fade .2s ease;}
-  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .panel.active{display:block;animation:fade .22s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-  .group{background:var(--card);border-radius:20px;padding:8px;box-shadow:var(--shadow);}
-  .song{display:flex;align-items:center;gap:14px;width:100%;padding:12px;border:0;background:transparent;
-    color:inherit;font:inherit;text-align:left;border-radius:14px;cursor:pointer;transition:background .12s,transform .12s;}
-  .song:active{transform:scale(.98);background:var(--bg);}
-  @media (hover:hover){.song:hover{background:var(--bg);}}
-  .song + .song{margin-top:2px;}
-  .thumb{flex:none;width:96px;aspect-ratio:16/9;border-radius:10px;background:var(--disabled-bg);overflow:hidden;position:relative;
-    display:flex;align-items:center;justify-content:center;}
+  /* ── Song list: 윤곽선 카드 ── */
+  .list{display:flex;flex-direction:column;gap:10px;}
+  .song{display:flex;align-items:center;gap:14px;width:100%;padding:12px;border:1px solid var(--line-soft);background:var(--surface);
+    color:inherit;font:inherit;text-align:left;border-radius:18px;transition:border-color .12s,transform .12s;}
+  button.song{cursor:pointer;}
+  button.song:active{transform:scale(.98);border-color:var(--line);}
+  @media (hover:hover){button.song:hover{border-color:var(--line);}}
+  .thumb{flex:none;width:100px;aspect-ratio:16/9;border-radius:10px;overflow:hidden;position:relative;background:var(--c);}
   .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-  .thumb .num{position:absolute;left:6px;top:6px;min-width:20px;height:20px;padding:0 6px;border-radius:6px;
-    background:rgba(0,0,0,.6);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;}
-  .thumb .ph{font-size:12px;font-weight:700;color:var(--disabled-fg);}
+  .thumb .deco{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+  .thumb .deco svg{width:46%;opacity:.9;}
+  .num{position:absolute;left:6px;top:5px;width:24px;height:24px;}
+  .num svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
+  .num span{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:100%;
+    font-family:var(--font-point);font-size:11px;font-weight:800;color:var(--on-point);}
   .meta{flex:1;min-width:0;}
   .title{font-size:16px;font-weight:700;line-height:1.4;margin:0;word-break:keep-all;}
-  .medley{font-size:13px;color:var(--ink-faint);margin:3px 0 0;}
-  .tag{display:inline-block;font-size:12px;font-weight:600;color:var(--weak-fg);background:var(--weak-bg);
-    padding:2px 7px;border-radius:6px;margin-top:6px;margin-right:4px;}
-  .tag.off{color:var(--disabled-fg);background:var(--disabled-bg);}
-  .chev{flex:none;color:var(--ink-faint);}
+  .medley{font-size:13px;color:var(--ink-muted);margin:3px 0 0;}
+  .tag{display:inline-block;font-size:11px;font-weight:600;border:1px solid var(--line-soft);color:var(--ink-muted);
+    padding:2px 8px;border-radius:999px;margin-top:7px;}
+  .play{flex:none;width:34px;height:34px;border-radius:50%;background:var(--c);display:flex;align-items:center;justify-content:center;color:var(--on-point);}
 
-  .note{font-size:13px;color:var(--ink-faint);text-align:center;margin:20px 0 0;line-height:1.6;}
+  .foot{margin:32px 0 0;text-align:center;font-family:var(--font-point);font-size:11px;color:var(--ink-muted);line-height:1.8;}
 
-  /* bottom sheet */
-  .dim{position:fixed;inset:0;background:var(--sheet-dim);opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;}
+  /* ── Bottom sheet ── */
+  .dim{position:fixed;inset:0;background:var(--dim);opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;}
   .dim.open{opacity:1;pointer-events:auto;}
-  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;max-width:560px;margin:0 auto;background:var(--card);
-    border-radius:24px 24px 0 0;padding:12px 20px calc(20px + env(safe-area-inset-bottom));
-    transform:translateY(100%);transition:transform .25s cubic-bezier(.2,.8,.2,1);}
-  .sheet.open{transform:none;}
-  .grip{width:40px;height:5px;border-radius:3px;background:var(--border);margin:0 auto 16px;}
-  .sheet .s-label{font-size:13px;font-weight:700;color:var(--weak-fg);margin:0 0 4px;}
-  .sheet h2{font-size:20px;font-weight:800;letter-spacing:-.3px;margin:0 0 16px;line-height:1.35;word-break:keep-all;}
-  .player{width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;margin-bottom:16px;}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;max-width:560px;margin:0 auto;background:var(--bg);border:1px solid var(--line);border-bottom:0;
+    border-radius:28px 28px 0 0;padding:12px 20px calc(20px + env(safe-area-inset-bottom));transform:translateY(105%);visibility:hidden;transition:transform .26s cubic-bezier(.2,.8,.2,1),visibility 0s .26s;}
+  .sheet.open{transform:none;visibility:visible;transition:transform .26s cubic-bezier(.2,.8,.2,1);}
+  .grip{width:40px;height:4px;border-radius:2px;background:var(--line-soft);margin:0 auto 16px;}
+  .s-label{display:inline-block;font-family:var(--font-point);font-size:12px;font-weight:600;color:var(--on-point);background:var(--c);
+    padding:4px 10px;border-radius:999px;margin:0 0 10px;}
+  .sheet h2{font-size:20px;font-weight:700;letter-spacing:-.3px;margin:0 0 16px;line-height:1.35;word-break:keep-all;}
+  .sheet h2 small{font-size:14px;font-weight:500;color:var(--ink-muted);}
+  .player{width:100%;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:#000;margin-bottom:16px;border:1px solid var(--line-soft);}
   .player iframe{width:100%;height:100%;border:0;display:block;}
-  .empty{width:100%;aspect-ratio:16/9;border-radius:14px;background:var(--disabled-bg);color:var(--ink-faint);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;margin-bottom:16px;font-size:15px;font-weight:600;}
   .btns{display:flex;gap:8px;}
-  .btn{flex:1;display:flex;align-items:center;justify-content:center;height:54px;border-radius:14px;border:0;font:inherit;
-    font-size:16px;font-weight:700;cursor:pointer;text-decoration:none;transition:background .12s,transform .12s;}
+  .btn{flex:1;display:flex;align-items:center;justify-content:center;height:54px;border-radius:999px;font:inherit;font-size:16px;font-weight:700;
+    cursor:pointer;text-decoration:none;transition:transform .12s;}
   .btn:active{transform:scale(.98);}
-  .btn.primary{background:var(--primary);color:#fff;}
-  .btn.primary:active{background:var(--primary-press);}
-  .btn.ghost{background:var(--weak-bg);color:var(--weak-fg);flex:0 0 96px;}
-  .btn[aria-disabled="true"]{background:var(--disabled-bg);color:var(--disabled-fg);pointer-events:none;}
+  .btn.primary{background:var(--ink);color:var(--bg);border:1px solid var(--ink);}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);flex:0 0 110px;}
 
-  .toast{position:fixed;left:50%;bottom:calc(32px + env(safe-area-inset-bottom));transform:translate(-50%,20px);
-    background:#333d4b;color:#fff;font-size:14px;font-weight:600;padding:12px 18px;border-radius:12px;opacity:0;
-    transition:opacity .2s,transform .2s;z-index:30;pointer-events:none;white-space:nowrap;}
+  .toast{position:fixed;left:50%;bottom:calc(32px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);
+    font-size:14px;font-weight:600;padding:12px 18px;border-radius:999px;opacity:0;transition:opacity .2s,transform .2s;z-index:30;pointer-events:none;white-space:nowrap;}
   .toast.show{opacity:1;transform:translate(-50%,0);}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <span class="eyebrow">2026 가을창문축제 · 키퍼스워십</span>
-    <h1>오늘 함께 부를<br>찬양을 미리 들어보세요</h1>
+  <header class="hero">
+    <div class="shapes" aria-hidden="true">
+      <!-- 1. 한동 = 채플 건물 조형 -->
+      <svg class="s-trap" viewBox="0 0 365 175"><path d="M15 0H84L359 75L365 173H0V158Z" fill="var(--pink)"/></svg>
+      <svg class="s-sq" viewBox="0 0 100 100"><rect width="100" height="100" fill="var(--green)"/></svg>
+      <svg class="s-rect" viewBox="0 0 130 90"><rect width="130" height="90" fill="var(--purple)"/></svg>
+      <!-- 2. 꿈을 꾸고 나눔 = 상상풍선 -->
+      <svg class="s-bub" viewBox="0 0 120 120"><circle cx="50" cy="50" r="48" fill="var(--yellow)"/><circle cx="88" cy="86" r="14" fill="var(--yellow)"/><circle cx="108" cy="110" r="8" fill="var(--yellow)"/></svg>
+    </div>
+    <p class="verse">Matthew 28:19–20</p>
+    <h1>
+      <span class="en">Go Beyond</span>
+      <span class="team">(Keepers Worship)</span>
+      <span class="ko">예배의 찬양을 미리 들어보세요</span>
+    </h1>
     <p class="sub">곡을 누르면 바로 영상을 볼 수 있어요.</p>
   </header>
 
@@ -141,7 +155,7 @@
 
   <main id="panels"></main>
 
-  <p class="note">링크가 없는 곡은 준비되는 대로 추가할게요.<br>Keepers Worship</p>
+  <p class="foot">2026 창문축제 · Dreamers<br>Keepers Worship</p>
 </div>
 
 <div class="dim" id="dim"></div>
@@ -160,50 +174,56 @@
 <script>
   // 곡 데이터 — 링크가 생기면 id에 유튜브 영상 ID만 넣으면 됩니다.
   const SESSIONS = [
-    { name: '세션 1', songs: [
+    { name: 'Session 1', color: 'var(--pink)', songs: [
       { title: 'Easy', id: 'JtaIPz0dDvQ' },
       { title: '성령이여 내 영혼은', medley: '높은 산들 흔들리고', id: '7Dt9mT1c9Fg' },
       { title: 'One Way', ver: 'keepers ver.', id: 'idh_YanAUtE' },
       { title: 'Stand in Your Love', id: 'JOgp_e2FSFo' },
       { title: '주 나타내시네', medley: 'Let It Rain', id: 'r2By2a00ljg' },
     ]},
-    { name: '세션 2', songs: [
+    { name: 'Session 2', color: 'var(--purple)', songs: [
       { title: 'Romans 16:19', id: 'YjFOINMY2hg' },
-      { title: '거리마다 기쁨으로', medley: 'Might Get Loud', ver: 'keepers ver.', id: '' },
+      { title: '거리마다 기쁨으로', medley: 'Might Get Loud', id: '' },
       { title: '나의 삶 주의 손에', id: 'tOw-m-64pPY' },
-      { title: '열린문', ver: '키퍼스 자작곡', id: '' },
+      { title: '열린문', id: '' },
     ]},
   ];
+  const POINTS = ['var(--green)', 'var(--yellow)', 'var(--purple)', 'var(--pink)'];
 
   const $ = s => document.querySelector(s);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const url = id => `https://youtu.be/${id}`;
-  const chev = '<svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
+  const bubble = fill => `<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="11" fill="${fill}"/><circle cx="20.5" cy="20" r="3" fill="${fill}"/></svg>`;
+  const trap = `<svg viewBox="0 0 365 175"><path d="M15 0H84L359 75L365 173H0V158Z" fill="#040000" opacity=".22"/></svg>`;
+  const playIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>';
 
   const tabs = $('#tabs'), panels = $('#panels');
   SESSIONS.forEach((s, si) => {
     const b = document.createElement('button');
-    b.type = 'button'; b.role = 'tab';
-    b.innerHTML = `${esc(s.name)}<span class="count">· ${s.songs.length}곡</span>`;
+    b.type = 'button'; b.role = 'tab'; b.style.setProperty('--c', s.color);
+    b.innerHTML = `${esc(s.name)}<span class="n">${s.songs.length}곡</span>`;
     b.onclick = () => selectTab(si);
     tabs.appendChild(b);
 
     const p = document.createElement('div');
     p.className = 'panel'; p.role = 'tabpanel';
-    p.innerHTML = `<div class="group">${s.songs.map((song, i) => `
-      <button class="song" type="button" data-s="${si}" data-i="${i}">
+    p.innerHTML = `<div class="list">${s.songs.map((song, i) => {
+      const c = POINTS[(i + si) % POINTS.length];
+      const tag = song.id ? 'button' : 'div';
+      return `
+      <${tag} class="song" ${song.id ? 'type="button"' : ''} data-s="${si}" data-i="${i}" style="--c:${c}">
         <div class="thumb">
-          ${song.id ? `<img src="https://i.ytimg.com/vi/${song.id}/mqdefault.jpg" alt="" loading="lazy" onerror="this.remove()">` : '<span class="ph">준비중</span>'}
-          <span class="num">${i + 1}</span>
+          ${song.id ? `<img src="https://i.ytimg.com/vi/${song.id}/mqdefault.jpg" alt="" loading="lazy" onerror="this.remove()">` : `<div class="deco">${trap}</div>`}
+          <div class="num">${bubble(c)}<span>${i + 1}</span></div>
         </div>
         <div class="meta">
           <p class="title">${esc(song.title)}</p>
           ${song.medley ? `<p class="medley">+ ${esc(song.medley)}</p>` : ''}
           ${song.ver ? `<span class="tag">${esc(song.ver)}</span>` : ''}
-          ${song.id ? '' : '<span class="tag off">링크 준비중</span>'}
         </div>
-        ${chev}
-      </button>`).join('')}</div>`;
+        ${song.id ? `<span class="play">${playIcon}</span>` : ''}
+      </${tag}>`;
+    }).join('')}</div>`;
     panels.appendChild(p);
   });
 
@@ -217,30 +237,26 @@
   selectTab(start);
 
   panels.addEventListener('click', e => {
-    const el = e.target.closest('.song');
-    if (el) openSheet(SESSIONS[el.dataset.s], +el.dataset.i);
+    const el = e.target.closest('button.song');
+    if (el) openSheet(SESSIONS[el.dataset.s], +el.dataset.i, el.style.getPropertyValue('--c'));
   });
 
   const sheet = $('#sheet'), dim = $('#dim'), openBtn = $('#sOpen'), copyBtn = $('#sCopy');
   let current = null;
-  function openSheet(session, i){
+  function openSheet(session, i, color){
     const song = session.songs[i];
     current = song;
-    $('#sLabel').textContent = `${session.name} · ${i + 1}번째 곡`;
+    sheet.style.setProperty('--c', color);
+    $('#sLabel').textContent = `${session.name} · ${String(i + 1).padStart(2, '0')}`;
     $('#sTitle').innerHTML = esc(song.title) + (song.medley ? ` + ${esc(song.medley)}` : '') +
-      (song.ver ? ` <span style="font-weight:600;color:var(--ink-faint);font-size:15px">(${esc(song.ver)})</span>` : '');
-    $('#sMedia').innerHTML = song.id
-      ? `<div class="player"><iframe src="https://www.youtube-nocookie.com/embed/${song.id}" title="${esc(song.title)}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`
-      : `<div class="empty">🎵<span>아직 링크가 준비되지 않았어요</span></div>`;
-    if (song.id){ openBtn.href = url(song.id); openBtn.removeAttribute('aria-disabled'); }
-    else { openBtn.removeAttribute('href'); openBtn.setAttribute('aria-disabled', 'true'); }
-    copyBtn.disabled = !song.id;
-    copyBtn.setAttribute('aria-disabled', !song.id);
+      (song.ver ? ` <small>(${esc(song.ver)})</small>` : '');
+    $('#sMedia').innerHTML = `<div class="player"><iframe src="https://www.youtube-nocookie.com/embed/${song.id}" title="${esc(song.title)}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+    openBtn.href = url(song.id);
     sheet.classList.add('open'); dim.classList.add('open'); sheet.setAttribute('aria-hidden', 'false');
   }
   function closeSheet(){
     sheet.classList.remove('open'); dim.classList.remove('open'); sheet.setAttribute('aria-hidden', 'true');
-    setTimeout(() => { if (!sheet.classList.contains('open')) $('#sMedia').innerHTML = ''; }, 250);
+    setTimeout(() => { if (!sheet.classList.contains('open')) $('#sMedia').innerHTML = ''; }, 260);
   }
   dim.onclick = closeSheet;
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
@@ -258,7 +274,7 @@
     clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 1600);
   }
   copyBtn.onclick = async () => {
-    if (!current || !current.id) return;
+    if (!current) return;
     try { await navigator.clipboard.writeText(url(current.id)); toast('링크를 복사했어요'); }
     catch(e){ toast(url(current.id)); }
   };
