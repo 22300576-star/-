@@ -63,7 +63,7 @@ b,strong{font-weight:500;color:var(--ink);}
 button.song{cursor:pointer;transition:transform .12s;}
 button.song:active{transform:scale(.985);}
 .thumb{width:100%;aspect-ratio:16/9;overflow:hidden;position:relative;background:var(--c);}
-.thumb img{position:relative;width:100%;height:100%;object-fit:cover;display:block;}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 .thumb .deco{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
 .thumb .deco svg{width:44%;}
 .body{padding:22px 22px 0;}
@@ -183,8 +183,7 @@ button.song:active{transform:scale(.985);}
       return `
       <${tag} class="song" ${song.id ? 'type="button"' : ''} data-s="${si}" data-i="${i}" style="--c:${c}">
         <div class="thumb">
-          <div class="deco">${chapel}</div>
-          ${song.id ? `<img src="https://i.ytimg.com/vi/${song.id}/mqdefault.jpg" alt="" loading="lazy" onerror="this.remove()">` : ''}
+          ${song.id ? `<img src="https://i.ytimg.com/vi/${song.id}/mqdefault.jpg" alt="" loading="lazy" onerror="this.remove()">` : `<div class="deco">${chapel}</div>`}
         </div>
         <div class="body">
           <p class="k"><i></i>SONG ${pad(i + 1)}</p>
