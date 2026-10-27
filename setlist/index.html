@@ -112,8 +112,11 @@
     padding:4px 10px;border-radius:999px;margin:0 0 10px;}
   .sheet h2{font-size:20px;font-weight:700;letter-spacing:-.3px;margin:0 0 16px;line-height:1.35;word-break:keep-all;}
   .sheet h2 small{font-size:14px;font-weight:500;color:var(--ink-muted);}
-  .player{width:100%;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:#000;margin-bottom:16px;border:1px solid var(--line-soft);}
-  .player iframe{width:100%;height:100%;border:0;display:block;}
+  .player{position:relative;display:block;width:100%;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:var(--c);margin-bottom:16px;border:1px solid var(--line-soft);}
+  .player img{width:100%;height:100%;object-fit:cover;display:block;}
+  .player .big-play{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:var(--c);
+    color:var(--on-point);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.35);transition:transform .12s;}
+  .player:active .big-play{transform:scale(.94);}
   .btns{display:flex;gap:8px;}
   .btn{flex:1;display:flex;align-items:center;justify-content:center;height:54px;border-radius:999px;font:inherit;font-size:16px;font-weight:700;
     cursor:pointer;text-decoration:none;transition:transform .12s;}
@@ -149,7 +152,7 @@
       <span class="team">(Keepers Worship)</span>
       <span class="ko">예배의 찬양을 미리 들어보세요</span>
     </h1>
-    <p class="sub">곡을 누르면 바로 영상을 볼 수 있어요.</p>
+    <p class="sub">곡을 누르고 썸네일을 누르면 유튜브로 이동해요.</p>
   </header>
 
   <div class="tabs">
@@ -254,7 +257,12 @@
     $('#sLabel').textContent = `${session.name} · ${String(i + 1).padStart(2, '0')}`;
     $('#sTitle').innerHTML = esc(song.title) + (song.medley ? ` + ${esc(song.medley)}` : '') +
       (song.ver ? ` <small>(${esc(song.ver)})</small>` : '');
-    $('#sMedia').innerHTML = `<div class="player"><iframe src="https://www.youtube-nocookie.com/embed/${song.id}" title="${esc(song.title)}" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+    // 유튜브 썸네일(고화질 → 기본 화질 순으로 시도) — 누르면 유튜브로 이동
+    $('#sMedia').innerHTML = `<a class="player" href="${url(song.id)}" target="_blank" rel="noopener" aria-label="${esc(song.title)} 유튜브에서 보기">
+        <img src="https://i.ytimg.com/vi/${song.id}/maxresdefault.jpg" alt=""
+          onerror="if(!this.dataset.f){this.dataset.f=1;this.src='https://i.ytimg.com/vi/${song.id}/hqdefault.jpg'}else{this.remove()}">
+        <span class="big-play"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg></span>
+      </a>`;
     openBtn.href = url(song.id);
     sheet.classList.add('open'); dim.classList.add('open'); sheet.setAttribute('aria-hidden', 'false');
   }
