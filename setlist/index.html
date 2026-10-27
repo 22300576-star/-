@@ -77,27 +77,29 @@
 
   /* ── Song list: 윤곽선 카드 ── */
   .list{display:flex;flex-direction:column;gap:10px;}
-  .song{display:flex;align-items:center;gap:14px;width:100%;padding:12px;border:1px solid var(--line-soft);background:var(--surface);
-    color:inherit;font:inherit;text-align:left;border-radius:18px;transition:border-color .12s,transform .12s;}
+  .list{gap:16px;}
+  .song{display:flex;flex-direction:column;gap:16px;width:100%;padding:14px 14px 20px;border:1px solid var(--line-soft);background:var(--surface);
+    color:inherit;font:inherit;text-align:left;border-radius:24px;transition:border-color .12s,transform .12s;}
   button.song{cursor:pointer;}
-  button.song:active{transform:scale(.98);border-color:var(--line);}
+  button.song:active{transform:scale(.985);border-color:var(--line);}
   @media (hover:hover){button.song:hover{border-color:var(--line);}}
-  .thumb{flex:none;width:100px;aspect-ratio:16/9;border-radius:10px;overflow:hidden;position:relative;background:var(--c);}
+  .thumb{width:100%;aspect-ratio:16/9;border-radius:16px;overflow:hidden;position:relative;background:var(--c);}
   .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
   .thumb .deco{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
-  .thumb .deco svg{width:46%;opacity:.9;}
-  .num{position:absolute;left:6px;top:5px;width:24px;height:24px;}
+  .thumb .deco svg{width:42%;opacity:.9;}
+  .num{position:absolute;left:12px;top:12px;width:44px;height:44px;}
   .num svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
   .num span{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:100%;
-    font-family:var(--font-point);font-size:11px;font-weight:800;color:var(--on-point);}
+    font-family:var(--font-point);font-size:18px;font-weight:800;color:var(--on-point);}
+  .row{display:flex;align-items:center;gap:14px;padding:0 6px;}
   .meta{flex:1;min-width:0;}
-  .title{font-size:16px;font-weight:700;line-height:1.4;margin:0;word-break:keep-all;}
-  .medley{font-size:13px;color:var(--ink-muted);margin:3px 0 0;}
-  .tag{display:inline-block;font-size:11px;font-weight:600;border:1px solid var(--line-soft);color:var(--ink-muted);
-    padding:2px 8px;border-radius:999px;margin-top:7px;}
-  .go{display:block;width:max-content;font-size:12px;font-weight:700;color:var(--ink);margin-top:7px;
-    border-bottom:2px solid var(--c);padding-bottom:1px;}
-  .play{flex:none;width:34px;height:34px;border-radius:50%;background:var(--c);display:flex;align-items:center;justify-content:center;color:var(--on-point);}
+  .title{font-size:22px;letter-spacing:-.3px;font-weight:700;line-height:1.4;margin:0;word-break:keep-all;}
+  .medley{font-size:16px;color:var(--ink-muted);margin:4px 0 0;}
+  .tag{display:inline-block;font-size:13px;font-weight:600;border:1px solid var(--line-soft);color:var(--ink-muted);
+    padding:3px 10px;border-radius:999px;margin-top:10px;}
+  .go{display:block;width:max-content;font-size:15px;font-weight:700;color:var(--ink);margin-top:12px;
+    border-bottom:2px solid var(--c);padding-bottom:2px;}
+  .play{flex:none;width:52px;height:52px;border-radius:50%;background:var(--c);display:flex;align-items:center;justify-content:center;color:var(--on-point);}
 
   .foot{margin:32px 0 0;text-align:center;font-family:var(--font-point);font-size:11px;color:var(--ink-muted);line-height:1.8;}
 
@@ -201,7 +203,7 @@
   const url = id => `https://youtu.be/${id}`;
   const bubble = fill => `<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="11" fill="${fill}"/><circle cx="20.5" cy="20" r="3" fill="${fill}"/></svg>`;
   const trap = `<svg viewBox="0 0 365 175"><path d="M15 0H84L359 75L365 173H0V158Z" fill="#040000" opacity=".22"/></svg>`;
-  const playIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>';
+  const playIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>';
 
   const tabs = $('#tabs'), panels = $('#panels');
   SESSIONS.forEach((s, si) => {
@@ -222,6 +224,7 @@
           ${song.id ? `<img src="https://i.ytimg.com/vi/${song.id}/mqdefault.jpg" alt="" loading="lazy" onerror="this.remove()">` : `<div class="deco">${trap}</div>`}
           <div class="num">${bubble(c)}<span>${i + 1}</span></div>
         </div>
+        <div class="row">
         <div class="meta">
           <p class="title">${esc(song.title)}</p>
           ${song.medley ? `<p class="medley">+ ${esc(song.medley)}</p>` : ''}
@@ -229,6 +232,7 @@
           ${song.id ? '<span class="go">링크 바로가기 →</span>' : ''}
         </div>
         ${song.id ? `<span class="play">${playIcon}</span>` : ''}
+        </div>
       </${tag}>`;
     }).join('')}</div>`;
     panels.appendChild(p);
