@@ -48,16 +48,11 @@
   .wrap{max-width:560px;margin:0 auto;padding:0 16px calc(56px + env(safe-area-inset-bottom));}
 
   /* ── Hero: 로고 조형(채플 사다리꼴 · 사각 · 상상풍선)을 배치 ── */
-  .hero{position:relative;padding:36px 4px 28px;}
-  .shapes{position:relative;height:150px;margin:0 -4px 8px;}
-  .shapes svg{position:absolute;overflow:visible;}
-  .shapes .s-trap{left:18%;top:18px;width:62%;transform:rotate(-8deg);}
-  .shapes .s-sq{left:4%;top:62px;width:24%;transform:rotate(-17deg);}
-  .shapes .s-rect{left:66%;top:66px;width:24%;transform:rotate(-14deg);}
-  .shapes .s-bub{left:78%;top:6px;width:20%;}
-  .shapes .label{position:absolute;left:24%;top:58px;font-family:var(--font-point);font-weight:800;font-size:clamp(30px,10vw,48px);
-    color:var(--on-point);letter-spacing:-1px;transform:rotate(-8deg);white-space:nowrap;}
-  .verse{font-family:var(--font-point);font-size:11px;color:var(--ink-muted);margin:0 0 18px;transform:rotate(-4deg);transform-origin:left;}
+  .hero{position:relative;padding:20px 4px 28px;}
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:22px;}
+  .topbar .verse{margin:44px 0 0;}
+  .mark{flex:none;width:150px;height:auto;overflow:visible;}
+  .verse{font-family:var(--font-point);font-size:11px;color:var(--ink-muted);transform:rotate(-4deg);transform-origin:left;}
 
   h1{margin:0;font-weight:700;letter-spacing:-.5px;word-break:keep-all;}
   h1 .en{display:block;font-family:var(--font-point);font-weight:800;font-size:clamp(34px,11vw,48px);line-height:1.05;letter-spacing:-1.5px;}
@@ -100,6 +95,8 @@
   .medley{font-size:13px;color:var(--ink-muted);margin:3px 0 0;}
   .tag{display:inline-block;font-size:11px;font-weight:600;border:1px solid var(--line-soft);color:var(--ink-muted);
     padding:2px 8px;border-radius:999px;margin-top:7px;}
+  .go{display:block;width:max-content;font-size:12px;font-weight:700;color:var(--ink);margin-top:7px;
+    border-bottom:2px solid var(--c);padding-bottom:1px;}
   .play{flex:none;width:34px;height:34px;border-radius:50%;background:var(--c);display:flex;align-items:center;justify-content:center;color:var(--on-point);}
 
   .foot{margin:32px 0 0;text-align:center;font-family:var(--font-point);font-size:11px;color:var(--ink-muted);line-height:1.8;}
@@ -132,15 +129,21 @@
 <body>
 <div class="wrap">
   <header class="hero">
-    <div class="shapes" aria-hidden="true">
-      <!-- 1. 한동 = 채플 건물 조형 -->
-      <svg class="s-trap" viewBox="0 0 365 175"><path d="M15 0H84L359 75L365 173H0V158Z" fill="var(--pink)"/></svg>
-      <svg class="s-sq" viewBox="0 0 100 100"><rect width="100" height="100" fill="var(--green)"/></svg>
-      <svg class="s-rect" viewBox="0 0 130 90"><rect width="130" height="90" fill="var(--purple)"/></svg>
-      <!-- 2. 꿈을 꾸고 나눔 = 상상풍선 -->
-      <svg class="s-bub" viewBox="0 0 120 120"><circle cx="50" cy="50" r="48" fill="var(--yellow)"/><circle cx="88" cy="86" r="14" fill="var(--yellow)"/><circle cx="108" cy="110" r="8" fill="var(--yellow)"/></svg>
+    <div class="topbar">
+      <p class="verse">Matthew 28:19–20</p>
+      <!-- 로고 조형(채플 사다리꼴 · 사각 · 상상풍선) + DREAMERS -->
+      <svg class="mark" viewBox="0 0 300 140" role="img" aria-label="Dreamers">
+        <g transform="rotate(-10 150 70)">
+          <path d="M50 26H88L232 42L236 104H46V98Z" fill="var(--pink)"/>
+          <rect x="10" y="54" width="58" height="56" fill="var(--green)" transform="rotate(-8 39 82)"/>
+          <rect x="176" y="68" width="66" height="44" fill="var(--purple)" transform="rotate(-4 209 90)"/>
+          <circle cx="252" cy="76" r="27" fill="var(--yellow)"/>
+          <circle cx="276" cy="102" r="7" fill="var(--yellow)"/>
+          <circle cx="289" cy="115" r="4" fill="var(--yellow)"/>
+          <text x="20" y="95" font-family="Unbounded, sans-serif" font-weight="800" font-size="33" letter-spacing="-1" fill="#040000" textLength="250" lengthAdjust="spacingAndGlyphs">DREAMERS</text>
+        </g>
+      </svg>
     </div>
-    <p class="verse">Matthew 28:19–20</p>
     <h1>
       <span class="en">Go Beyond</span>
       <span class="team">(Keepers Worship)</span>
@@ -220,6 +223,7 @@
           <p class="title">${esc(song.title)}</p>
           ${song.medley ? `<p class="medley">+ ${esc(song.medley)}</p>` : ''}
           ${song.ver ? `<span class="tag">${esc(song.ver)}</span>` : ''}
+          ${song.id ? '<span class="go">링크 바로가기 →</span>' : ''}
         </div>
         ${song.id ? `<span class="play">${playIcon}</span>` : ''}
       </${tag}>`;
