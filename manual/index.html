@@ -147,12 +147,15 @@
 
   function route(){
     // 영문 짧은 주소 지원: /sehoon, /kyungjin, /geon, /all, /edit
-    const slug = location.pathname.replace(/^\/+|\/+$/g,'').toLowerCase();
+    // 주소 뒤에 다른 글자가 붙어도 (예: /edit)를) 앞의 영문만 보고 판단
+    let slug = location.pathname;
+    try{ slug = decodeURIComponent(slug); }catch(e){}
+    slug = (slug.replace(/^\/+/,'').toLowerCase().match(/^[a-z]+/) || [''])[0];
     if(slug && !location.hash){
       const slugs = base.slugs || {};
       if(slugs[slug]) return {a:'p', b:slugs[slug]};
       if(slug === 'all') return {a:'p', b:''};
-      if(slug === 'edit') return {a:'edit', b:''};
+      if(slug === 'edit' || slug === 'admin') return {a:'edit', b:''};
     }
     const h = decodeURIComponent(location.hash.replace(/^#\/?/,''));
     const [a, b] = h.split('/');
@@ -171,12 +174,15 @@
     const d = base;
     const cnt = n => d.entries.filter(e => (e.assignees||[]).includes(n)).length;
     app.innerHTML = `<div class="wrap">
-      <header class="top"><h1>${esc(d.title)}</h1><a class="btn ghost" href="#/edit">편집</a></header>
+      <header class="top"><h1>${esc(d.title)}</h1><a class="btn" href="/admin">관리자 페이지</a></header>
       <p class="hint">본인 이름을 눌러 담당 매뉴얼을 확인하세요.</p>
       <div class="people">
         ${d.people.map(n => `<a class="person" href="#/p/${encodeURIComponent(n)}"><div>${esc(n)} <span class="cnt">· ${cnt(n)}개 업무</span></div></a>`).join('')}
         <a class="person" href="#/p/"><div>전체 보기 <span class="cnt">· ${d.entries.length}개 업무</span></div></a>
-      </div></div>`;
+      </div>
+      <a class="person admin" href="/admin" style="margin-top:24px"><div>🔒 관리자 페이지 <span class="cnt">· 매뉴얼 내용 수정 (비밀번호 필요)</span></div></a>
+      ${d.updatedAt ? `<p class="hint" style="text-align:center;margin-top:16px">마지막 수정 ${esc(new Date(d.updatedAt).toLocaleString('ko-KR'))}</p>` : ''}
+    </div>`;
   }
 
   function entryCard(e, person){
@@ -216,6 +222,7 @@
       ${list.length ? days.map(day => `<div class="day-h">${esc(day)}</div>` +
           list.filter(e => (e.day||'기타')===day).map(e => entryCard(e, person)).join('')).join('')
         : '<div class="empty">배정된 업무가 없습니다.</div>'}
+      ${isPreview ? '' : `<p class="hint" style="text-align:center;margin-top:28px">${d.updatedAt ? '마지막 수정 ' + esc(new Date(d.updatedAt).toLocaleString('ko-KR')) + ' · ' : ''}<a href="/admin" style="color:var(--blue-ink);font-weight:600">관리자 페이지</a></p>`}
     </div>`;
   }
 
@@ -380,6 +387,19 @@
   const app = document.getElementById('app');
   window.addEventListener('hashchange', () => { window.scrollTo(0,0); render(); });
   window.addEventListener('beforeunload', ev => { if(dirty){ ev.preventDefault(); ev.returnValue=''; } });
+
+  async function refreshBase(){
+    try{
+      const res = await fetch(API, {cache:'no-store'});
+      if(res.ok){ const saved = await res.json(); if(saved && Array.isArray(saved.entries)) base = saved; }
+    }catch(e){}
+  }
+  document.addEventListener('visibilitychange', async () => {
+    if(document.visibilityState !== 'visible') return;
+    const r = route();
+    if(r.a === 'edit' || r.a === 'preview') return;
+    await refreshBase(); render();
+  });
 
   (async function init(){
     app.innerHTML = '<div class="wrap"><div class="empty">불러오는 중…</div></div>';
