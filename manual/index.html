@@ -86,8 +86,13 @@
 <script>
 (function(){
   const DRAFT_KEY = 'manual-draft-v1';
+  const PW_KEY = 'manual-edit-pw';
+  const API = '/.netlify/functions/manual';
   const clone = o => JSON.parse(JSON.stringify(o));
-  const base = clone(window.MANUAL_DATA || {title:'매뉴얼',people:[],entries:[]});
+  // 기본값은 data.js, 서버에 저장된 내용이 있으면 그걸 사용
+  let base = clone(window.MANUAL_DATA || {title:'매뉴얼',people:[],entries:[]});
+  let password = '';
+  try{ password = sessionStorage.getItem(PW_KEY) || ''; }catch(e){}
 
   function loadDraft(){
     try{ const s = localStorage.getItem(DRAFT_KEY); if(s) return JSON.parse(s); }catch(e){}
@@ -96,8 +101,9 @@
   function saveDraft(d){ try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); }catch(e){} }
   function clearDraft(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} }
 
-  let draft = loadDraft() || clone(base);
-  let selId = draft.entries[0] && draft.entries[0].id;
+  let draft = null;
+  let selId = null;
+  let dirty = false;
 
   const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   // 한 줄에 하나, 번호는 자동 — 사용자가 적은 "1." "2)" 같은 번호는 제거
@@ -124,7 +130,7 @@
 
   function render(){
     const r = route();
-    if(r.a === 'edit') return renderEditor();
+    if(r.a === 'edit') return password ? renderEditor() : renderLogin();
     if(r.a === 'preview') return renderViewer(draft, r.b, true);
     if(r.a === 'p') return renderViewer(base, r.b, false);
     renderHome();
@@ -171,6 +177,45 @@
     </div>`;
   }
 
+  function renderLogin(msg){
+    app.innerHTML = `<div class="wrap" style="max-width:420px">
+      <header class="top"><h1>매뉴얼 편집</h1><a class="btn ghost" href="#/">나가기</a></header>
+      <form class="card" id="login">
+        <div class="f"><label>편집 비밀번호</label><input type="text" id="pw" autocomplete="off" autofocus></div>
+        ${msg ? `<p style="color:var(--red);font-size:14px;margin:0 0 12px">${esc(msg)}</p>` : ''}
+        <button class="btn primary" style="width:100%">들어가기</button>
+      </form></div>`;
+    document.getElementById('login').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const pw = document.getElementById('pw').value.trim();
+      try{
+        const res = await fetch(API + '?check=1', {headers:{'x-edit-password': pw}, cache:'no-store'});
+        if(!res.ok) return renderLogin('비밀번호가 올바르지 않습니다.');
+      }catch(e){ return renderLogin('서버에 연결할 수 없습니다.'); }
+      password = pw;
+      try{ sessionStorage.setItem(PW_KEY, pw); }catch(e){}
+      renderEditor();
+    });
+  }
+
+  async function publish(){
+    const btn = document.getElementById('publish');
+    btn.disabled = true; btn.textContent = '저장 중…';
+    try{
+      const res = await fetch(API, {method:'PUT', headers:{'content-type':'application/json','x-edit-password':password}, body: JSON.stringify(draft)});
+      if(res.status === 401){ password = ''; try{ sessionStorage.removeItem(PW_KEY); }catch(e){} return renderLogin('비밀번호를 다시 입력해 주세요. (편집 내용은 이 브라우저에 남아 있습니다)'); }
+      if(!res.ok) throw new Error((await res.json().catch(()=>({}))).error || res.status);
+      const out = await res.json();
+      draft.updatedAt = out.updatedAt;
+      base = clone(draft); dirty = false; clearDraft();
+      renderEditor();
+      alert('저장했습니다. 모든 사람에게 바로 반영됩니다.');
+    }catch(e){
+      alert('저장하지 못했습니다: ' + e.message);
+      btn.disabled = false; btn.textContent = '저장하기';
+    }
+  }
+
   function renderEditor(){
     const d = draft;
     const ordered = sortEntries(d.entries);
@@ -180,8 +225,9 @@
       <header class="top"><h1>매뉴얼 편집</h1>
         <div class="actions">
           <a class="btn ghost" href="#/preview/">미리보기</a>
-          <button class="btn primary" id="export">data.js 내보내기</button>
-          <button class="btn danger" id="reset">편집 초기화</button>
+          <button class="btn primary" id="publish">저장하기</button>
+          <button class="btn danger" id="reset">변경 취소</button>
+          <button class="btn ghost" id="export">백업 받기</button>
           <a class="btn ghost" href="#/">나가기</a>
         </div></header>
       <div class="card">
@@ -208,13 +254,14 @@
             ${d.people.map(n => `<label><input type="checkbox" data-who="${esc(n)}" ${(e.assignees||[]).includes(n)?'checked':''}> ${esc(n)}</label>`).join('')}
           </div></div>
           <div class="actions" style="justify-content:space-between;align-items:center">
-            <span class="saved" id="saved">자동 저장됨 (이 브라우저)</span>
+            <span class="saved" id="saved">${dirty ? '저장 안 된 변경 있음 · 위의 [저장하기]를 눌러야 반영됩니다' : '모든 변경이 저장됨' + (d.updatedAt ? ' · ' + new Date(d.updatedAt).toLocaleString('ko-KR') : '')}</span>
             <div class="actions"><button class="btn ghost" id="dup">복제</button><button class="btn danger" id="del">삭제</button></div>
           </div>
         </section>` : '<section class="card empty">업무를 추가하세요.</section>'}
       </div></div>`;
 
-    const touch = () => { saveDraft(d); const s = document.getElementById('saved'); if(s) s.textContent = '자동 저장됨 · ' + new Date().toLocaleTimeString('ko-KR'); };
+    const touch = () => { dirty = true; saveDraft(d); const s = document.getElementById('saved'); if(s) s.textContent = '저장 안 된 변경 있음 · 위의 [저장하기]를 눌러야 반영됩니다'; };
+    document.getElementById('publish').addEventListener('click', publish);
 
     app.querySelectorAll('[data-k]').forEach(el => el.addEventListener('input', () => {
       e[el.dataset.k] = el.value;
@@ -248,8 +295,8 @@
       d.entries = d.entries.filter(x => x.id !== e.id); touch(); renderEditor();
     });
     document.getElementById('reset').addEventListener('click', () => {
-      if(!confirm('이 브라우저의 편집 내용을 버리고 배포된 data.js로 되돌릴까요?')) return;
-      clearDraft(); draft = clone(base); selId = null; renderEditor();
+      if(!confirm('저장하지 않은 변경을 버리고 마지막으로 저장된 내용으로 되돌릴까요?')) return;
+      clearDraft(); draft = clone(base); dirty = false; selId = null; renderEditor();
     });
     document.getElementById('export').addEventListener('click', () => {
       const out = '// 매뉴얼 데이터 — 편집 모드(#/edit)에서 수정 후 "data.js 내보내기"로 받은 파일로 교체하세요.\n'
@@ -263,7 +310,20 @@
 
   const app = document.getElementById('app');
   window.addEventListener('hashchange', () => { window.scrollTo(0,0); render(); });
-  render();
+  window.addEventListener('beforeunload', ev => { if(dirty){ ev.preventDefault(); ev.returnValue=''; } });
+
+  (async function init(){
+    app.innerHTML = '<div class="wrap"><div class="empty">불러오는 중…</div></div>';
+    try{
+      const res = await fetch(API, {cache:'no-store'});
+      if(res.ok){ const saved = await res.json(); if(saved && Array.isArray(saved.entries)) base = saved; }
+    }catch(e){}
+    const local = loadDraft();
+    if(local && JSON.stringify(local) !== JSON.stringify(base)){ draft = local; dirty = true; }
+    else { draft = clone(base); clearDraft(); }
+    selId = draft.entries[0] && draft.entries[0].id;
+    render();
+  })();
 })();
 </script>
 </body>
