@@ -42,6 +42,8 @@
   .day-h{font-size:15px;font-weight:700;color:var(--sub);margin:22px 4px 10px;}
   .m-title{font-size:19px;font-weight:800;margin:0 0 4px;letter-spacing:-.3px;}
   .m-sum{color:var(--sub);font-size:15px;margin:0 0 14px;}
+  .m-time{display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:#fff;border-radius:8px;padding:5px 10px;
+    font-size:15px;font-weight:700;margin:4px 0 8px;font-variant-numeric:tabular-nums;}
   .lbl{font-size:13px;color:var(--muted);font-weight:600;margin:16px 0 8px;}
   .chips{display:flex;flex-wrap:wrap;gap:6px;}
   .chip{background:var(--blue-weak);color:var(--blue-ink);border-radius:8px;padding:5px 10px;font-size:14px;font-weight:600;}
@@ -199,6 +201,7 @@
     const items = commas(e.items), steps = lines(e.steps), warns = lines(e.cautions);
     return `<article class="card">
       <h2 class="m-title">${esc(heading(e))}</h2>
+      ${e.time ? `<div class="m-time">🕗 ${esc(e.time)}</div>` : ''}
       ${e.summary ? `<p class="m-sum">${esc(e.summary)}</p>` : ''}
       ${posBlock}
       ${items.length ? `<div class="lbl">준비물</div><div class="chips">${items.map(i=>`<span class="chip">${esc(i)}</span>`).join('')}</div>` : ''}
@@ -308,7 +311,7 @@
       </div>
       <div class="ed">
         <aside class="list">
-          ${ordered.map(x => `<button class="li ${x.id===selId?'on':''}" data-id="${esc(x.id)}"><small>${esc([x.rotation,x.day].filter(Boolean).join(' · '))}</small><b>${esc(x.title||'(제목 없음)')}</b></button>`).join('')}
+          ${ordered.map(x => `<button class="li ${x.id===selId?'on':''}" data-id="${esc(x.id)}"><small>${esc([x.rotation,x.day,x.time].filter(Boolean).join(' · '))}</small><b>${esc(x.title||'(제목 없음)')}</b></button>`).join('')}
           <button class="btn" id="add" style="width:100%;margin-top:6px">+ 업무 추가</button>
         </aside>
         ${e ? `<section class="card form">
@@ -318,6 +321,7 @@
             <div class="f"><label>Day</label><input type="text" data-k="day" value="${esc(e.day)}" placeholder="Day 2"></div>
             <div class="f"><label>업무명</label><input type="text" data-k="title" value="${esc(e.title)}" placeholder="통제선 관리"></div>
           </div>
+          <div class="f"><label>시간 (예: 20:00~22:45)</label><input type="text" data-k="time" value="${esc(e.time)}" placeholder="20:00~22:45"></div>
           <div class="f"><label>한 줄 설명</label><input type="text" data-k="summary" value="${esc(e.summary)}"></div>
           <div class="f"><label>준비물 (쉼표로 구분)</label><input type="text" data-k="items" value="${esc(e.items)}"></div>
           <div class="f"><label>하는 일 / 순서 (한 줄에 하나, 번호는 자동)</label><textarea class="tall" data-k="steps">${esc(e.steps)}</textarea></div>
@@ -341,7 +345,7 @@
       e[el.dataset.k] = el.value;
       document.getElementById('hd').textContent = heading(e);
       const li = app.querySelector(`.li[data-id="${CSS.escape(e.id)}"]`);
-      if(li) li.innerHTML = `<small>${esc([e.rotation,e.day].filter(Boolean).join(' · '))}</small><b>${esc(e.title||'(제목 없음)')}</b>`;
+      if(li) li.innerHTML = `<small>${esc([e.rotation,e.day,e.time].filter(Boolean).join(' · '))}</small><b>${esc(e.title||'(제목 없음)')}</b>`;
       touch();
     }));
     app.querySelectorAll('[data-who]').forEach(el => el.addEventListener('change', () => {
@@ -388,10 +392,18 @@
   window.addEventListener('hashchange', () => { window.scrollTo(0,0); render(); });
   window.addEventListener('beforeunload', ev => { if(dirty){ ev.preventDefault(); ev.returnValue=''; } });
 
+  // 기존 데이터 보정: 2로테이션 · Day 2 · 통제선 업무에 시간이 없으면 20:00~22:45로 채움
+  function migrate(d){
+    (d.entries||[]).forEach(e => {
+      if(e.time === undefined && e.rotation === '2로테이션' && e.day === 'Day 2' && /통제선/.test(e.title||'')) e.time = '20:00~22:45';
+    });
+    return d;
+  }
+
   async function refreshBase(){
     try{
       const res = await fetch(API, {cache:'no-store'});
-      if(res.ok){ const saved = await res.json(); if(saved && Array.isArray(saved.entries)) base = saved; }
+      if(res.ok){ const saved = await res.json(); if(saved && Array.isArray(saved.entries)) base = migrate(saved); }
     }catch(e){}
   }
   document.addEventListener('visibilitychange', async () => {
@@ -407,7 +419,8 @@
       const res = await fetch(API, {cache:'no-store'});
       if(res.ok){ const saved = await res.json(); if(saved && Array.isArray(saved.entries)) base = saved; }
     }catch(e){}
-    const local = loadDraft();
+    base = migrate(base);
+    const ld = loadDraft(); const local = ld ? migrate(ld) : null;
     if(local && JSON.stringify(local) !== JSON.stringify(base)){ draft = local; dirty = true; }
     else { draft = clone(base); clearDraft(); }
     selId = draft.entries[0] && draft.entries[0].id;
