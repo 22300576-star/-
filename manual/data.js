@@ -3,7 +3,7 @@ window.MANUAL_DATA = {
   "title": "2026 가을창문축제 · 무대운영팀 매뉴얼",
   "people": ["김세훈", "오경진", "고건", "정유성"],
   "slugs": {"sehoon": "김세훈", "kyungjin": "오경진", "geon": "고건", "yuseong": "정유성"},
-  "migrations": ["map22", "add-yuseong"],
+  "migrations": ["map22", "add-yuseong", "yuseong-13"],
   "entries": [
     {
       "id": "r2d2-line",
@@ -16,7 +16,7 @@ window.MANUAL_DATA = {
       "steps": "19:50까지 해당 통제선 구역으로 도착\n통제선 쪽으로 오는 관객을 입구로 안내\n일반관객 재학생구역 밀착 방지 및 안내\n찬단봉 미설치 구간 통제\n안내 멘트예시: \"밀거나 뛰는 행동을 금지합니다. 안전한 관람을 위해 스태프의 안내를 따라주세요!\"",
       "cautions": "밀거나 뛰지 않도록 안내\n음식물을 반입하지 않도록 안내\n출입구로 입퇴장 할 수 있도록 안내",
       "assignees": ["김세훈", "오경진", "고건", "정유성"],
-      "positions": {"정유성": 14}
+      "positions": {"정유성": 13}
     }
   ]
 };

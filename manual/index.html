@@ -443,6 +443,17 @@
       d.entries = (d.entries||[]).concat(copies);
       d.migrations.push('add-yuseong');
     }
+    // 정유성 위치 14번 → 13번(통제선 관리)
+    if(!d.migrations.includes('yuseong-13')){
+      (d.entries||[]).forEach(e => {
+        const ps = e.positions || {};
+        if(parseInt(ps['정유성'],10) === 14){
+          ps['정유성'] = 13;
+          if((e.assignees||[]).length === 1) retitle(e, 14, 13);
+        }
+      });
+      d.migrations.push('yuseong-13');
+    }
     return d;
   }
 
