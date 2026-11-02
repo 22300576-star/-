@@ -54,6 +54,20 @@
   .empty{text-align:center;color:var(--muted);padding:40px 0;}
   .banner{background:#fff7e6;color:#9a6400;border-radius:12px;padding:10px 14px;font-size:14px;margin-bottom:14px;}
 
+  /* patrol map */
+  .pos{display:flex;align-items:center;gap:10px;background:var(--ink);color:#fff;border-radius:12px;padding:12px 14px;margin:4px 0 12px;font-size:15px;}
+  .pos b.num{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;border-radius:50%;font-size:15px;font-weight:800;color:#fff;}
+  .map{position:relative;border-radius:12px;overflow:hidden;background:#000;line-height:0;}
+  .map img{width:100%;height:auto;display:block;}
+  .mk{position:absolute;width:7.4%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);border:3px solid #fff;
+    box-shadow:0 0 0 3px #ff2d55,0 0 0 9999px rgba(0,0,0,.5);animation:pulse 1.4s ease-in-out infinite;pointer-events:none;}
+  .map.multi .mk{box-shadow:0 0 0 3px #ff2d55;}
+  .mk-tag{position:absolute;transform:translate(-50%,-100%);background:#fff;color:#191f28;font-size:12px;font-weight:800;line-height:1.2;
+    padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.4);}
+  @keyframes pulse{0%,100%{transform:translate(-50%,-50%) scale(1);}50%{transform:translate(-50%,-50%) scale(1.18);}}
+  .map-link{display:inline-block;margin-top:8px;font-size:13px;color:var(--blue-ink);font-weight:600;}
+  .posin{width:64px;font:inherit;font-size:14px;border:1px solid var(--border);border-radius:8px;padding:4px 6px;margin-left:4px;}
+
   /* editor */
   .ed{display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start;}
   @media (max-width:820px){.ed{grid-template-columns:1fr;}}
@@ -114,6 +128,21 @@
   const rotNum = r => { const m = String(r||'').match(/\d+/); return m ? +m[0] : 999; };
   const sortEntries = arr => arr.slice().sort((a,b) => dayNum(a.day)-dayNum(b.day) || rotNum(a.rotation)-rotNum(b.rotation));
 
+  // 관객석 인력 배치도 위의 1~21번 위치 (지도 이미지 기준 %)
+  const SPOTS = {1:[39.64,59.79],2:[44.54,58.06],3:[44.54,65.9],4:[55.61,61.87],5:[25.76,36.52],6:[74.31,36.52],
+    7:[34.82,48.39],8:[42.46,48.39],9:[57.61,48.39],10:[65.33,48.39],11:[19.75,48.96],12:[11.51,51.61],13:[4.31,57.6],
+    14:[80.25,48.96],15:[88.49,51.61],16:[95.69,57.6],17:[34.89,29.26],18:[42.54,29.26],19:[50.11,29.26],20:[57.68,29.26],21:[65.26,29.26]};
+  const spotRole = n => n<=3 ? ['입구','#1f9d55'] : n===4 ? ['출구','#2563eb'] : n<=6 ? ['보조출구','#0e8fa8'] : n<=16 ? ['통제선 관리','#e02424'] : ['무대 앞','#8b2be2'];
+  const posOf = (e, name) => { const n = parseInt((e.positions||{})[name], 10); return SPOTS[n] ? n : null; };
+
+  function mapHtml(marks){ // marks: [{n, label}]
+    if(!marks.length) return '';
+    return `<div class="map ${marks.length>1?'multi':''}"><img src="/img/staff-map.webp" alt="관객석 인력 배치도" loading="lazy">
+      ${marks.map(m => { const [x,y] = SPOTS[m.n]; return `<span class="mk" style="left:${x}%;top:${y}%"></span>`
+        + (m.label ? `<span class="mk-tag" style="left:${x}%;top:${y-5}%">${esc(m.label)}</span>` : ''); }).join('')}
+    </div><a class="map-link" href="/img/staff-map-full.webp" target="_blank" rel="noopener">전체 배치도 크게 보기 ›</a>`;
+  }
+
   function route(){
     // 영문 짧은 주소 지원: /sehoon, /kyungjin, /geon, /all, /edit
     const slug = location.pathname.replace(/^\/+|\/+$/g,'').toLowerCase();
@@ -148,11 +177,21 @@
       </div></div>`;
   }
 
-  function entryCard(e){
+  function entryCard(e, person){
+    let posBlock = '';
+    if(person){
+      const n = posOf(e, person);
+      if(n){ const [role,color] = spotRole(n);
+        posBlock = `<div class="lbl">내 패트롤 위치</div><div class="pos"><b class="num" style="background:${color}">${n}</b><span>${n}번 · ${role}</span></div>` + mapHtml([{n}]); }
+    } else {
+      const marks = (e.assignees||[]).map(a => ({n: posOf(e,a), label: a})).filter(m => m.n);
+      if(marks.length) posBlock = `<div class="lbl">패트롤 위치</div>` + mapHtml(marks.map(m => ({n:m.n, label:`${m.label} ${m.n}`})));
+    }
     const items = commas(e.items), steps = lines(e.steps), warns = lines(e.cautions);
     return `<article class="card">
       <h2 class="m-title">${esc(heading(e))}</h2>
       ${e.summary ? `<p class="m-sum">${esc(e.summary)}</p>` : ''}
+      ${posBlock}
       ${items.length ? `<div class="lbl">준비물</div><div class="chips">${items.map(i=>`<span class="chip">${esc(i)}</span>`).join('')}</div>` : ''}
       ${steps.length ? `<div class="lbl">하는 일 / 순서</div><ol class="steps">${steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>` : ''}
       ${warns.length ? `<div class="lbl">주의</div><ol class="warn">${warns.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>` : ''}
@@ -172,7 +211,7 @@
       ${isPreview ? '<div class="banner">미리보기 · 아직 배포되지 않은 편집 내용입니다.</div>' : ''}
       <nav class="tabs">${tabs.map(n => `<a class="tab ${n===person?'on':''}" href="${prefix}${encodeURIComponent(n)}">${n ? esc(n) : '전체'}</a>`).join('')}</nav>
       ${list.length ? days.map(day => `<div class="day-h">${esc(day)}</div>` +
-          list.filter(e => (e.day||'기타')===day).map(entryCard).join('')).join('')
+          list.filter(e => (e.day||'기타')===day).map(e => entryCard(e, person)).join('')).join('')
         : '<div class="empty">배정된 업무가 없습니다.</div>'}
     </div>`;
   }
@@ -250,8 +289,9 @@
           <div class="f"><label>준비물 (쉼표로 구분)</label><input type="text" data-k="items" value="${esc(e.items)}"></div>
           <div class="f"><label>하는 일 / 순서 (한 줄에 하나, 번호는 자동)</label><textarea class="tall" data-k="steps">${esc(e.steps)}</textarea></div>
           <div class="f"><label>주의 (한 줄에 하나, 번호는 자동)</label><textarea data-k="cautions">${esc(e.cautions)}</textarea></div>
-          <div class="f"><label>담당자</label><div class="checks">
-            ${d.people.map(n => `<label><input type="checkbox" data-who="${esc(n)}" ${(e.assignees||[]).includes(n)?'checked':''}> ${esc(n)}</label>`).join('')}
+          <div class="f"><label>담당자 · 패트롤 위치 번호 (배치도 1~21번, 비우면 지도 없음)</label><div class="checks">
+            ${d.people.map(n => `<label><input type="checkbox" data-who="${esc(n)}" ${(e.assignees||[]).includes(n)?'checked':''}> ${esc(n)}
+              <input class="posin" type="number" min="1" max="21" placeholder="위치" data-pos="${esc(n)}" value="${esc((e.positions||{})[n]||'')}"></label>`).join('')}
           </div></div>
           <div class="actions" style="justify-content:space-between;align-items:center">
             <span class="saved" id="saved">${dirty ? '저장 안 된 변경 있음 · 위의 [저장하기]를 눌러야 반영됩니다' : '모든 변경이 저장됨' + (d.updatedAt ? ' · ' + new Date(d.updatedAt).toLocaleString('ko-KR') : '')}</span>
@@ -272,6 +312,12 @@
     }));
     app.querySelectorAll('[data-who]').forEach(el => el.addEventListener('change', () => {
       e.assignees = [...app.querySelectorAll('[data-who]:checked')].map(x => x.dataset.who); touch();
+    }));
+    app.querySelectorAll('[data-pos]').forEach(el => el.addEventListener('input', () => {
+      e.positions = e.positions || {};
+      const v = parseInt(el.value, 10);
+      if(SPOTS[v]) e.positions[el.dataset.pos] = v; else delete e.positions[el.dataset.pos];
+      touch();
     }));
     app.querySelectorAll('.li').forEach(el => el.addEventListener('click', () => { selId = el.dataset.id; renderEditor(); }));
     document.getElementById('siteTitle').addEventListener('input', ev => { d.title = ev.target.value; touch(); });
