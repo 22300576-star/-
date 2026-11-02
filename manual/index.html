@@ -82,7 +82,7 @@
 </head>
 <body>
 <div id="app"></div>
-<script src="data.js"></script>
+<script src="/data.js"></script>
 <script>
 (function(){
   const DRAFT_KEY = 'manual-draft-v1';
@@ -109,6 +109,14 @@
   const sortEntries = arr => arr.slice().sort((a,b) => dayNum(a.day)-dayNum(b.day) || rotNum(a.rotation)-rotNum(b.rotation));
 
   function route(){
+    // 영문 짧은 주소 지원: /sehoon, /kyungjin, /geon, /all, /edit
+    const slug = location.pathname.replace(/^\/+|\/+$/g,'').toLowerCase();
+    if(slug && !location.hash){
+      const slugs = base.slugs || {};
+      if(slugs[slug]) return {a:'p', b:slugs[slug]};
+      if(slug === 'all') return {a:'p', b:''};
+      if(slug === 'edit') return {a:'edit', b:''};
+    }
     const h = decodeURIComponent(location.hash.replace(/^#\/?/,''));
     const [a, b] = h.split('/');
     return {a: a||'', b: b||''};

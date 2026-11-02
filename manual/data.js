@@ -2,6 +2,7 @@
 window.MANUAL_DATA = {
   "title": "2026 가을창문축제 · 무대운영팀 매뉴얼",
   "people": ["김세훈", "오경진", "고건"],
+  "slugs": {"sehoon": "김세훈", "kyungjin": "오경진", "geon": "고건"},
   "entries": [
     {
       "id": "r2d2-line",
