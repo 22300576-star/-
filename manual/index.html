@@ -136,8 +136,7 @@
   const posOf = (e, name) => { const n = parseInt((e.positions||{})[name], 10); return SPOTS[n] ? n : null; };
 
   function mapHtml(marks){ // marks: [{n, label}]
-    if(!marks.length) return '';
-    return `<div class="map ${marks.length>1?'multi':''}"><img src="/img/staff-map.webp" alt="관객석 인력 배치도" loading="lazy">
+    return `<div class="map ${marks.length!==1?'multi':''}"><img src="/img/staff-map.webp" alt="관객석 인력 배치도" loading="lazy">
       ${marks.map(m => { const [x,y] = SPOTS[m.n]; return `<span class="mk" style="left:${x}%;top:${y}%"></span>`
         + (m.label ? `<span class="mk-tag" style="left:${x}%;top:${y-5}%">${esc(m.label)}</span>` : ''); }).join('')}
     </div><a class="map-link" href="/img/staff-map-full.webp" target="_blank" rel="noopener">전체 배치도 크게 보기 ›</a>`;
@@ -183,9 +182,10 @@
       const n = posOf(e, person);
       if(n){ const [role,color] = spotRole(n);
         posBlock = `<div class="lbl">내 패트롤 위치</div><div class="pos"><b class="num" style="background:${color}">${n}</b><span>${n}번 · ${role}</span></div>` + mapHtml([{n}]); }
+      else posBlock = `<div class="lbl">관객석 인력 배치도</div>` + mapHtml([]);
     } else {
       const marks = (e.assignees||[]).map(a => ({n: posOf(e,a), label: a})).filter(m => m.n);
-      if(marks.length) posBlock = `<div class="lbl">패트롤 위치</div>` + mapHtml(marks.map(m => ({n:m.n, label:`${m.label} ${m.n}`})));
+      posBlock = `<div class="lbl">${marks.length ? '패트롤 위치' : '관객석 인력 배치도'}</div>` + mapHtml(marks.map(m => ({n:m.n, label:`${m.label} ${m.n}`})));
     }
     const items = commas(e.items), steps = lines(e.steps), warns = lines(e.cautions);
     return `<article class="card">
