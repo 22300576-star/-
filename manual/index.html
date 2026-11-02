@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>무대운영팀 매뉴얼</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<style>
+  :root{
+    --bg:#f2f4f6; --card:#ffffff; --ink:#191f28; --muted:#8b95a1; --sub:#4e5968;
+    --border:#e5e8eb; --blue:#3182f6; --blue-weak:#e8f3ff; --blue-ink:#1b64da;
+    --red:#f04452; --red-weak:#fff0f1;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:'Pretendard Variable',Pretendard,-apple-system,sans-serif;}
+  a{color:inherit;text-decoration:none;}
+  .wrap{max-width:760px;margin:0 auto;padding:24px 16px 80px;}
+  .wrap.wide{max-width:1180px;}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+  header.top h1{font-size:20px;margin:0;font-weight:800;letter-spacing:-.3px;}
+  .btn{border:0;border-radius:10px;padding:10px 14px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;
+    background:var(--blue-weak);color:var(--blue-ink);}
+  .btn.primary{background:var(--blue);color:#fff;}
+  .btn.ghost{background:#fff;color:var(--sub);border:1px solid var(--border);}
+  .btn.danger{background:var(--red-weak);color:var(--red);}
+  .btn:hover{filter:brightness(.97);}
+  .card{background:var(--card);border-radius:16px;padding:22px 20px;margin-bottom:14px;}
+
+  /* home */
+  .people{display:grid;gap:12px;}
+  .person{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:16px;padding:20px;
+    font-size:18px;font-weight:700;}
+  .person span.cnt{font-size:14px;color:var(--muted);font-weight:500;}
+  .person::after{content:'›';font-size:24px;color:#b0b8c1;margin-left:8px;}
+  .hint{color:var(--muted);font-size:14px;margin:6px 0 18px;}
+
+  /* viewer */
+  .tabs{display:flex;gap:8px;overflow-x:auto;margin-bottom:16px;padding-bottom:2px;}
+  .tab{white-space:nowrap;border-radius:999px;padding:8px 14px;background:#fff;color:var(--sub);font-weight:600;font-size:14px;border:0;cursor:pointer;font-family:inherit;}
+  .tab.on{background:var(--ink);color:#fff;}
+  .day-h{font-size:15px;font-weight:700;color:var(--sub);margin:22px 4px 10px;}
+  .m-title{font-size:19px;font-weight:800;margin:0 0 4px;letter-spacing:-.3px;}
+  .m-sum{color:var(--sub);font-size:15px;margin:0 0 14px;}
+  .lbl{font-size:13px;color:var(--muted);font-weight:600;margin:16px 0 8px;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{background:var(--blue-weak);color:var(--blue-ink);border-radius:8px;padding:5px 10px;font-size:14px;font-weight:600;}
+  ol.steps,ol.warn{margin:0;padding:0;list-style:none;counter-reset:n;}
+  ol.steps li,ol.warn li{counter-increment:n;position:relative;padding:4px 0 4px 32px;font-size:15px;line-height:1.55;}
+  ol.steps li::before,ol.warn li::before{content:counter(n);position:absolute;left:0;top:5px;width:22px;height:22px;border-radius:50%;
+    font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;background:var(--blue-weak);color:var(--blue-ink);}
+  ol.warn li::before{background:var(--red-weak);color:var(--red);}
+  .who{margin-top:14px;font-size:13px;color:var(--muted);}
+  .empty{text-align:center;color:var(--muted);padding:40px 0;}
+  .banner{background:#fff7e6;color:#9a6400;border-radius:12px;padding:10px 14px;font-size:14px;margin-bottom:14px;}
+
+  /* editor */
+  .ed{display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start;}
+  @media (max-width:820px){.ed{grid-template-columns:1fr;}}
+  .list{background:#fff;border-radius:16px;padding:10px;position:sticky;top:12px;}
+  .li{display:block;width:100%;text-align:left;border:0;background:none;font:inherit;padding:10px 12px;border-radius:10px;cursor:pointer;}
+  .li small{display:block;color:var(--muted);font-size:12px;}
+  .li b{font-size:14px;}
+  .li.on{background:var(--blue-weak);}
+  .form h2{font-size:20px;font-weight:800;margin:0 0 18px;letter-spacing:-.3px;}
+  .f{margin-bottom:16px;}
+  .f label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;}
+  .f input[type=text],.f textarea{width:100%;font:inherit;font-size:15px;color:var(--ink);border:1px solid var(--border);
+    border-radius:10px;padding:10px 12px;background:#fff;outline:none;}
+  .f input[type=text]:focus,.f textarea:focus{border-color:var(--blue);}
+  .f textarea{min-height:120px;line-height:1.6;resize:vertical;}
+  .f textarea.tall{min-height:200px;}
+  .row3{display:grid;grid-template-columns:1fr 1fr 2fr;gap:10px;}
+  @media (max-width:560px){.row3{grid-template-columns:1fr 1fr;}.row3 .f:last-child{grid-column:1/-1;}}
+  .checks{display:flex;gap:8px;flex-wrap:wrap;}
+  .checks label{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px 12px;
+    font-size:14px;color:var(--ink);cursor:pointer;margin:0;}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .saved{font-size:12px;color:var(--muted);}
+  .people-edit{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="data.js"></script>
+<script>
+(function(){
+  const DRAFT_KEY = 'manual-draft-v1';
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const base = clone(window.MANUAL_DATA || {title:'매뉴얼',people:[],entries:[]});
+
+  function loadDraft(){
+    try{ const s = localStorage.getItem(DRAFT_KEY); if(s) return JSON.parse(s); }catch(e){}
+    return null;
+  }
+  function saveDraft(d){ try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); }catch(e){} }
+  function clearDraft(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} }
+
+  let draft = loadDraft() || clone(base);
+  let selId = draft.entries[0] && draft.entries[0].id;
+
+  const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  // 한 줄에 하나, 번호는 자동 — 사용자가 적은 "1." "2)" 같은 번호는 제거
+  const lines = s => String(s||'').split('\n').map(l => l.replace(/^\s*\d+\s*[.)]\s*/,'').trim()).filter(Boolean);
+  const commas = s => String(s||'').split(/[,，]/).map(x => x.trim()).filter(Boolean);
+  const heading = e => [e.rotation, e.day, e.title].filter(Boolean).join(' · ');
+  const dayNum = d => { const m = String(d||'').match(/\d+/); return m ? +m[0] : 999; };
+  const rotNum = r => { const m = String(r||'').match(/\d+/); return m ? +m[0] : 999; };
+  const sortEntries = arr => arr.slice().sort((a,b) => dayNum(a.day)-dayNum(b.day) || rotNum(a.rotation)-rotNum(b.rotation));
+
+  function route(){
+    const h = decodeURIComponent(location.hash.replace(/^#\/?/,''));
+    const [a, b] = h.split('/');
+    return {a: a||'', b: b||''};
+  }
+
+  function render(){
+    const r = route();
+    if(r.a === 'edit') return renderEditor();
+    if(r.a === 'preview') return renderViewer(draft, r.b, true);
+    if(r.a === 'p') return renderViewer(base, r.b, false);
+    renderHome();
+  }
+
+  function renderHome(){
+    const d = base;
+    const cnt = n => d.entries.filter(e => (e.assignees||[]).includes(n)).length;
+    app.innerHTML = `<div class="wrap">
+      <header class="top"><h1>${esc(d.title)}</h1><a class="btn ghost" href="#/edit">편집</a></header>
+      <p class="hint">본인 이름을 눌러 담당 매뉴얼을 확인하세요.</p>
+      <div class="people">
+        ${d.people.map(n => `<a class="person" href="#/p/${encodeURIComponent(n)}"><div>${esc(n)} <span class="cnt">· ${cnt(n)}개 업무</span></div></a>`).join('')}
+        <a class="person" href="#/p/"><div>전체 보기 <span class="cnt">· ${d.entries.length}개 업무</span></div></a>
+      </div></div>`;
+  }
+
+  function entryCard(e){
+    const items = commas(e.items), steps = lines(e.steps), warns = lines(e.cautions);
+    return `<article class="card">
+      <h2 class="m-title">${esc(heading(e))}</h2>
+      ${e.summary ? `<p class="m-sum">${esc(e.summary)}</p>` : ''}
+      ${items.length ? `<div class="lbl">준비물</div><div class="chips">${items.map(i=>`<span class="chip">${esc(i)}</span>`).join('')}</div>` : ''}
+      ${steps.length ? `<div class="lbl">하는 일 / 순서</div><ol class="steps">${steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>` : ''}
+      ${warns.length ? `<div class="lbl">주의</div><ol class="warn">${warns.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>` : ''}
+      ${(e.assignees||[]).length ? `<div class="who">담당 · ${e.assignees.map(esc).join(', ')}</div>` : ''}
+    </article>`;
+  }
+
+  function renderViewer(d, person, isPreview){
+    const prefix = isPreview ? '#/preview/' : '#/p/';
+    let list = d.entries.filter(e => !person || (e.assignees||[]).includes(person));
+    list = sortEntries(list);
+    const days = [...new Set(list.map(e => e.day || '기타'))];
+    const tabs = [''].concat(d.people);
+    app.innerHTML = `<div class="wrap">
+      <header class="top"><h1>${person ? esc(person)+'님의 매뉴얼' : '전체 매뉴얼'}</h1>
+        <a class="btn ghost" href="${isPreview ? '#/edit' : '#/'}">${isPreview ? '편집으로' : '처음으로'}</a></header>
+      ${isPreview ? '<div class="banner">미리보기 · 아직 배포되지 않은 편집 내용입니다.</div>' : ''}
+      <nav class="tabs">${tabs.map(n => `<a class="tab ${n===person?'on':''}" href="${prefix}${encodeURIComponent(n)}">${n ? esc(n) : '전체'}</a>`).join('')}</nav>
+      ${list.length ? days.map(day => `<div class="day-h">${esc(day)}</div>` +
+          list.filter(e => (e.day||'기타')===day).map(entryCard).join('')).join('')
+        : '<div class="empty">배정된 업무가 없습니다.</div>'}
+    </div>`;
+  }
+
+  function renderEditor(){
+    const d = draft;
+    const ordered = sortEntries(d.entries);
+    if(!d.entries.find(e => e.id===selId)) selId = ordered[0] && ordered[0].id;
+    const e = d.entries.find(x => x.id===selId);
+    app.innerHTML = `<div class="wrap wide">
+      <header class="top"><h1>매뉴얼 편집</h1>
+        <div class="actions">
+          <a class="btn ghost" href="#/preview/">미리보기</a>
+          <button class="btn primary" id="export">data.js 내보내기</button>
+          <button class="btn danger" id="reset">편집 초기화</button>
+          <a class="btn ghost" href="#/">나가기</a>
+        </div></header>
+      <div class="card">
+        <div class="f" style="margin-bottom:10px"><label>사이트 제목</label><input type="text" id="siteTitle" value="${esc(d.title)}"></div>
+        <div class="f" style="margin:0"><label>배포 대상 (쉼표로 구분)</label><input type="text" id="people" value="${esc(d.people.join(', '))}"></div>
+      </div>
+      <div class="ed">
+        <aside class="list">
+          ${ordered.map(x => `<button class="li ${x.id===selId?'on':''}" data-id="${esc(x.id)}"><small>${esc([x.rotation,x.day].filter(Boolean).join(' · '))}</small><b>${esc(x.title||'(제목 없음)')}</b></button>`).join('')}
+          <button class="btn" id="add" style="width:100%;margin-top:6px">+ 업무 추가</button>
+        </aside>
+        ${e ? `<section class="card form">
+          <h2 id="hd">${esc(heading(e))}</h2>
+          <div class="row3">
+            <div class="f"><label>로테이션</label><input type="text" data-k="rotation" value="${esc(e.rotation)}" placeholder="2로테이션"></div>
+            <div class="f"><label>Day</label><input type="text" data-k="day" value="${esc(e.day)}" placeholder="Day 2"></div>
+            <div class="f"><label>업무명</label><input type="text" data-k="title" value="${esc(e.title)}" placeholder="통제선 관리"></div>
+          </div>
+          <div class="f"><label>한 줄 설명</label><input type="text" data-k="summary" value="${esc(e.summary)}"></div>
+          <div class="f"><label>준비물 (쉼표로 구분)</label><input type="text" data-k="items" value="${esc(e.items)}"></div>
+          <div class="f"><label>하는 일 / 순서 (한 줄에 하나, 번호는 자동)</label><textarea class="tall" data-k="steps">${esc(e.steps)}</textarea></div>
+          <div class="f"><label>주의 (한 줄에 하나, 번호는 자동)</label><textarea data-k="cautions">${esc(e.cautions)}</textarea></div>
+          <div class="f"><label>담당자</label><div class="checks">
+            ${d.people.map(n => `<label><input type="checkbox" data-who="${esc(n)}" ${(e.assignees||[]).includes(n)?'checked':''}> ${esc(n)}</label>`).join('')}
+          </div></div>
+          <div class="actions" style="justify-content:space-between;align-items:center">
+            <span class="saved" id="saved">자동 저장됨 (이 브라우저)</span>
+            <div class="actions"><button class="btn ghost" id="dup">복제</button><button class="btn danger" id="del">삭제</button></div>
+          </div>
+        </section>` : '<section class="card empty">업무를 추가하세요.</section>'}
+      </div></div>`;
+
+    const touch = () => { saveDraft(d); const s = document.getElementById('saved'); if(s) s.textContent = '자동 저장됨 · ' + new Date().toLocaleTimeString('ko-KR'); };
+
+    app.querySelectorAll('[data-k]').forEach(el => el.addEventListener('input', () => {
+      e[el.dataset.k] = el.value;
+      document.getElementById('hd').textContent = heading(e);
+      const li = app.querySelector(`.li[data-id="${CSS.escape(e.id)}"]`);
+      if(li) li.innerHTML = `<small>${esc([e.rotation,e.day].filter(Boolean).join(' · '))}</small><b>${esc(e.title||'(제목 없음)')}</b>`;
+      touch();
+    }));
+    app.querySelectorAll('[data-who]').forEach(el => el.addEventListener('change', () => {
+      e.assignees = [...app.querySelectorAll('[data-who]:checked')].map(x => x.dataset.who); touch();
+    }));
+    app.querySelectorAll('.li').forEach(el => el.addEventListener('click', () => { selId = el.dataset.id; renderEditor(); }));
+    document.getElementById('siteTitle').addEventListener('input', ev => { d.title = ev.target.value; touch(); });
+    document.getElementById('people').addEventListener('change', ev => {
+      d.people = commas(ev.target.value);
+      d.entries.forEach(x => x.assignees = (x.assignees||[]).filter(n => d.people.includes(n)));
+      touch(); renderEditor();
+    });
+    document.getElementById('add').addEventListener('click', () => {
+      const n = {id:'e'+Date.now().toString(36), rotation:'', day:'', title:'새 업무', summary:'', items:'', steps:'', cautions:'', assignees:d.people.slice()};
+      d.entries.push(n); selId = n.id; touch(); renderEditor();
+    });
+    const dup = document.getElementById('dup');
+    if(dup) dup.addEventListener('click', () => {
+      const n = clone(e); n.id = 'e'+Date.now().toString(36); n.title = e.title + ' (복사)';
+      d.entries.push(n); selId = n.id; touch(); renderEditor();
+    });
+    const del = document.getElementById('del');
+    if(del) del.addEventListener('click', () => {
+      if(!confirm(`"${heading(e)}" 업무를 삭제할까요?`)) return;
+      d.entries = d.entries.filter(x => x.id !== e.id); touch(); renderEditor();
+    });
+    document.getElementById('reset').addEventListener('click', () => {
+      if(!confirm('이 브라우저의 편집 내용을 버리고 배포된 data.js로 되돌릴까요?')) return;
+      clearDraft(); draft = clone(base); selId = null; renderEditor();
+    });
+    document.getElementById('export').addEventListener('click', () => {
+      const out = '// 매뉴얼 데이터 — 편집 모드(#/edit)에서 수정 후 "data.js 내보내기"로 받은 파일로 교체하세요.\n'
+        + 'window.MANUAL_DATA = ' + JSON.stringify(d, null, 2) + ';\n';
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([out], {type:'text/javascript'}));
+      a.download = 'data.js'; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    });
+  }
+
+  const app = document.getElementById('app');
+  window.addEventListener('hashchange', () => { window.scrollTo(0,0); render(); });
+  render();
+})();
+</script>
+</body>
+</html>
