@@ -365,7 +365,7 @@
       touch(); renderEditor();
     });
     document.getElementById('add').addEventListener('click', () => {
-      const n = {id:'e'+Date.now().toString(36), rotation:'', day:'', title:'새 업무', summary:'', items:'', steps:'', cautions:'', assignees:d.people.slice()};
+      const n = {id:'e'+Date.now().toString(36), rotation:'', day:'', title:'새 업무', time:'', summary:'', items:'', steps:'', cautions:'', assignees:d.people.slice()};
       d.entries.push(n); selId = n.id; touch(); renderEditor();
     });
     const dup = document.getElementById('dup');
@@ -392,10 +392,10 @@
   window.addEventListener('hashchange', () => { window.scrollTo(0,0); render(); });
   window.addEventListener('beforeunload', ev => { if(dirty){ ev.preventDefault(); ev.returnValue=''; } });
 
-  // 기존 데이터 보정: 2로테이션 · Day 2 · 통제선 업무에 시간이 없으면 20:00~22:45로 채움
+  // 기존 데이터 보정: 시간 칸이 생기기 전에 만든 업무(시간 없음)는 모두 20:00~22:45로 채움
   function migrate(d){
     (d.entries||[]).forEach(e => {
-      if(e.time === undefined && e.rotation === '2로테이션' && e.day === 'Day 2' && /통제선/.test(e.title||'')) e.time = '20:00~22:45';
+      if(e.time === undefined || e.time === null) e.time = '20:00~22:45';
     });
     return d;
   }
