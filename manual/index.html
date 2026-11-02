@@ -134,10 +134,11 @@
   const sortEntries = arr => arr.slice().sort((a,b) => dayNum(a.day)-dayNum(b.day) || rotNum(a.rotation)-rotNum(b.rotation));
 
   // 관객석 인력 배치도 위의 1~21번 위치 (지도 이미지 기준 %)
-  const SPOTS = {1:[39.64,59.79],2:[44.54,58.06],3:[44.54,65.9],4:[55.61,61.87],5:[25.76,36.52],6:[74.31,36.52],
-    7:[34.82,48.39],8:[42.46,48.39],9:[57.61,48.39],10:[65.33,48.39],11:[19.75,48.96],12:[11.51,51.61],13:[4.31,57.6],
-    14:[80.25,48.96],15:[88.49,51.61],16:[95.69,57.6],17:[34.89,29.26],18:[42.54,29.26],19:[50.11,29.26],20:[57.68,29.26],21:[65.26,29.26]};
-  const spotRole = n => n<=3 ? ['입구','#1f9d55'] : n===4 ? ['출구','#2563eb'] : n<=6 ? ['보조출구','#0e8fa8'] : n<=16 ? ['통제선 관리','#e02424'] : ['무대 앞','#8b2be2'];
+  // 관객석 인력 배치도(22명) 위의 1~22번 위치 (지도 이미지 기준 %)
+  const SPOTS = {1:[39.42,57.49],2:[44.54,57.49],3:[39.42,65.32],4:[44.54,65.32],5:[55.61,61.87],6:[25.76,36.52],7:[74.31,36.52],
+    8:[34.82,48.39],9:[42.46,48.39],10:[57.76,48.39],11:[65.33,48.39],12:[19.75,48.96],13:[11.51,51.61],14:[4.31,57.6],
+    15:[80.25,48.96],16:[88.49,51.61],17:[95.69,57.6],18:[34.89,29.26],19:[42.54,29.26],20:[50.11,29.26],21:[57.68,29.26],22:[65.26,29.26]};
+  const spotRole = n => n<=4 ? ['입구','#1f9d55'] : n===5 ? ['출구','#2563eb'] : n<=7 ? ['보조출구','#0e8fa8'] : n<=17 ? ['통제선 관리','#e02424'] : ['무대 앞','#8b2be2'];
   const posOf = (e, name) => { const n = parseInt((e.positions||{})[name], 10); return SPOTS[n] ? n : null; };
 
   function mapHtml(marks){ // marks: [{n, label}]
@@ -326,9 +327,9 @@
           <div class="f"><label>준비물 (쉼표로 구분)</label><input type="text" data-k="items" value="${esc(e.items)}"></div>
           <div class="f"><label>하는 일 / 순서 (한 줄에 하나, 번호는 자동)</label><textarea class="tall" data-k="steps">${esc(e.steps)}</textarea></div>
           <div class="f"><label>주의 (한 줄에 하나, 번호는 자동)</label><textarea data-k="cautions">${esc(e.cautions)}</textarea></div>
-          <div class="f"><label>담당자 · 패트롤 위치 번호 (배치도 1~21번, 비우면 지도 없음)</label><div class="checks">
+          <div class="f"><label>담당자 · 패트롤 위치 번호 (배치도 1~22번)</label><div class="checks">
             ${d.people.map(n => `<label><input type="checkbox" data-who="${esc(n)}" ${(e.assignees||[]).includes(n)?'checked':''}> ${esc(n)}
-              <input class="posin" type="number" min="1" max="21" placeholder="위치" data-pos="${esc(n)}" value="${esc((e.positions||{})[n]||'')}"></label>`).join('')}
+              <input class="posin" type="number" min="1" max="22" placeholder="위치" data-pos="${esc(n)}" value="${esc((e.positions||{})[n]||'')}"></label>`).join('')}
           </div></div>
           <div class="actions" style="justify-content:space-between;align-items:center">
             <span></span>
@@ -394,9 +395,54 @@
 
   // 기존 데이터 보정: 시간 칸이 생기기 전에 만든 업무(시간 없음)는 모두 20:00~22:45로 채움
   function migrate(d){
+    d.migrations = d.migrations || [];
     (d.entries||[]).forEach(e => {
       if(e.time === undefined || e.time === null) e.time = '20:00~22:45';
     });
+    // 제목 끝 번호가 담당자(1명)의 위치 번호와 같으면 함께 바꿔 줌 (예: "통제선 관리 7")
+    const retitle = (e, oldN, newN) => {
+      const m = String(e.title||'').match(/^(.*?)(\d+)\s*$/);
+      if(m && +m[2] === oldN) e.title = m[1] + newN;
+    };
+    // 배치도 21명 → 22명: 입구가 1명 늘어 기존 4번 이상은 한 칸씩 밀림 (같은 자리 유지)
+    if(!d.migrations.includes('map22')){
+      (d.entries||[]).forEach(e => {
+        const ps = e.positions || {};
+        const keys = Object.keys(ps);
+        keys.forEach(k => {
+          const n = parseInt(ps[k],10);
+          if(n >= 4){ ps[k] = n + 1; if(keys.length === 1) retitle(e, n, n + 1); }
+        });
+      });
+      d.migrations.push('map22');
+    }
+    // 정유성 추가: 김세훈의 업무를 그대로 복사, 위치 14번(통제선 관리)
+    if(!d.migrations.includes('add-yuseong')){
+      d.people = d.people || [];
+      if(!d.people.includes('정유성')) d.people.push('정유성');
+      d.slugs = Object.assign({sehoon:'김세훈', kyungjin:'오경진', geon:'고건'}, d.slugs || {}, {yuseong:'정유성'});
+      const copies = [];
+      (d.entries||[]).forEach(e => {
+        const as = e.assignees || [];
+        if(!as.includes('김세훈') || as.includes('정유성')) return;
+        if(as.length === 1){
+          const c = clone(e);
+          c.id = e.id + '-yuseong';
+          c.assignees = ['정유성'];
+          const myN = parseInt((e.positions||{})['김세훈'],10);
+          c.positions = {'정유성': 14};
+          if(myN) retitle(c, myN, 14);
+          copies.push(c);
+        } else {
+          // 여러 명이 함께 쓰는 업무는 담당자로만 추가
+          as.push('정유성');
+          e.positions = e.positions || {};
+          e.positions['정유성'] = 14;
+        }
+      });
+      d.entries = (d.entries||[]).concat(copies);
+      d.migrations.push('add-yuseong');
+    }
     return d;
   }
 
