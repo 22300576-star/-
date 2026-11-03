@@ -61,7 +61,7 @@
   .pos b.num{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;border-radius:50%;font-size:15px;font-weight:800;color:#fff;}
   .map{position:relative;border-radius:12px;overflow:hidden;background:#000;line-height:0;}
   .map img{width:100%;height:auto;display:block;}
-  .mk{position:absolute;width:7.4%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);border:3px solid #fff;
+  .mk{position:absolute;width:6.9%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);border:3px solid #fff;
     box-shadow:0 0 0 3px #ff2d55,0 0 0 9999px rgba(0,0,0,.5);animation:pulse 1.4s ease-in-out infinite;pointer-events:none;}
   .map.multi .mk{box-shadow:0 0 0 3px #ff2d55;}
   .mk-tag{position:absolute;transform:translate(-50%,-100%);background:#fff;color:#191f28;font-size:12px;font-weight:800;line-height:1.2;
@@ -135,9 +135,9 @@
 
   // 관객석 인력 배치도 위의 1~21번 위치 (지도 이미지 기준 %)
   // 관객석 인력 배치도(22명) 위의 1~22번 위치 (지도 이미지 기준 %)
-  const SPOTS = {1:[39.42,57.49],2:[44.54,57.49],3:[39.42,65.32],4:[44.54,65.32],5:[55.61,61.87],6:[25.76,36.52],7:[74.31,36.52],
-    8:[34.82,48.39],9:[42.46,48.39],10:[57.76,48.39],11:[65.33,48.39],12:[19.75,48.96],13:[11.51,51.61],14:[4.31,57.6],
-    15:[80.25,48.96],16:[88.49,51.61],17:[95.69,57.6],18:[34.89,29.26],19:[42.54,29.26],20:[50.11,29.26],21:[57.68,29.26],22:[65.26,29.26]};
+  const SPOTS = {1:[31.83,84.87],2:[36.95,84.87],3:[31.83,91.37],4:[36.95,91.37],5:[47.97,88.45],6:[25.75,29.93],7:[74.34,29.93],
+    8:[34.83,77.13],9:[50.0,77.13],10:[57.67,77.13],11:[65.26,77.13],12:[30.78,42.49],13:[30.78,54.6],14:[30.78,66.7],
+    15:[69.49,42.49],16:[69.49,54.6],17:[69.49,66.7],18:[34.92,23.99],19:[42.5,23.99],20:[50.09,23.99],21:[57.67,23.99],22:[65.26,23.99]};
   const spotRole = n => n<=4 ? ['입구','#1f9d55'] : n===5 ? ['출구','#2563eb'] : n<=7 ? ['보조출구','#0e8fa8'] : n<=17 ? ['통제선 관리','#e02424'] : ['무대 앞','#8b2be2'];
   const posOf = (e, name) => { const n = parseInt((e.positions||{})[name], 10); return SPOTS[n] ? n : null; };
 
