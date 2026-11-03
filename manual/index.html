@@ -394,6 +394,36 @@
   window.addEventListener('beforeunload', ev => { if(dirty){ ev.preventDefault(); ev.returnValue=''; } });
 
   // 기존 데이터 보정: 시간 칸이 생기기 전에 만든 업무(시간 없음)는 모두 20:00~22:45로 채움
+  // 기준 인원(from)의 업무를 그대로 복사해 새 인원(name)을 위치 pos로 추가
+  function addLike(d, from, name, slug, pos){
+    const retitle = (e, oldN, newN) => {
+      const m = String(e.title||'').match(/^(.*?)(\d+)\s*$/);
+      if(m && +m[2] === oldN) e.title = m[1] + newN;
+    };
+    d.people = d.people || [];
+    if(!d.people.includes(name)) d.people.push(name);
+    d.slugs = Object.assign({}, d.slugs || {}, {[slug]: name});
+    const copies = [];
+    (d.entries||[]).forEach(e => {
+      const as = e.assignees || [];
+      if(!as.includes(from) || as.includes(name)) return;
+      if(as.length === 1){
+        const c = clone(e);
+        c.id = e.id + '-' + slug;
+        c.assignees = [name];
+        const fromN = parseInt((e.positions||{})[from],10);
+        c.positions = {[name]: pos};
+        if(fromN) retitle(c, fromN, pos);
+        copies.push(c);
+      } else {
+        as.push(name);
+        e.positions = e.positions || {};
+        e.positions[name] = pos;
+      }
+    });
+    d.entries = (d.entries||[]).concat(copies);
+  }
+
   function migrate(d){
     d.migrations = d.migrations || [];
     (d.entries||[]).forEach(e => {
@@ -453,6 +483,11 @@
         }
       });
       d.migrations.push('yuseong-13');
+    }
+    // 백세현 추가: 김세훈의 업무를 그대로 복사, 위치 15번(통제선 관리)
+    if(!d.migrations.includes('add-sehyun')){
+      addLike(d, '김세훈', '백세현', 'sehyun', 15);
+      d.migrations.push('add-sehyun');
     }
     return d;
   }
