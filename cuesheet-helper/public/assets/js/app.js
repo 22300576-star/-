@@ -19,14 +19,14 @@ const app = $('#app');
 
 // ---------------- 항목(페이지) 정의 ----------------
 const PAGES = [
-  { id: 'time', name: 'Run Time', icon: 'clock', cols: ['item', 'runtime'], rule: '<b>00:00 ~ 00:04 (4초)</b> · 앞 행 끝 = 다음 행 시작 · 무대 <b>11분</b> 이내' },
-  { id: 'stage', name: '무대 · 인원', icon: 'users', cols: ['item', 'runtime', 'stage', 'waiting'], rule: '무대·단상 위 인원과 <b>무대 아래 대기 인원</b>을 숫자로' },
-  { id: 'detail', name: '세부 내용', icon: 'route', cols: ['item', 'runtime', 'detail'], rule: '<b>언제 · 어디서 · 누가(몇 명) · 무엇을 · 어떻게</b>' },
-  { id: 'lyrics', name: '개사', icon: 'mic', cols: ['item', 'runtime', 'lyrics'], rule: 'Run Time에 맞춰 <b>슬라이드 단위</b>로 · 가사 없으면 간주 / X' },
-  { id: 'sound', name: '음향 · FD', icon: 'sliders', cols: ['item', 'runtime', 'sound', 'note'], rule: '<b>장비·개수 · 누가 · 언제</b> · 무대 사이 마이크 이동' },
-  { id: 'screen', name: '화면', icon: 'monitor', cols: ['item', 'runtime', 'screen'], rule: '화면에 띄울 <b>영상 / PPT</b>' },
-  { id: 'light', name: '조명', icon: 'bulb', cols: ['item', 'runtime', 'lStage', 'lTop', 'pin1', 'pin2', 'pin3', 'pin4', 'details'], rule: '무대·상단 <b>구역 / 색상 / 밝기%</b> · 핀은 <b>ON / X</b> · FX는 2개' },
-  { id: 'form', name: '양식', icon: 'clipboard', cols: null, rule: '<b>양식 유지</b> · 빈칸 없이 X / 유지 · 공통 항목 셀 병합' },
+  { id: 'time', name: 'Run Time', icon: 'clock', rule: '<b>00:00 ~ 00:04 (4초)</b> · 앞 행 끝 = 다음 행 시작 · 무대 <b>11분</b> 이내' },
+  { id: 'stage', name: '무대 · 인원', icon: 'users', rule: '무대·단상 위 인원과 <b>무대 아래 대기 인원</b>을 숫자로' },
+  { id: 'detail', name: '세부 내용', icon: 'route', rule: '<b>언제 · 어디서 · 누가(몇 명) · 무엇을 · 어떻게</b>' },
+  { id: 'lyrics', name: '개사', icon: 'mic', rule: 'Run Time에 맞춰 <b>슬라이드 단위</b>로 · 가사 없으면 간주 / X' },
+  { id: 'sound', name: '음향 · FD', icon: 'sliders', rule: '<b>장비·개수 · 누가 · 언제</b> · 무대 사이 마이크 이동' },
+  { id: 'screen', name: '화면', icon: 'monitor', rule: '화면에 띄울 <b>영상 / PPT</b>' },
+  { id: 'light', name: '조명', icon: 'bulb', rule: '무대·상단 <b>구역 / 색상 / 밝기%</b> · 핀은 <b>ON / X</b> · FX는 2개' },
+  { id: 'form', name: '양식', icon: 'clipboard', rule: '<b>양식 유지</b> · 빈칸 없이 X / 유지 · 공통 항목 셀 병합' },
 ];
 const PAGE = Object.fromEntries(PAGES.map((p) => [p.id, p]));
 const KEY_PAGE = { runtime: 'time', stage: 'stage', waiting: 'stage', detail: 'detail', lyrics: 'lyrics', sound: 'sound', screen: 'screen', lStage: 'light', lTop: 'light', pin1: 'light', pin2: 'light', pin3: 'light', pin4: 'light', details: 'light', item: 'form', note: 'form' };
@@ -49,9 +49,11 @@ const state = {
   showDiff: true,
   sheetView: 'revised',
   selectedRow: null,
-  open: new Set(),
-  lastCheck: null,
-  showAll: null,
+  open: new Set(), // 펼친 피드백 카드
+  openSecs: new Set(), // 펼친 항목(Run Time, 조명 …)
+  showAll: new Set(), // '더 보기'를 누른 항목
+  scrollTo: null,
+  fbText: null,
   ai: { enabled: false, items: [], running: false },
   sheets: null,
 };
@@ -102,7 +104,7 @@ function annotateKinds(model) {
   }
 }
 
-// 불러오면 고칠 것이 있는 첫 항목으로 바로 이동 (없으면 수정본 받기)
+// 불러오면 결과 한 화면으로 (항목은 모두 접힌 채)
 function loadGrid(grid, name) {
   const model = parseGrid(grid);
   if (!model.rows.length) throw new Error('큐시트 내용 행을 찾지 못했습니다. 머리글(항목, Run Time …)부터 복사해주세요.');
@@ -120,16 +122,14 @@ function loadGrid(grid, name) {
     open: new Set(),
     selectedRow: null,
     sheetView: 'revised',
-    lastCheck: null,
-    showAll: null,
+    openSecs: new Set(),
+    showAll: new Set(),
+    fbText: null,
   });
   state.ai.items = [];
   run(false);
-  const first = firstTodoPage();
-  location.hash = first ? `#/check/${first.id}` : '#/download';
+  location.hash = '#/result';
   render();
-  const c = state.result.summary.counts;
-  toast(first ? `필수 ${c.error} · 권장 ${c.warn} — 위 탭에서 항목별로 고치세요` : '고칠 것이 없습니다. 바로 내려받으세요.', 4000);
 }
 
 function ensureExcel() {
@@ -311,12 +311,7 @@ function pageStats(id) {
   };
 }
 
-// 필수 → 권장 순으로 고칠 것이 남은 첫 항목
-function firstTodoPage() {
-  return PAGES.find((p) => pageStats(p.id).error) || PAGES.find((p) => pageStats(p.id).warn) || null;
-}
-
-// Run Time 페이지: 무대 시간 막대 (11분 기준선)
+// Run Time 항목 안: 무대 시간 막대 (11분 기준선)
 function timeCardHtml() {
   const { summary, timeline } = state.result;
   const blocks = [];
@@ -329,23 +324,9 @@ function timeCardHtml() {
   const over = summary.totalSec > 660;
   const lim = (660 / total) * 100;
   const segs = blocks.map((b) => `<i class="${b.kind}" style="left:${(b.start / total) * 100}%;width:${((b.end - b.start) / total) * 100}%" title="${esc(b.label)}"></i>`).join('');
-  return `<div class="card timecard">
+  return `<div class="timecard">
     <div class="tc-head"><b>무대 시간</b><span class="${over ? 'over' : ''}">${summary.totalText} / 11분${over ? ` · ${fmtDurationKo(summary.totalSec - 660)} 초과` : ''}</span></div>
     <div class="timebar"><div class="bar-wrap"><div class="track">${segs}</div><span class="limit" style="left:${lim}%"></span></div><div class="labels"><span>00:00</span><span class="lim ${over ? '' : 'end'}" style="left:${lim}%">11분</span></div></div>
-  </div>`;
-}
-
-// 수정본 받기 페이지: 남은 개수 / 제출 가능
-function readyCardHtml() {
-  const { summary } = state.result;
-  const c = summary.counts;
-  const ok = !c.error && !c.warn;
-  const first = firstTodoPage();
-  return `<div class="card ready ${ok ? 'ok' : c.error ? 'error' : 'warn'}">
-    <div><b>${ok ? '제출 가능' : '아직 고칠 것이 있습니다'}</b>
-      <div class="chips">${c.error ? `<span class="pill error">필수 ${c.error}</span>` : ''}${c.warn ? `<span class="pill warn">권장 ${c.warn}</span>` : ''}${summary.pendingCount ? `<span class="pill pending">논의 중 ${summary.pendingCount}</span>` : ''}${ok ? '<span class="pill ok">기준 모두 통과</span>' : ''}${summary.autoCells ? `<span class="pill info">자동 수정 ${summary.autoCells}칸 반영</span>` : ''}</div>
-    </div>
-    ${first ? `<a class="btn primary" href="#/check/${first.id}">${icon('right', 18)} ${first.name} 고치기</a>` : ''}
   </div>`;
 }
 
@@ -386,7 +367,9 @@ function pageHome() {
   });
 }
 
-// ---------------- 페이지: 항목별 ----------------
+// ---------------- 페이지: 결과 (한 화면) ----------------
+// 맨 위: 학부 이름 · 남은 개수 · 무대 시간 · 내려받기 버튼
+// 그 아래: 항목 8개를 접힌 목록으로 — 눌러서 펼치면 피드백(근거·대안), 바로 고치기, 자동 수정 끄기
 function issueHtml(f) {
   const open = state.open.has(f.id);
   const cls = f.cat === 'pending' ? 'pending' : f.level;
@@ -403,80 +386,126 @@ function issueHtml(f) {
   </div>`;
 }
 
-function pageCheck(id) {
-  if (needResult()) return;
-  const p = PAGE[id];
-  if (!p) return location.replace('#/check');
-  state.lastCheck = id;
-  const s = pageStats(id);
-  const S = state.result.revised;
-  const todo = s.fs.filter((f) => f.level === 'error' || f.level === 'warn').sort((a, b) => LEVELS[a.level].order - LEVELS[b.level].order);
-  const autos = s.fs.filter((f) => f.fixId);
-  // 총 무대 시간 안내는 Run Time의 무대 시간 카드가 대신 보여줌
-  const notes = s.fs.filter((f) => f.level === 'info' && !f.fixId && f.id !== 'time:total');
-  const i = PAGES.indexOf(p);
-  const prev = PAGES[i - 1];
-  const next = PAGES[i + 1];
-  const fx =
-    id === 'light'
-      ? `<div class="fix"><div class="t"><b>FX 지정</b><small>학부가 쓰는 효과 2개를 고르면 Details에 함께 적습니다</small></div>${['FX1', 'FX2']
-          .map((k) => `<select data-fx="${k}" class="btn small">${FX_OPTIONS.map((o) => `<option value="${esc(o)}" ${state.fx[k] === o ? 'selected' : ''}>${o ? `${k}: ${o}` : `${k} 지정 안 함`}</option>`).join('')}</select>`)
-          .join('')}</div>`
-      : '';
-  app.innerHTML = `<section class="page">
-    <div class="cat-head">
-      <div><h1>${icon(p.icon, 34)} ${p.name}</h1><div class="rule">${p.rule}</div></div>
-      <div class="chips">${s.error ? `<span class="pill error">필수 ${s.error}</span>` : ''}${s.warn ? `<span class="pill warn">권장 ${s.warn}</span>` : ''}${s.auto ? `<span class="pill info">자동 수정 ${s.auto}</span>` : ''}${!s.error && !s.warn ? '<span class="pill ok">통과</span>' : ''}</div>
-    </div>
-    ${id === 'time' ? timeCardHtml() : ''}
-    ${todo.length ? `<h2 class="row-title">고칠 것 <small>${todo.length}개 · 눌러서 자세히 보고 바로 고치기</small></h2><div class="issues">${todo.slice(0, state.showAll === id ? todo.length : 6).map(issueHtml).join('')}</div>${todo.length > 6 && state.showAll !== id ? `<button class="btn ghost" id="b-more" style="margin-top:10px;width:100%">나머지 ${todo.length - 6}개 더 보기</button>` : ''}` : `<div class="empty-ok"><b>고칠 것이 없습니다</b>${p.name} 기준을 모두 지켰습니다.</div>`}
-    ${fx ? `<h2 class="row-title">FX</h2>${fx}` : ''}
-    ${autos.length ? `<h2 class="row-title">자동으로 고친 것 <small>${state.editMode ? '직접 고친 뒤에는 되돌리기로만 끌 수 있습니다' : '끄면 원래 내용으로 돌아갑니다'}</small></h2><div class="fixes">${autos
-      .map((f) => `<div class="fix"><div class="t">${esc(f.title)}<small>${esc(firstSentence(f.msg))}</small></div><label class="switch"><input type="checkbox" data-fix="${esc(f.fixId)}" ${f.fixEnabled ? 'checked' : ''} ${state.editMode ? 'disabled' : ''}><span>${f.fixEnabled ? '반영' : '끔'}</span></label></div>`)
-      .join('')}</div>` : ''}
-    ${notes.length ? `<h2 class="row-title">참고</h2><div class="fixes">${notes.map((f) => `<div class="fix"><div class="t">${esc(f.title)}<small>${esc(firstSentence(f.msg))}</small></div></div>`).join('')}</div>` : ''}
-    ${p.cols ? `<h2 class="row-title">표에서 고치기 <small>칸을 눌러 바로 수정</small></h2>
-      <div class="sheet-card"><div class="grid-wrap">${sheetHtml(S, { cols: p.cols, editable: true, findings: state.result.findings, originalMap: state.originalMap, showDiff: true })}</div></div>
-      <div class="legend"><span><i class="sw changed"></i>자동 수정</span><span><i class="sw ph"></i>직접 작성</span><span><i class="sw pd"></i>논의 중</span><span><i class="dot error"></i>필수</span><span><i class="dot warn"></i>권장</span></div>` : ''}
-    <div class="pager">
-      ${prev ? `<a href="#/check/${prev.id}"><small>이전</small>${prev.name}</a>` : ''}
-      ${next ? `<a class="next" href="#/check/${next.id}"><small>다음</small>${next.name}</a>` : '<a class="next" href="#/download"><small>다음</small>수정본 받기</a>'}
-    </div>
+const fixHtml = (f) =>
+  `<div class="fix"><div class="t">${esc(f.title)}<small>${esc(firstSentence(f.msg))}</small></div><label class="switch"><input type="checkbox" data-fix="${esc(f.fixId)}" ${f.fixEnabled ? 'checked' : ''} ${state.editMode ? 'disabled' : ''}><span>${f.fixEnabled ? '반영' : '끔'}</span></label></div>`;
+const noteHtml = (f) => `<div class="fix"><div class="t">${esc(f.title)}<small>${esc(firstSentence(f.msg))}</small></div></div>`;
+const fxHtml = () =>
+  `<div class="fix fx"><div class="t"><b>FX 지정</b><small>학부가 쓰는 효과 2개를 고르면 Details에 함께 적습니다</small></div><div class="fx-sel">${['FX1', 'FX2']
+    .map((k) => `<select data-fx="${k}" class="btn small">${FX_OPTIONS.map((o) => `<option value="${esc(o)}" ${state.fx[k] === o ? 'selected' : ''}>${o ? `${k}: ${o}` : `${k} 지정 안 함`}</option>`).join('')}</select>`)
+    .join('')}</div></div>`;
+
+function sectionHtml(p) {
+  const s = pageStats(p.id);
+  const open = state.openSecs.has(p.id);
+  const status = s.error ? 'error' : s.warn ? 'warn' : 'ok';
+  const chips = status === 'ok' ? '<span class="pill ok">통과</span>' : `${s.error ? `<span class="pill error">필수 ${s.error}</span>` : ''}${s.warn ? `<span class="pill warn">권장 ${s.warn}</span>` : ''}`;
+  let body = '';
+  if (open) {
+    const todo = s.fs.filter((f) => f.level === 'error' || f.level === 'warn').sort((a, b) => LEVELS[a.level].order - LEVELS[b.level].order);
+    const autos = s.fs.filter((f) => f.fixId);
+    // 총 무대 시간 안내는 Run Time의 무대 시간 막대가 대신 보여줌
+    const notes = s.fs.filter((f) => f.level === 'info' && !f.fixId && f.id !== 'time:total');
+    const all = state.showAll.has(p.id);
+    body = `<div class="sec-body">
+      <div class="rule">${p.rule}</div>
+      ${p.id === 'time' ? timeCardHtml() : ''}
+      ${todo.length ? `<div class="issues">${todo.slice(0, all ? todo.length : 6).map(issueHtml).join('')}</div>${todo.length > 6 && !all ? `<button class="btn ghost small more" data-more="${p.id}">나머지 ${todo.length - 6}개 더 보기</button>` : ''}` : '<div class="sec-ok">고칠 것이 없습니다.</div>'}
+      ${p.id === 'light' ? `<h3 class="sub-title">FX</h3>${fxHtml()}` : ''}
+      ${autos.length ? `<h3 class="sub-title">자동으로 고친 것 <small>${state.editMode ? '직접 고친 뒤에는 처음 결과로 되돌려야 끌 수 있습니다' : '끄면 원래 내용으로 돌아갑니다'}</small></h3><div class="fixes">${autos.map(fixHtml).join('')}</div>` : ''}
+      ${notes.length ? `<h3 class="sub-title">참고</h3><div class="fixes">${notes.map(noteHtml).join('')}</div>` : ''}
+    </div>`;
+  }
+  return `<section class="sec ${status}${open ? ' open' : ''}" data-sec="${p.id}">
+    <button class="sec-head" type="button" aria-expanded="${open}">${icon(p.icon, 22)}<b>${p.name}</b><span class="chips">${chips}</span>${icon('chevron', 20).replace('class="ic"', 'class="ic chev"')}</button>
+    ${body}
   </section>`;
-  if ($('#b-more'))
-    $('#b-more').addEventListener('click', () => {
-      state.showAll = id;
-      pageCheck(id);
-    });
-  $$('.issue-top', app).forEach((el) =>
-    el.addEventListener('click', () => {
-      const card = el.closest('.issue');
+}
+
+function redrawSec(id) {
+  const el = $(`.sec[data-sec="${id}"]`, app);
+  if (!el) return;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = sectionHtml(PAGE[id]);
+  el.replaceWith(tmp.firstElementChild);
+}
+
+function pageResult() {
+  if (needResult()) return;
+  const { summary } = state.result;
+  const c = summary.counts;
+  const ok = !c.error && !c.warn;
+  const over = summary.totalSec > 660;
+  app.innerHTML = `<section class="page result">
+    <div class="card res-head">
+      <div class="res-info">
+        <h1>${esc(state.name)}</h1>
+        <div class="chips">
+          ${ok ? '<span class="pill ok">제출 가능</span>' : ''}${c.error ? `<span class="pill error">필수 ${c.error}</span>` : ''}${c.warn ? `<span class="pill warn">권장 ${c.warn}</span>` : ''}${summary.pendingCount ? `<span class="pill pending">논의 중 ${summary.pendingCount}</span>` : ''}
+          <span class="pill ${over ? 'error' : ''}">무대 시간 ${summary.totalText}${over ? ` · ${fmtDurationKo(summary.totalSec - 660)} 초과` : ' / 11분'}</span>
+          ${summary.autoCells ? `<span class="pill info">자동 수정 ${summary.autoCells}칸</span>` : ''}
+        </div>
+      </div>
+      <div class="res-actions">
+        <button class="btn primary" id="d-submit">${icon('download', 18)} 수정본 엑셀</button>
+        <button class="btn" id="d-review">${icon('list', 18)} 검토용 엑셀</button>
+        <button class="btn" id="d-copy">${icon('copy', 18)} 구글 시트에 붙여넣기</button>
+        <button class="btn" id="d-msg">${icon('chat', 18)} 피드백 메시지 복사</button>
+        ${state.ai.enabled ? `<a class="btn ghost" href="#/ai">${icon('sparkle', 18)} AI 대안</a>` : ''}
+      </div>
+    </div>
+    <div class="sections">${PAGES.map(sectionHtml).join('')}</div>
+    <div class="res-foot"><a class="btn" href="#/sheet">${icon('grid', 18)} 전체 표에서 직접 고치기 ${icon('right', 18)}</a>${state.firstBase ? '<button class="btn ghost" id="b-undo">처음 결과로 되돌리기</button>' : ''}</div>
+    <details class="more"><summary>큐시트 1행 TFT 피드백 문구 고치기</summary><textarea id="fb-text">${esc(state.fbText ?? summary.feedbackText)}</textarea></details>
+  </section>`;
+  $('#d-submit').addEventListener('click', () => exportFile('submit'));
+  $('#d-review').addEventListener('click', () => exportFile('review'));
+  $('#d-copy').addEventListener('click', copySheet);
+  $('#d-msg').addEventListener('click', () => copyText(reportText(), '피드백 메시지를 복사했습니다.'));
+  $('#fb-text').addEventListener('input', (e) => (state.fbText = e.target.value));
+  if ($('#b-undo')) $('#b-undo').addEventListener('click', undoAll);
+  const root = $('.sections', app);
+  root.addEventListener('click', (e) => {
+    const head = e.target.closest('.sec-head');
+    if (head) {
+      const id = head.closest('.sec').dataset.sec;
+      if (state.openSecs.has(id)) state.openSecs.delete(id);
+      else state.openSecs.add(id);
+      return redrawSec(id);
+    }
+    const top = e.target.closest('.issue-top');
+    if (top) {
+      const card = top.closest('.issue');
       const fid = card.dataset.id;
       if (state.open.has(fid)) state.open.delete(fid);
       else state.open.add(fid);
-      card.classList.toggle('open');
-    }),
-  );
-  $$('[data-save]', app).forEach((b) =>
-    b.addEventListener('click', () => {
-      const ta = b.closest('.editor').querySelector('textarea');
-      saveCell(ta.dataset.editRow, ta.dataset.editKey, ta.value);
-    }),
-  );
-  $$('[data-jump]', app).forEach((a) => a.addEventListener('click', () => (state.jump = a.dataset.jump)));
-  $$('[data-fix]', app).forEach((cb) =>
-    cb.addEventListener('change', () => {
+      return card.classList.toggle('open');
+    }
+    const save = e.target.closest('[data-save]');
+    if (save) {
+      const ta = save.closest('.editor').querySelector('textarea');
+      return saveCell(ta.dataset.editRow, ta.dataset.editKey, ta.value);
+    }
+    const more = e.target.closest('[data-more]');
+    if (more) {
+      state.showAll.add(more.dataset.more);
+      return redrawSec(more.dataset.more);
+    }
+    const jump = e.target.closest('[data-jump]');
+    if (jump) state.jump = jump.dataset.jump;
+  });
+  root.addEventListener('change', (e) => {
+    const cb = e.target.closest('[data-fix]');
+    if (cb) {
       if (cb.checked) state.disabled.delete(cb.dataset.fix);
       else state.disabled.add(cb.dataset.fix);
-      run();
-    }),
-  );
-  $$('[data-fx]', app).forEach((sel) =>
-    sel.addEventListener('change', () => {
+      return run();
+    }
+    const sel = e.target.closest('[data-fx]');
+    if (sel) {
       state.fx[sel.dataset.fx] = sel.value;
       run();
-    }),
-  );
+    }
+  });
 }
 
 // ---------------- 페이지: 전체 표 ----------------
@@ -485,8 +514,9 @@ function pageSheet() {
   const isOrig = state.sheetView === 'original';
   const S = isOrig ? state.original : state.result.revised;
   app.innerHTML = `<section class="page">
+    <a class="back" href="#/result">${icon('left', 18)} 결과</a>
     <h1 class="page-title">전체 표</h1>
-    <p class="page-sub">2차 큐시트 모양 그대로 · 칸을 눌러 바로 고칠 수 있습니다</p>
+    <p class="page-sub">${esc(state.name)} · 2차 큐시트 모양 그대로 · 칸을 눌러 바로 고칠 수 있습니다</p>
     <div class="sheet-tools">
       <div class="seg"><button data-v="revised" class="${isOrig ? '' : 'active'}">수정본</button><button data-v="original" class="${isOrig ? 'active' : ''}">원본</button></div>
       <label class="switch"><input type="checkbox" id="t-diff" ${state.showDiff ? 'checked' : ''}><span>바뀐 칸 표시</span></label>
@@ -566,27 +596,6 @@ function reportText() {
   }
   L.push('', '수정본 엑셀을 함께 보냅니다. 붉은 칸(작성 필요)과 보라 칸(논의 중)을 채워 다시 제출해주세요.');
   return L.join('\n');
-}
-
-function pageDownload() {
-  if (needResult()) return;
-  app.innerHTML = `<section class="page">
-    <h1 class="page-title">수정본 받기</h1>
-    <p class="page-sub">2026 2차 큐시트 양식 그대로 내려받거나 바로 붙여넣으세요</p>
-    ${readyCardHtml()}
-    <div class="dl-grid">
-      <button class="dl main" id="d-submit">${icon('download', 30)}<div><b>수정본 엑셀</b><span>2차 큐시트 양식 그대로 · 제출용</span></div></button>
-      <button class="dl" id="d-review">${icon('list', 30)}<div><b>검토용 엑셀</b><span>바뀐 칸 표시 + 메모 + 피드백 목록</span></div></button>
-      <button class="dl" id="d-copy">${icon('copy', 30)}<div><b>구글 시트에 붙여넣기</b><span>복사 후 새 시트 A1 칸에 붙여넣기</span></div></button>
-      <button class="dl" id="d-msg">${icon('chat', 30)}<div><b>피드백 메시지 복사</b><span>학부 디렉터에게 보낼 카톡 문구</span></div></button>
-    </div>
-    <details class="more"><summary>큐시트 1행 TFT 피드백 문구 고치기</summary><textarea id="fb-text">${esc(state.fbText ?? state.result.summary.feedbackText)}</textarea></details>
-  </section>`;
-  $('#fb-text').addEventListener('input', (e) => (state.fbText = e.target.value));
-  $('#d-submit').addEventListener('click', () => exportFile('submit'));
-  $('#d-review').addEventListener('click', () => exportFile('review'));
-  $('#d-copy').addEventListener('click', copySheet);
-  $('#d-msg').addEventListener('click', () => copyText(reportText(), '피드백 메시지를 복사했습니다.'));
 }
 
 function download(buf, filename) {
@@ -680,6 +689,7 @@ function pageAI() {
   if (needResult()) return;
   const items = state.ai.items;
   app.innerHTML = `<section class="page">
+    <a class="back" href="#/result">${icon('left', 18)} 결과</a>
     <h1 class="page-title">AI 대안 <span class="pill info">베타</span></h1>
     <p class="page-sub">무대마다 문장·조명 대안을 받아 골라서 반영합니다. 큐시트 내용이 Anthropic Claude API로 전송됩니다.</p>
     <button class="btn primary" id="b-ai" ${state.ai.running ? 'disabled' : ''}>${icon('sparkle', 18)} ${state.ai.running ? '받는 중…' : items.length ? '다시 받기' : '대안 받기'}</button>
@@ -751,39 +761,19 @@ async function runAI() {
 
 // ---------------- 라우터 ----------------
 function renderNav(route) {
-  const has = !!state.result;
-  $('#nav-check').hidden = !has;
+  $('#nav-result').hidden = !state.result;
   $$('.nav a').forEach((a) => a.classList.toggle('active', a.dataset.nav === route.top));
-  const sub = $('#subnav');
-  const show = has && ['check', 'sheet', 'download', 'ai'].includes(route.name);
-  sub.hidden = !show;
-  if (!show) return;
-  const links = [];
-  for (const p of PAGES) {
-    const s = pageStats(p.id);
-    const n = s.error + s.warn;
-    links.push(`<a href="#/check/${p.id}" class="${route.name === 'check' && route.id === p.id ? 'active' : ''}">${p.name}${n ? `<span class="n">${n}</span>` : '<span class="n ok">✓</span>'}</a>`);
-  }
-  links.push('<span class="sep"></span>');
-  links.push(`<a href="#/sheet" class="${route.name === 'sheet' ? 'active' : ''}">${icon('grid', 16)} 전체 표</a>`);
-  links.push(`<a href="#/download" class="${route.name === 'download' ? 'active' : ''}">${icon('download', 16)} 수정본 받기</a>`);
-  if (state.ai.enabled) links.push(`<a href="#/ai" class="${route.name === 'ai' ? 'active' : ''}">${icon('sparkle', 16)} AI 대안</a>`);
-  // 맨 앞(고정): 지금 점검 중인 학부(탭) 이름 · 그 옆 항목 탭은 가로로 넘김
-  $('#subnav-inner').innerHTML = `<span class="cur" title="지금 점검 중: ${esc(state.name)}">${icon('clipboard', 16)}<span>${esc(state.name)}</span></span><span class="sep"></span><div class="subnav-scroll">${links.join('')}</div>`;
-  const act = $('#subnav-inner a.active');
-  if (act) act.scrollIntoView({ block: 'nearest', inline: 'center' });
 }
 
 function parseRoute() {
   const h = (location.hash || '#/').replace(/^#\/?/, '');
   const [a, b] = h.split('/');
   if (!a) return { name: 'home', top: 'home' };
-  // #/check(항목 미지정)과 예전 주소 #/report는 이어서 볼 항목으로 보냄
-  if (a === 'report' || (a === 'check' && !b)) return { name: 'checkStart', top: 'check' };
-  if (a === 'check') return { name: 'check', id: b, top: 'check' };
-  if (a === 'sheet') return { name: 'sheet', top: 'check' };
-  if (a === 'download') return { name: 'download', top: 'check' };
-  if (a === 'ai') return { name: 'ai', top: 'check' };
+  if (a === 'result') return { name: 'result', top: 'result' };
+  // 예전 주소(#/check, #/check/항목, #/report, #/download)는 결과 화면으로
+  if (a === 'check' || a === 'report' || a === 'download') return { name: 'legacy', id: a === 'check' ? b : null, top: 'result' };
+  if (a === 'sheet') return { name: 'sheet', top: 'result' };
+  if (a === 'ai') return { name: 'ai', top: 'result' };
   if (a === 'guide') return { name: 'guide', id: b, top: 'guide' };
   if (a === 'example') return { name: 'example', top: 'guide' };
   return { name: 'home', top: 'home' };
@@ -792,9 +782,13 @@ function parseRoute() {
 let lastRouteKey = '';
 function render() {
   const route = parseRoute();
-  if (route.name === 'checkStart' && state.result) {
-    const p = PAGE[state.lastCheck] || firstTodoPage() || PAGES[0];
-    location.replace(`#/check/${p.id}`);
+  if (route.name === 'legacy') {
+    // #/check/조명 처럼 항목을 가리키던 주소면 그 항목을 펼쳐서 보여줌
+    if (PAGE[route.id]) {
+      state.openSecs.add(route.id);
+      state.scrollTo = route.id;
+    }
+    location.replace('#/result');
     return;
   }
   const key = `${route.name}/${route.id || ''}`;
@@ -805,10 +799,8 @@ function render() {
   $('#tip').hidden = true;
   renderNav(route);
   if (route.name === 'home') pageHome();
-  else if (route.name === 'checkStart') needResult();
-  else if (route.name === 'check') pageCheck(route.id);
+  else if (route.name === 'result') pageResult();
   else if (route.name === 'sheet') pageSheet();
-  else if (route.name === 'download') pageDownload();
   else if (route.name === 'ai') pageAI();
   else if (route.name === 'guide') pageGuide(route.id);
   else if (route.name === 'example') pageExample();
@@ -820,6 +812,11 @@ function render() {
       g2.scrollLeft = gs.l;
     }
   } else window.scrollTo(0, 0);
+  if (state.scrollTo) {
+    const sec = $(`.sec[data-sec="${state.scrollTo}"]`, app);
+    state.scrollTo = null;
+    if (sec) sec.scrollIntoView({ block: 'start' });
+  }
   lastRouteKey = key;
 }
 
@@ -883,5 +880,6 @@ initDelegates();
 window.addEventListener('hashchange', render);
 render();
 checkAI().then(() => {
-  if (state.ai.enabled && state.result) renderNav(parseRoute());
+  // AI가 켜져 있으면 결과 화면 맨 위에 'AI 대안' 버튼을 보여줌
+  if (state.ai.enabled && parseRoute().name === 'result') render();
 });
