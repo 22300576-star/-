@@ -1,0 +1,17 @@
+{
+  "name": "cuesheet-helper",
+  "version": "1.0.0",
+  "private": true,
+  "description": "2026 학부합창대회 학부 무대 큐시트 피드백·수정본 작성 도우미",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.8.0"
+  },
+  "devDependencies": {
+    "@netlify/functions": "6.1.1",
+    "exceljs": "4.4.0"
+  }
+}
