@@ -80,7 +80,7 @@ export function sheetHtml(S, o = {}) {
       const lv = level.get(`${row.id}|${k}`);
       const rs = spans[k].get(row.id) > 1 ? ` rowspan="${spans[k].get(row.id)}"` : '';
       const ce = o.editable ? ' contenteditable="true" spellcheck="false"' : '';
-      body += `<td class="${cls.join(' ')}" data-row="${esc(row.id)}" data-key="${k}"${rs}${ce} aria-label="${esc(colName(k))}">${esc(row.c[k] || '')}${lv ? `<i class="mk ${lv}"></i>` : ''}</td>`;
+      body += `<td class="${cls.join(' ')}" data-row="${esc(row.id)}" data-key="${k}"${rs}${ce} aria-label="${esc(colName(k))}">${esc(row.c[k] || '')}${lv ? '<i class="mk error"></i>' : ''}</td>`;
     }
     body += '</tr>';
   }

@@ -115,27 +115,13 @@ export function formRules(ctx) {
 }
 
 // ---------------- 논의 중 표시 ----------------
+// '논의 중'·'미정' 칸은 공시 2차 큐시트처럼 수정본에서 보라색으로만 칠한다.
+// 피드백 항목(수정요망)으로는 세지 않는다.
 export function pendingRules(ctx) {
   const { S } = ctx;
   for (const row of S.rows) {
-    const cols = [];
     for (const k of KEYS) {
-      if (row.c[k] && PENDING_RE.test(row.c[k])) {
-        markPending(row, k);
-        cols.push(colName(k));
-      }
-    }
-    if (cols.length) {
-      addFinding(ctx, {
-        id: `pending:${row.id}`,
-        cat: 'pending',
-        level: 'warn',
-        rowId: row.id,
-        key: KEYS.find((k) => row.marks[k] && row.marks[k].pending),
-        title: `논의 중: ${cols.join(', ')}`,
-        msg: '아직 정해지지 않은 내용입니다. 결과물에는 보라색으로 표시했습니다. 다음 차수 큐시트 전까지 확정해주세요.',
-        why: "TFT 2차 피드백: '논의 중인 사항 표시 필요'",
-      });
+      if (row.c[k] && PENDING_RE.test(row.c[k])) markPending(row, k);
     }
   }
 }

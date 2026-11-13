@@ -70,9 +70,10 @@ export const INTRO_SEC = 2 * 60; // 인트로 영상 2분
 
 export const PLACEHOLDER = '(작성 필요)';
 
+// 화면·엑셀에는 고칠 것을 모두 '수정요망' 하나로 보여준다 (order는 정렬용: 큰 문제 먼저)
 export const LEVELS = {
-  error: { label: '필수 수정', order: 0 },
-  warn: { label: '권장', order: 1 },
+  error: { label: '수정요망', order: 0 },
+  warn: { label: '수정요망', order: 1 },
   info: { label: '참고', order: 2 },
 };
 
@@ -86,5 +87,4 @@ export const CATS = {
   screen: '화면(영상)',
   light: '조명',
   fx: 'FX',
-  pending: '논의 중',
 };

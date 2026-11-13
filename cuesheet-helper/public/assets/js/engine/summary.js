@@ -1,49 +1,34 @@
-// 요약: 점수, 영역별 상태, TFT식 피드백 문구
-import { CATS, LEVELS } from './constants.js';
+// 요약: 남은 수정요망 개수, 총평·수정 방향, TFT식 1행 피드백 문구
+import { LEVELS } from './constants.js';
 import { fmtDurationKo } from './time.js';
-
-const CAT_ORDER = ['time', 'stage', 'detail', 'lyrics', 'sound', 'screen', 'light', 'fx', 'form', 'pending'];
+import { buildOverview } from './overview.js';
 
 export function buildSummary(S, findings, fixes) {
   const counts = { error: 0, warn: 0, info: 0 };
   for (const f of findings) counts[f.level]++;
-  const byCat = {};
-  for (const c of CAT_ORDER) byCat[c] = { error: 0, warn: 0, info: 0, items: [] };
-  for (const f of findings) {
-    const c = byCat[f.cat] || (byCat[f.cat] = { error: 0, warn: 0, info: 0, items: [] });
-    c[f.level]++;
-    c.items.push(f);
-  }
-  const pendingCount = byCat.pending ? byCat.pending.items.length : 0;
+  const todo = counts.error + counts.warn; // 화면에는 모두 '수정요망' 하나로 보여줌
   const autoFixes = [...fixes.values()].filter((f) => f.cells.length);
   const autoCells = autoFixes.reduce((n, f) => n + (f.enabled ? f.cells.length : 0), 0);
+  const totalSec = S.totalSec || 0;
+
+  const overview = buildOverview(S, findings, { totalSec, autoCells });
 
   // TFT 피드백 문구 (큐시트 1행에 들어가는 형식)
-  const lines = [];
-  const pick = (level) => findings.filter((f) => f.level === level && f.cat !== 'pending');
-  const fmtGroup = (arr) => {
-    const groups = new Map();
-    for (const f of arr) {
-      const key = `${CATS[f.cat] || f.cat}: ${f.title}`;
-      groups.set(key, (groups.get(key) || 0) + 1);
-    }
-    return [...groups.entries()].map(([k, n]) => (n > 1 ? `${k} (${n}곳)` : k));
-  };
-  const errs = fmtGroup(pick('error'));
-  const warns = fmtGroup(pick('warn'));
-  if (errs.length) lines.push(`[필수 수정] ${errs.slice(0, 6).join(' / ')}${errs.length > 6 ? ` 외 ${errs.length - 6}건` : ''}`);
-  if (warns.length) lines.push(`[권장] ${warns.slice(0, 6).join(' / ')}${warns.length > 6 ? ` 외 ${warns.length - 6}건` : ''}`);
-  if (pendingCount) lines.push(`[논의 중] ${pendingCount}개 행 — 보라색 칸 확정 필요`);
-  const fixedTitles = findings.filter((f) => f.fixId && f.fixEnabled && f.level !== 'error').map((f) => f.title);
-  if (autoCells) lines.push(`[자동 반영] ${autoCells}칸 수정 — ${[...new Set(fixedTitles)].slice(0, 4).join(', ')}`);
+  const lines = [`[총평] ${overview.lead}`];
+  if (overview.directions.length) {
+    const dirs = overview.directions.map((d) => `${d.item}: ${d.action}`);
+    lines.push(`[수정요망] ${dirs.slice(0, 6).join(' / ')}${dirs.length > 6 ? ` 외 ${dirs.length - 6}가지` : ''}`);
+  }
+  if (overview.autoNote) lines.push(`[자동 반영] ${overview.autoNote}`);
 
   return {
     counts,
-    pendingCount,
+    todo,
     autoCells,
-    totalSec: S.totalSec || 0,
-    totalText: S.totalSec ? fmtDurationKo(S.totalSec) : '-',
+    totalSec,
+    totalText: totalSec ? fmtDurationKo(totalSec) : '-',
     baseMode: S.baseMode,
+    overview,
     feedbackLines: lines,
     feedbackText: lines.join('\n'),
     levels: LEVELS,

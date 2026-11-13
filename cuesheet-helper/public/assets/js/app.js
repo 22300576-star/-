@@ -2,6 +2,7 @@
 import { parseGrid, buildBlocks } from './engine/parser.js';
 import { classifyItem } from './engine/classify.js';
 import { analyze } from './engine/analyze.js';
+import { overviewText, placeText } from './engine/overview.js';
 import { KEYS, LEVELS, colName } from './engine/constants.js';
 import { fmtDurationKo } from './engine/time.js';
 import { readWorkbook, looksLikeCueSheet, gridFromTsv } from './io/importers.js';
@@ -28,9 +29,10 @@ const PAGES = [
   { id: 'form', name: '양식', icon: 'clipboard', rule: '<b>양식 유지</b> · 빈칸 없이 X / 유지 · 공통 항목 셀 병합' },
 ];
 const PAGE = Object.fromEntries(PAGES.map((p) => [p.id, p]));
-const KEY_PAGE = { runtime: 'time', stage: 'stage', waiting: 'stage', detail: 'detail', lyrics: 'lyrics', sound: 'sound', screen: 'screen', lStage: 'light', lTop: 'light', pin1: 'light', pin2: 'light', pin3: 'light', pin4: 'light', details: 'light', item: 'form', note: 'form' };
 const CAT_PAGE = { time: 'time', stage: 'stage', detail: 'detail', lyrics: 'lyrics', sound: 'sound', screen: 'screen', light: 'light', fx: 'light', form: 'form' };
-const pageOf = (f) => (f.cat === 'pending' ? KEY_PAGE[f.key] || 'form' : CAT_PAGE[f.cat] || 'form');
+const pageOf = (f) => CAT_PAGE[f.cat] || 'form';
+// 고칠 것: 화면에는 큰 문제(error)와 나머지(warn)를 나누지 않고 모두 '수정요망'으로 보여줌
+const isTodo = (f) => f.level === 'error' || f.level === 'warn';
 const FX_OPTIONS = ['', '스트로브', '고보(무늬 투사)', '무빙(좌우 교차·원 그리기)', '추가 핀(Pin1~4 외 위치)', '조합 연출(여러 효과를 하나로)'];
 
 // ---------------- 상태 ----------------
@@ -51,6 +53,7 @@ const state = {
   open: new Set(), // 펼친 피드백 카드
   openSecs: new Set(), // 펼친 항목(Run Time, 조명 …)
   showAll: new Set(), // '더 보기'를 누른 항목
+  showAllDirs: false, // 총평의 수정 방향 '더 보기'
   scrollTo: null,
   fbText: null,
   source: null, // 첨부한 큐시트: { kind: 'link', title, tab, url, rows, at } ('paste'는 예전 버전에서 저장된 것)
@@ -128,6 +131,7 @@ function loadGrid(grid, name, source = {}) {
     sheetView: 'revised',
     openSecs: new Set(),
     showAll: new Set(),
+    showAllDirs: false,
     fbText: null,
   });
   state.ai.items = [];
@@ -296,10 +300,8 @@ function pageStats(id) {
   const fs = state.result.findings.filter((f) => pageOf(f) === id);
   return {
     fs,
-    error: fs.filter((f) => f.level === 'error').length,
-    warn: fs.filter((f) => f.level === 'warn').length,
+    todo: fs.filter(isTodo).length,
     auto: fs.filter((f) => f.fixId && f.fixEnabled).length,
-    pending: fs.filter((f) => f.cat === 'pending').length,
   };
 }
 
@@ -357,7 +359,7 @@ function pageHome() {
 // 그 아래: 항목 8개를 접힌 목록으로 — 눌러서 펼치면 피드백(근거·대안), 바로 고치기, 자동 수정 끄기
 function issueHtml(f) {
   const open = state.open.has(f.id);
-  const cls = f.cat === 'pending' ? 'pending' : f.level;
+  const cls = 'error'; // 모두 '수정요망' 한 가지 모양
   const editable = f.rowId && f.key && !(f.rows && f.rows.length > 1);
   const row = editable ? state.result.revised.rows.find((r) => r.id === f.rowId) : null;
   let editor = '';
@@ -382,11 +384,11 @@ const fxHtml = () =>
 function sectionHtml(p) {
   const s = pageStats(p.id);
   const open = state.openSecs.has(p.id);
-  const status = s.error ? 'error' : s.warn ? 'warn' : 'ok';
-  const chips = status === 'ok' ? '<span class="pill ok">통과</span>' : `${s.error ? `<span class="pill error">필수 ${s.error}</span>` : ''}${s.warn ? `<span class="pill warn">권장 ${s.warn}</span>` : ''}`;
+  const status = s.todo ? 'todo' : 'ok';
+  const chips = s.todo ? `<span class="pill error">수정요망 ${s.todo}</span>` : '<span class="pill ok">통과</span>';
   let body = '';
   if (open) {
-    const todo = s.fs.filter((f) => f.level === 'error' || f.level === 'warn').sort((a, b) => LEVELS[a.level].order - LEVELS[b.level].order);
+    const todo = s.fs.filter(isTodo).sort((a, b) => LEVELS[a.level].order - LEVELS[b.level].order);
     const autos = s.fs.filter((f) => f.fixId);
     // 총 무대 시간 안내는 Run Time의 무대 시간 막대가 대신 보여줌
     const notes = s.fs.filter((f) => f.level === 'info' && !f.fixId && f.id !== 'time:total');
@@ -425,11 +427,26 @@ function sourceHtml() {
   return `${what}${extra ? ` <span class="muted">· ${esc(extra)}</span>` : ''}${open}`;
 }
 
+// 총평 · 수정 방향: 항목별 피드백을 한눈에 이해할 수 있게 글로 묶은 것
+function overviewHtml() {
+  const o = state.result.summary.overview;
+  if (!o) return '';
+  const dirs = o.directions;
+  const shown = state.showAllDirs ? dirs : dirs.slice(0, 8);
+  const li = (d) =>
+    `<li class="${d.fixed ? 'fixed' : ''}"><b>${esc(d.item)}</b> ${esc(d.action)}${d.places.length ? ` <span class="muted">${esc(placeText(d).trim())}</span>` : ''}${d.fixed ? ' <span class="pill info">수정본에 반영됨</span>' : ''}</li>`;
+  return `<section class="card overview">
+    <h2>${icon('chat', 20)} 총평</h2>
+    <p class="ov-lead">${esc(o.lead)}</p>
+    ${dirs.length ? `<h3>수정 방향</h3><ol class="ov-dirs">${shown.map(li).join('')}</ol>${dirs.length > shown.length ? `<button class="btn ghost small more" id="b-dirs" type="button">나머지 ${dirs.length - shown.length}가지 더 보기</button>` : ''}` : ''}
+    ${o.autoNote ? `<p class="ov-auto">${esc(o.autoNote)}</p>` : ''}
+  </section>`;
+}
+
 function pageResult() {
   if (needResult()) return;
   const { summary } = state.result;
-  const c = summary.counts;
-  const ok = !c.error && !c.warn;
+  const ok = !summary.todo;
   const over = summary.totalSec > 660;
   app.innerHTML = `<section class="page result">
     <div class="card res-head">
@@ -440,7 +457,7 @@ function pageResult() {
         <div><dt>점검 기준</dt><dd>2026 2차 큐시트 양식 · OT 작성 예시 · 2026 조명 가이드 · 모범 큐시트(공시)<a href="#/guide">자세히</a></dd></div>
       </dl>
       <div class="chips">
-        ${ok ? '<span class="pill ok">제출 가능</span>' : ''}${c.error ? `<span class="pill error">필수 ${c.error}</span>` : ''}${c.warn ? `<span class="pill warn">권장 ${c.warn}</span>` : ''}${summary.pendingCount ? `<span class="pill pending">논의 중 ${summary.pendingCount}</span>` : ''}
+        ${ok ? '<span class="pill ok">제출 가능</span>' : `<span class="pill error">수정요망 ${summary.todo}</span>`}
         <span class="pill ${over ? 'error' : ''}">무대 시간 ${summary.totalText}${over ? ` · ${fmtDurationKo(summary.totalSec - 660)} 초과` : ' / 11분'}</span>
         ${summary.autoCells ? `<span class="pill info">자동 수정 ${summary.autoCells}칸</span>` : ''}
       </div>
@@ -456,6 +473,8 @@ function pageResult() {
         <div class="make-note" id="make-note" role="status" hidden></div>
       </div>
     </div>
+    ${overviewHtml()}
+    <h2 class="sec-title">항목별 피드백 <small>눌러서 펼치면 근거·대안을 보고 바로 고칠 수 있습니다</small></h2>
     <div class="sections">${PAGES.map(sectionHtml).join('')}</div>
     <div class="res-foot"><a class="btn" href="#/sheet">${icon('grid', 18)} 전체 표에서 직접 고치기 ${icon('right', 18)}</a>${state.firstBase ? '<button class="btn ghost" id="b-undo">처음 결과로 되돌리기</button>' : ''}</div>
     <details class="more"><summary>큐시트 1행 TFT 피드백 문구 고치기</summary><textarea id="fb-text">${esc(state.fbText ?? summary.feedbackText)}</textarea></details>
@@ -466,6 +485,11 @@ function pageResult() {
   $('#d-msg').addEventListener('click', () => copyText(reportText(), '피드백 메시지를 복사했습니다.'));
   $('#fb-text').addEventListener('input', (e) => (state.fbText = e.target.value));
   if ($('#b-undo')) $('#b-undo').addEventListener('click', undoAll);
+  if ($('#b-dirs'))
+    $('#b-dirs').addEventListener('click', () => {
+      state.showAllDirs = true;
+      render();
+    });
   const root = $('.sections', app);
   root.addEventListener('click', (e) => {
     const head = e.target.closest('.sec-head');
@@ -528,7 +552,7 @@ function pageSheet() {
       ${state.firstBase ? `<button class="btn small" id="b-undo">처음 결과로</button>` : ''}
     </div>
     <div class="sheet-card"><div class="grid-wrap" id="grid">${sheetHtml(S, { editable: !isOrig, findings: isOrig ? [] : state.result.findings, originalMap: isOrig ? null : state.originalMap, showDiff: state.showDiff && !isOrig, selected: state.selectedRow })}</div></div>
-    <div class="legend"><span><i class="sw changed"></i>자동 수정</span><span><i class="sw ph"></i>직접 작성</span><span><i class="sw pd"></i>논의 중</span><span><i class="dot error"></i>필수</span><span><i class="dot warn"></i>권장</span><span>행 번호를 누르면 행 선택</span></div>
+    <div class="legend"><span><i class="sw changed"></i>자동 수정</span><span><i class="sw ph"></i>직접 작성</span><span><i class="sw pd"></i>논의 중</span><span><i class="dot error"></i>수정요망</span><span>행 번호를 누르면 행 선택</span></div>
   </section>`;
   $$('.seg button', app).forEach((b) =>
     b.addEventListener('click', () => {
@@ -588,16 +612,19 @@ function delRow() {
 }
 
 // ---------------- 페이지: 내려받기 ----------------
+// 학부 디렉터에게 보낼 메시지: 총평 · 수정 방향 → 항목별 피드백
 function reportText() {
   const { summary, findings } = state.result;
-  const L = [`[2026 학부합창대회 큐시트 피드백] ${state.name}`, `필수 수정 ${summary.counts.error} · 권장 ${summary.counts.warn} · 무대 시간 ${summary.totalText}/11분`];
+  const L = [`[2026 학부합창대회 큐시트 피드백] ${state.name}`, `${summary.todo ? `수정요망 ${summary.todo}건` : '제출 가능'} · 무대 시간 ${summary.totalText}/11분`, '', '■ 총평', overviewText(summary.overview)];
+  const items = [];
   for (const p of PAGES) {
-    const items = findings.filter((f) => pageOf(f) === p.id && (f.level === 'error' || f.level === 'warn'));
-    if (!items.length) continue;
-    L.push('', `■ ${p.name}`);
-    items.forEach((f) => L.push(`- ${f.level === 'error' ? '[필수] ' : ''}${f.title}${f.rowId ? ` (${locText(f)})` : ''}${f.suggestion ? `\n  → ${f.suggestion}` : ''}`));
+    const fs = findings.filter((f) => pageOf(f) === p.id && isTodo(f));
+    if (!fs.length) continue;
+    items.push('', `[${p.name}]`);
+    fs.forEach((f) => items.push(`- ${f.title}${f.rowId ? ` (${locText(f)})` : ''}${f.suggestion ? `\n  → ${f.suggestion}` : ''}`));
   }
-  L.push('', '수정본 엑셀을 함께 보냅니다. 붉은 칸(작성 필요)과 보라 칸(논의 중)을 채워 다시 제출해주세요.');
+  if (items.length) L.push('', '■ 항목별 피드백 (수정요망)', ...items);
+  L.push('', "수정본(새 시트)을 함께 보냅니다. 붉은 '(작성 필요)' 칸을 채워 다시 제출해 주세요.");
   return L.join('\n');
 }
 
@@ -618,6 +645,7 @@ async function exportFile(mode, { quiet = false } = {}) {
       feedbackText: state.fbText ?? state.result.summary.feedbackText,
       findings: state.result.findings,
       title: safeSheetName(state.name),
+      overviewText: mode === 'review' ? overviewText(state.result.summary.overview, { maxDirections: 100 }) : '',
     });
     const base = state.name.replace(/[\\/:*?"<>|]/g, ' ').trim() || '큐시트';
     const file = `${base}_2026큐시트_${mode === 'review' ? '검토용' : '수정본'}.xlsx`;

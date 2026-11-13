@@ -63,7 +63,7 @@ function verticalRuns(S, key) {
 /**
  * @param {*} ExcelJS ExcelJS 라이브러리
  * @param {object} S analyze().revised
- * @param {object} opts { mode: 'review'|'submit', feedbackText, findings, title }
+ * @param {object} opts { mode: 'review'|'submit', feedbackText, findings, title, overviewText(검토용 '총평' 시트) }
  */
 export async function buildWorkbook(ExcelJS, S, opts = {}) {
   const mode = opts.mode || 'review';
@@ -213,6 +213,19 @@ export async function buildWorkbook(ExcelJS, S, opts = {}) {
     ws.getRow(5 + idx).height = pxToPt(Math.min(heights.get(row.id), 409 / 0.75));
   });
 
+  // ---------- 검토용: 총평 시트 (총평 · 수정 방향 · 자동 반영) ----------
+  if (mode === 'review' && opts.overviewText) {
+    const ov = wb.addWorksheet('총평');
+    ov.getColumn(1).width = 140;
+    const lines = String(opts.overviewText).split('\n');
+    ov.addRow(['총평']).font = font({ bold: true, size: 12 });
+    lines.forEach((t) => {
+      const r = ov.addRow([t]);
+      r.alignment = { vertical: 'top', wrapText: true };
+      r.font = font(t === '수정 방향' ? { bold: true, size: 11 } : {});
+    });
+  }
+
   // ---------- 검토용: 피드백 목록 시트 ----------
   if (mode === 'review' && opts.findings) {
     const fs = wb.addWorksheet('피드백 목록', { views: [{ state: 'frozen', ySplit: 1 }] });
@@ -240,7 +253,7 @@ export async function buildWorkbook(ExcelJS, S, opts = {}) {
         fix: f.fixId ? (f.fixEnabled ? '반영함' : '반영 안 함') : '-',
       });
       r.alignment = { vertical: 'top', wrapText: true };
-      r.font = font({ color: f.level === 'error' ? { argb: 'FFC00000' } : undefined });
+      r.font = font({ color: f.level === 'error' || f.level === 'warn' ? { argb: 'FFC00000' } : undefined });
     }
   }
   return wb;

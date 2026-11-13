@@ -8,6 +8,7 @@ import { josa } from '../public/assets/js/engine/josa.js';
 import { buildWorkbook } from '../public/assets/js/io/export-xlsx.js';
 import { gridFromTsv } from '../public/assets/js/io/importers.js';
 import { SAMPLE_DRAFT, SAMPLE_MODEL } from '../public/assets/js/samples.js';
+import { overviewText } from '../public/assets/js/engine/overview.js';
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const titles = (res) => res.findings.map((f) => f.title);
@@ -99,6 +100,34 @@ test('2차 큐시트 양식으로 엑셀을 만든다', async () => {
   assert.equal(ws.getCell('B2').font.name, 'Arial');
   assert.ok(ws.views[0].state === 'frozen' && ws.views[0].ySplit === 4);
   assert.ok(wb.getWorksheet('피드백 목록'));
+  assert.equal(wb.getWorksheet('피드백 목록').getCell('A2').value, '수정요망');
   const buf = await wb.xlsx.writeBuffer();
   assert.ok(buf.byteLength > 5000);
+  const wb2 = await buildWorkbook(ExcelJS, res.revised, { mode: 'review', findings: res.findings, title: '예시학부', overviewText: overviewText(res.summary.overview) });
+  assert.match(String(wb2.getWorksheet('총평').getCell('A2').value), /11분 40초/);
+});
+
+test('총평과 수정 방향을 만든다 (수정요망 하나로, 논의 중은 피드백에서 뺌)', () => {
+  const res = analyze(parseGrid(clone(SAMPLE_DRAFT)));
+  const { summary } = res;
+  const o = summary.overview;
+  assert.ok(!res.findings.some((f) => f.cat === 'pending'), '논의 중 피드백이 남아 있음');
+  assert.ok(res.revised.rows.some((r) => Object.values(r.marks || {}).some((m) => m && m.pending)), '논의 중 칸의 보라색 표시는 남아야 함');
+  assert.equal(summary.todo, summary.counts.error + summary.counts.warn);
+  assert.match(o.lead, /11분 40초/);
+  assert.match(o.lead, /40초 넘었/);
+  assert.match(o.directions[0].action, /40초 줄여 11분 안으로/);
+  const firstFixed = o.directions.findIndex((d) => d.fixed);
+  assert.ok(firstFixed > 0 && o.directions.slice(firstFixed).every((d) => d.fixed), '수정본에 반영된 것은 맨 뒤');
+  assert.match(summary.feedbackText, /^\[총평\] /);
+  assert.match(summary.feedbackText, /\n\[수정요망\] /);
+  assert.doesNotMatch(summary.feedbackText, /필수|권장|논의 중/);
+  assert.match(overviewText(o), /수정 방향\n1\. Run Time — /);
+});
+
+test('고칠 것이 없으면 총평이 제출 가능으로 끝난다', () => {
+  const o = analyze(parseGrid(clone(SAMPLE_MODEL))).summary.overview;
+  assert.ok(o.ok);
+  assert.equal(o.directions.length, 0);
+  assert.match(o.lead, /그대로 제출하면 됩니다/);
 });
