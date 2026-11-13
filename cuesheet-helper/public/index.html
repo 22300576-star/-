@@ -3,305 +3,36 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>큐시트 피드백 도우미 · 2026 학부합창대회</title>
-<meta name="description" content="2026 학부합창대회 학부 무대 큐시트를 2차 큐시트 양식·조명 가이드 기준으로 점검하고, 피드백을 반영한 수정본을 대신 작성해 주는 도구">
+<title>HANFLIX 큐시트 체크 · 2026 학부합창대회</title>
+<meta name="description" content="2026 학부합창대회 학부 무대 큐시트를 넣으면 피드백과 2차 큐시트 양식 수정본을 돌려주는 도구">
 <meta name="robots" content="noindex">
+<meta name="theme-color" content="#000000">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="stylesheet" href="assets/css/app.css">
 </head>
 <body>
 <header class="topbar">
   <div class="topbar-inner">
-    <a class="brand" href="#check" data-nav="check">
-      <span class="brand-mark" aria-hidden="true">♪</span>
-      <span class="brand-text"><b>큐시트 피드백 도우미</b><small>2026 학부합창대회 TFT</small></span>
+    <a class="brand" href="#/" aria-label="HANFLIX 큐시트 체크 홈">
+      <svg class="wm" viewBox="0 -12 338 124" aria-hidden="true"><g fill="#0060d1" fill-rule="evenodd"><path transform="translate(0 50) scale(1 1.17) translate(0 -50)" d="M0 0h14v42h22V0h14v100H36V56H14v44H0z"/><path transform="translate(57 50) scale(1 1.08) translate(0 -50)" d="M0 100L18 0h16l18 100H38l-3.5-20h-17L14 100zM20 66h12L26 26z"/><path transform="translate(116 50) scale(1 1.03) translate(0 -50)" d="M0 100V0h14l22 62V0h14v100H36L14 38v62z"/><path transform="translate(173 50) scale(1 1) translate(0 -50)" d="M0 100V0h40v14H14v28h20v14H14v44z"/><path transform="translate(220 50) scale(1 1.03) translate(0 -50)" d="M0 0h14v86h24v14H0z"/><path transform="translate(265 50) scale(1 1.08) translate(0 -50)" d="M0 0h14v100H0z"/><path transform="translate(286 50) scale(1 1.17) translate(0 -50)" d="M0 0h15l11 36L37 0h15L34 50l18 50H37L26 64 15 100H0l18-50z"/></g></svg>
+      <small>큐시트 체크</small>
     </a>
     <nav class="nav" aria-label="주요 메뉴">
-      <a href="#check" data-nav="check" class="active">피드백 받기</a>
-      <a href="#guide" data-nav="guide">작성 가이드</a>
-      <a href="#example" data-nav="example">모범 예시</a>
+      <a href="#/" data-nav="home">홈</a>
+      <a href="#/report" data-nav="report" id="nav-report" hidden>결과</a>
+      <a href="#/guide" data-nav="guide">가이드</a>
     </nav>
   </div>
+  <div class="subnav" id="subnav" hidden><div class="subnav-inner" id="subnav-inner"></div></div>
 </header>
 
-<main>
-<!-- ============ 피드백 받기 ============ -->
-<section id="view-check" class="view">
-  <div class="hero">
-    <div class="hero-text">
-      <h1>학부 무대 큐시트를 넣으면<br><em>피드백</em>과 <em>수정본</em>을 바로 드립니다</h1>
-      <p>2026 2차 큐시트 양식, OT 무대 큐시트 작성 예시, 2026 조명 큐시트 작성 가이드를 기준으로 Run Time·무대·세부 내용·개사·음향/FD·화면·조명을 한 칸씩 점검합니다. 고칠 수 있는 부분은 직접 고쳐서 2차 큐시트 양식 그대로 엑셀로 돌려드립니다.</p>
-      <ol class="steps">
-        <li><b>1</b> 큐시트 불러오기</li>
-        <li><b>2</b> 피드백·대안 확인</li>
-        <li><b>3</b> 수정본 내려받기</li>
-      </ol>
-    </div>
-  </div>
+<main id="app" aria-live="polite"></main>
 
-  <div class="card input-card" id="input-card">
-    <div class="tabs" role="tablist">
-      <button role="tab" class="tab active" data-tab="link">구글 시트 링크</button>
-      <button role="tab" class="tab" data-tab="file">엑셀 파일</button>
-      <button role="tab" class="tab" data-tab="paste">복사해서 붙여넣기</button>
-      <button role="tab" class="tab" data-tab="sample">예시로 체험 · 새로 작성</button>
-    </div>
-    <div class="tab-panel active" data-panel="link">
-      <label class="field-label" for="sheet-url">구글 시트 주소</label>
-      <div class="row-input">
-        <input id="sheet-url" type="url" placeholder="https://docs.google.com/spreadsheets/d/…/edit#gid=…" autocomplete="off">
-        <button class="btn primary" id="btn-load-link">불러오기</button>
-      </div>
-      <p class="hint">공유 설정이 <b>'링크가 있는 모든 사용자: 뷰어'</b>여야 불러올 수 있습니다. 주소에 <code>#gid=</code>가 있으면 그 탭을 먼저 고릅니다. 시트 내용은 저장하지 않습니다.</p>
-    </div>
-    <div class="tab-panel" data-panel="file">
-      <label class="dropzone" id="dropzone">
-        <input type="file" id="file-input" accept=".xlsx" hidden>
-        <span class="dz-icon" aria-hidden="true">⬆</span>
-        <span><b>.xlsx 파일을 끌어다 놓거나 클릭해서 선택</b><br><small>구글 시트: 파일 → 다운로드 → Microsoft Excel(.xlsx)</small></span>
-      </label>
-    </div>
-    <div class="tab-panel" data-panel="paste">
-      <div class="paste-box" id="paste-box" contenteditable="true" spellcheck="false" aria-label="여기를 클릭하고 붙여넣기"></div>
-      <p class="hint">구글 시트에서 <b>1행 '항목' 머리글부터 마지막 행까지</b> 선택해 복사(Ctrl/⌘+C)한 뒤, 위 칸을 클릭하고 붙여넣기(Ctrl/⌘+V) 하세요. 셀 병합까지 함께 읽습니다.</p>
-    </div>
-    <div class="tab-panel" data-panel="sample">
-      <div class="sample-grid">
-        <button class="sample-btn" id="btn-sample-draft"><b>수정 전 예시로 체험</b><span>가상 학부의 큐시트로 피드백과 자동 수정 결과를 확인합니다.</span></button>
-        <button class="sample-btn" id="btn-sample-model"><b>모범 예시 점검</b><span>작성 기준을 모두 지킨 큐시트는 어떻게 보이는지 확인합니다.</span></button>
-        <button class="sample-btn" id="btn-blank"><b>빈 양식으로 새로 작성</b><span>2차 큐시트 양식에서 바로 작성하고, 쓰는 동안 실시간으로 점검합니다.</span></button>
-      </div>
-    </div>
-    <div class="sheet-picker" id="sheet-picker" hidden>
-      <label class="field-label" for="sheet-select">점검할 탭(학부)을 고르세요</label>
-      <div class="row-input">
-        <select id="sheet-select"></select>
-        <button class="btn primary" id="btn-pick-sheet">이 탭 점검하기</button>
-      </div>
-    </div>
-    <div class="status" id="load-status" role="status" aria-live="polite"></div>
-  </div>
-
-  <!-- 결과 -->
-  <div id="result" hidden>
-    <div class="card summary" id="summary"></div>
-
-    <div class="workspace">
-      <aside class="feedback-pane card" id="feedback-pane">
-        <div class="pane-head">
-          <h2>피드백</h2>
-          <div class="filters" id="filters"></div>
-        </div>
-        <div class="fx-box" id="fx-box">
-          <div class="fx-title">FX 설정 <small>(학부가 지정한 효과 2개)</small></div>
-          <div class="fx-row"><label>FX1 <select data-fx="FX1"></select></label><label>FX2 <select data-fx="FX2"></select></label></div>
-        </div>
-        <div class="feedback-list" id="feedback-list"></div>
-        <div class="ai-box" id="ai-box">
-          <button class="btn ghost wide" id="btn-ai">✦ AI로 문장·조명 대안 받기 <small>(베타)</small></button>
-          <div class="ai-status" id="ai-status"></div>
-        </div>
-      </aside>
-
-      <div class="sheet-pane card">
-        <div class="sheet-toolbar">
-          <div class="seg" role="group" aria-label="보기">
-            <button class="seg-btn active" data-view="revised">수정본</button>
-            <button class="seg-btn" data-view="original">원본</button>
-          </div>
-          <label class="switch"><input type="checkbox" id="toggle-diff" checked><span>바뀐 칸 표시</span></label>
-          <label class="switch"><input type="checkbox" id="toggle-edit"><span>직접 수정</span></label>
-          <span class="toolbar-gap"></span>
-          <button class="btn small" id="btn-add-row" hidden>＋ 아래에 행 추가</button>
-          <button class="btn small" id="btn-del-row" hidden>－ 행 삭제</button>
-          <button class="btn small" id="btn-undo" hidden>↺ 처음 결과로</button>
-        </div>
-        <div class="legend">
-          <span><i class="sw sw-changed"></i>자동 수정</span>
-          <span><i class="sw sw-placeholder"></i>직접 작성 필요</span>
-          <span><i class="sw sw-pending"></i>논의 중</span>
-          <span><i class="sw sw-video"></i>영상</span>
-          <span><i class="dot dot-error"></i>필수 수정</span>
-          <span><i class="dot dot-warn"></i>권장</span>
-        </div>
-        <div class="grid-wrap" id="grid-wrap"></div>
-        <p class="hint grid-hint" id="grid-hint">칸에 마우스를 올리면 원래 내용과 고친 이유가 보입니다. '직접 수정'을 켜면 칸을 눌러 바로 고칠 수 있고, 고친 내용으로 다시 점검합니다.</p>
-      </div>
-    </div>
-
-    <div class="card export" id="export">
-      <h2>수정본 내려받기 · 보내기</h2>
-      <div class="export-grid">
-        <button class="export-btn" id="btn-xlsx-review"><b>검토용 엑셀</b><span>2차 큐시트 양식 + 바뀐 칸 표시·메모 + '피드백 목록' 시트</span></button>
-        <button class="export-btn" id="btn-xlsx-submit"><b>제출용 엑셀</b><span>2차 큐시트 양식 그대로, 표시 없이 깨끗한 수정본</span></button>
-        <button class="export-btn" id="btn-copy-sheet"><b>구글 시트에 붙여넣기</b><span>셀 병합·색까지 복사 → 시트 A1 칸에 붙여넣기</span></button>
-        <button class="export-btn" id="btn-copy-report"><b>피드백 문구 복사</b><span>학부 디렉터에게 보낼 피드백 메시지(카톡용)</span></button>
-      </div>
-      <label class="field-label" for="feedback-text">큐시트 1행에 들어갈 TFT 피드백 문구 <small>(고쳐 쓸 수 있습니다)</small></label>
-      <textarea id="feedback-text" rows="4"></textarea>
-    </div>
-  </div>
-</section>
-
-<!-- ============ 작성 가이드 ============ -->
-<section id="view-guide" class="view" hidden>
-  <div class="doc">
-    <h1>2026 학부 무대 큐시트 작성 가이드</h1>
-    <p class="lead">2026 2차 큐시트 양식(4행 붉은 안내), 학부 디렉터 OT '무대 큐시트 작성 예시', 2026 조명 큐시트 작성 가이드, 2025·2026 큐시트 피드백을 한곳에 정리했습니다. 도우미의 모든 점검 항목은 아래 기준에서 나옵니다.</p>
-
-    <nav class="toc">
-      <a href="#g-basic">1. 기본 규칙</a><a href="#g-cols">2. 열별 작성법</a><a href="#g-time">3. Run Time</a><a href="#g-light">4. 조명(2026 기준)</a><a href="#g-sound">5. 음향 / FD</a><a href="#g-check">6. 제출 전 체크리스트</a>
-    </nav>
-
-    <h2 id="g-basic">1. 기본 규칙</h2>
-    <ul class="rules">
-      <li><b>양식을 그대로 유지</b>합니다. 열을 추가하거나(예: 원곡 가사, 참고 이미지) 조명 칸을 합치지 말고, 필요한 내용은 <b>비고</b>에 적습니다.</li>
-      <li><b>붉은색 안내가 있는 칸(Run Time~Details)은 빈칸 없이</b> 채웁니다. 작성할 내용이 없으면 <b>X</b>, 앞 행과 같은 조명이 이어지면 <b>유지</b>로 적습니다.</li>
-      <li>같은 무대 안에서 <b>공통된 항목(항목·무대·대기 인원·음향·화면)은 셀 병합</b>합니다. 조명은 행마다 따로 적습니다.</li>
-      <li>아직 정하지 못한 부분은 <b>'논의 중'</b>이라고 적어 표시하고, 다음 차수까지 확정합니다.</li>
-      <li>첫 두 행은 고정입니다: <b>학부 소개 및 투표(사회자)</b> → <b>학부 인트로 영상</b>(TFT 제작). 그다음부터 학부 순서를 적습니다.</li>
-    </ul>
-
-    <h2 id="g-cols">2. 열별 작성법</h2>
-    <div class="table-scroll">
-    <table class="guide-table">
-      <thead><tr><th>열</th><th>이렇게 쓰세요</th><th>좋은 예</th><th>자주 하는 실수</th></tr></thead>
-      <tbody>
-        <tr><th>항목</th><td>곡 제목 또는 영상 이름. 무대는 번호를 차례로 붙입니다.</td><td>무대 1<br>(곡 제목 - 가수)<br>자체영상 1</td><td>항목 칸에 시간을 적음 · 무대 번호가 1, 2, 4처럼 빠짐</td></tr>
-        <tr><th>Run Time</th><td>시작 ~ 끝과 단시(n초)를 모두 적습니다. 가사·동작·조명이 바뀌는 지점마다 행을 나눕니다.</td><td>00:00 ~ 00:04 (4초)</td><td>'2분 30초'처럼 길이만 · 한 곡을 한 행에 · 0:17 다음 0:18로 1초 끊김</td></tr>
-        <tr><th>무대</th><td>무대와 단상 위에 누가 몇 명 있는지.</td><td>댄서 16명 무대 / 콰이어 24명 단상</td><td>'전체 안무'처럼 위치·인원 없이 씀</td></tr>
-        <tr><th>대기 인원</th><td>채플 무대 아래에서 대기하는 인원 수. 없으면 X.</td><td>댄서 12명 · X</td><td>빈칸 · '출연자 대기'처럼 숫자 없이 씀</td></tr>
-        <tr><th>세부 내용</th><td>언제·어디서·누가(몇 명)·무엇을·어떻게. 주인공 동선, 대형 변화, 소품 활용.</td><td>후렴 시작에 맞춰 가운데 4명이 앞으로 나와 V자 대형, 나머지는 2줄로 앉음</td><td>'단체 안무', '합창.'처럼 한 단어로 끝냄 · 빈칸</td></tr>
-        <tr><th>개사 내용</th><td>각 슬라이드에 들어갈 가사를 Run Time에 맞춰 나눠 적습니다. 가사가 없으면 '간주' 또는 X.</td><td>함께 걷는 이 길 위에<br>우리의 꿈을 그려요</td><td>한 행에 가사 수십 줄 · 빈칸</td></tr>
-        <tr><th>음향 / FD</th><td>어떤 장비를 몇 개, 누가, 언제, 어떻게. 영상 중 마이크 재배치도 적습니다.</td><td>합창 마이크 4개 / 무선 마이크 2개(주인공, 솔로)</td><td>'합창 마이크'처럼 개수 없음 · 무선 마이크를 누가 쓰는지 없음</td></tr>
-        <tr><th>화면(영상)</th><td>화면에 띄울 영상 / PPT.</td><td>가사 영상 1 · 영상 · PPT</td><td>빈칸</td></tr>
-        <tr><th>조명</th><td>무대·상단은 구역 / 색상 / 밝기, Pin은 ON·X, Details는 언제·누가·어떻게. (4장 참고)</td><td>중앙 / 흰색 / 100%</td><td>Pin에 색 지정 · 밝기 % 없음 · 조명 칸을 하나로 병합</td></tr>
-        <tr><th>비고</th><td>참고 링크, 소품, 확인할 점.</td><td>소품 3개 (무대 뒤 중앙 보관)</td><td>—</td></tr>
-      </tbody>
-    </table>
-    </div>
-
-    <h3>OT 작성 예시</h3>
-    <div class="table-scroll">
-    <table class="mini-sheet">
-      <thead><tr><th>항목</th><th>Run Time</th><th>무대</th><th>대기 인원</th><th>세부 내용</th><th>개사 내용</th><th>음향 / FD</th><th>화면</th></tr></thead>
-      <tbody>
-        <tr><td rowspan="4">무대 1<br>(곡 제목)</td><td>00:00 ~ 00:04 (4초)</td><td rowspan="4">댄서는 무대 / 콰이어는 단상</td><td rowspan="4">X</td><td>댄서들은 큰 W 동선으로 서있음<br>콰이어는 뒤 단상에서 노래부름</td><td>간주</td><td rowspan="4">합창 마이크 4개</td><td rowspan="4">영상</td></tr>
-        <tr><td>00:04 ~ 00:09 (4초)</td><td>댄서들은 큰 W 동선으로 서있음<br>콰이어는 뒤 단상에서 노래부름</td><td>(개사 가사 1)</td></tr>
-        <tr><td>00:09 ~ 00:18 (9초)</td><td>각각 왼, 오 한명 제외 댄서들은 큰 W 동선으로 숙이고 있음</td><td>(개사 가사 2)</td></tr>
-        <tr><td>00:18 ~ 00:21 (3초)</td><td>댄서들은 큰 W 동선으로 앉아있음<br>콰이어는 뒤 단상에서 노래부름</td><td>(개사 가사 3)</td></tr>
-      </tbody>
-    </table>
-    </div>
-
-    <h2 id="g-time">3. Run Time 규칙</h2>
-    <ul class="rules">
-      <li>표기: <code>00:00 ~ 00:04 (4초)</code> — 시작, 끝, 단시를 모두 적습니다.</li>
-      <li>기준: <b>학부 영상의 재생 시간</b>입니다. 인트로 영상(TFT 제작)이 끝나고 학부 순서가 시작되는 순간을 <b>00:00</b>으로 잡으면 조명·음향팀이 영상 시간과 그대로 맞춰 볼 수 있습니다.</li>
-      <li>앞 행의 끝 시각과 다음 행의 시작 시각이 <b>같아야</b> 합니다(빈 구간·겹침 없음). 무대마다 00:00으로 다시 시작하지 말고 전체를 이어서 적습니다.</li>
-      <li>총 13분 = 인트로 영상 2분 + <b>무대 11분</b>. 무대 시간 11분 초과는 절대 안 됩니다.</li>
-      <li>조명·Details에 적는 시간도 <b>Run Time과 같은 기준</b>이어야 합니다. 곡 기준(노래 시작 = 0:00)이나 다른 영상 버전의 시간으로 적으면 큐가 어긋납니다.</li>
-    </ul>
-
-    <h2 id="g-light">4. 조명 — 2026 기준</h2>
-    <p class="note">2025년 큐시트의 조명(House / Stage / Pin1·Pin2 O/X)은 2026년과 다릅니다. 2026 큐시트는 아래 기준으로만 작성합니다.</p>
-    <div class="light-grid">
-      <figure class="stage-fig">
-        <svg viewBox="0 0 360 250" role="img" aria-label="무대 조명 구역과 핀 조명 위치">
-          <rect x="20" y="10" width="320" height="34" rx="4" fill="#24406e"/><text x="180" y="32" text-anchor="middle" fill="#fff" font-size="13">LED 스크린</text>
-          <rect x="20" y="48" width="320" height="30" fill="#9aa3b2"/><text x="180" y="68" text-anchor="middle" fill="#fff" font-size="13">단상 (콰이어)</text>
-          <rect x="20" y="82" width="320" height="140" fill="#f3d5b5"/>
-          <line x1="126" y1="82" x2="126" y2="222" stroke="#c99a6b" stroke-dasharray="4 4"/><line x1="234" y1="82" x2="234" y2="222" stroke="#c99a6b" stroke-dasharray="4 4"/>
-          <text x="73" y="214" text-anchor="middle" font-size="12" fill="#7a5230">왼쪽</text><text x="180" y="214" text-anchor="middle" font-size="12" fill="#7a5230">중앙</text><text x="287" y="214" text-anchor="middle" font-size="12" fill="#7a5230">오른쪽</text>
-          <g font-size="11" text-anchor="middle" fill="#fff" font-weight="700">
-            <circle cx="70" cy="140" r="22" fill="#e04b3c"/><text x="70" y="144">Pin1</text>
-            <circle cx="180" cy="104" r="20" fill="#e04b3c"/><text x="180" y="108">Pin2</text>
-            <circle cx="180" cy="172" r="22" fill="#e04b3c"/><text x="180" y="176">Pin3</text>
-            <circle cx="290" cy="140" r="22" fill="#e04b3c"/><text x="290" y="144">Pin4</text>
-          </g>
-          <text x="180" y="244" text-anchor="middle" font-size="12" fill="#444">▲ 관객석에서 바라보는 기준</text>
-        </svg>
-        <figcaption>구역은 관객석에서 바라보는 기준입니다. 핀은 위치가 고정되어 있어 <b>핀이 비추는 곳에 가서 서야</b> 합니다.</figcaption>
-      </figure>
-      <div class="light-rules">
-        <h3>무대 조명</h3>
-        <p>무대 앞에서 무대를 향해 비추는 조명으로, 주로 <b>인물</b>을 비춥니다. 색보다 <b>밝은 계열</b>로 인물이 잘 보이게 쓰는 것을 권장합니다. 왼쪽 / 중앙 / 오른쪽 구역을 나누어 요청할 수 있습니다.</p>
-        <p class="example">중앙 / 하얀색 / 100% <span>(이 경우 왼쪽·오른쪽 무대 조명은 꺼짐)</span></p>
-        <h3>상단 조명</h3>
-        <p>무대 바로 위에서 아래로 비추며 <b>무대에 색을 입혀 분위기</b>를 만듭니다. 상단 왼쪽 / 중앙 / 오른쪽에 각각 색상과 밝기를 요청합니다.</p>
-        <p class="example">상단 중앙 / 따뜻한 노란빛 / 70%, 상단 왼쪽·오른쪽 / 파란색 / 50%</p>
-        <h3>핀조명 Pin1~4</h3>
-        <ul>
-          <li><b>색 변경 불가</b> — ON/OFF와 밝기만 조절합니다.</li>
-          <li><b>위치 고정</b> — Pin1 무대 왼쪽, Pin2 단상 앞 중앙, Pin3 무대 앞 중앙, Pin4 무대 오른쪽. 사람을 따라 움직일 수 없습니다.</li>
-          <li><b>1명</b>을 비출 때 가장 효과적입니다. 3명 이상은 무대 조명 구역으로 비추세요.</li>
-        </ul>
-        <h3>FX1 · FX2</h3>
-        <ul>
-          <li>스트로브 · 고보(무늬 투사) · 무빙(좌우 교차·원 그리기) · 추가 핀(Pin1~4 위치가 아닌 곳) 중 <b>2개만</b> 골라 FX1, FX2로 지정합니다. 여러 효과를 묶은 하나의 연출은 FX 하나로 인정합니다.</li>
-          <li>FX는 <b>Pin4 옆 Details</b>에 적습니다. 예) <i>00:00~00:01 노래가 시작되면 1초간 스트로브 조명(FX1)을 틀어주세요.</i></li>
-          <li>스트로브는 오래 쓰면 관객이 불편할 수 있어 짧게 씁니다.</li>
-        </ul>
-      </div>
-    </div>
-    <h3>조명 작성 팁</h3>
-    <ul class="rules">
-      <li><b>전환 방식</b>을 적습니다: 즉시 바뀌는지, 몇 초에 걸쳐 서서히 바뀌는지, 함께 끄거나 바꿀 조명은 무엇인지.</li>
-      <li><b>시간은 영상 재생 시간</b>(Run Time) 기준 시:분:초로 적습니다.</li>
-      <li>시간으로 적기 어려우면 누구나 알 수 있는 <b>객관적인 시점</b>으로 적습니다. '분위기가 고조될 때' 대신 '사회자가 ○○라고 말한 직후', '출연자 전원이 무대 중앙에 정렬한 후'.</li>
-      <li>색은 '파란색', '따뜻한 노란빛'처럼 적거나 <code>#0C1F3F</code> 같은 색상코드로 적습니다(코드와 실제 색은 조금 다를 수 있음). 밝기는 %로 적습니다(50%·100% 기준 사진 참고).</li>
-      <li>리허설에서는 밝기·색상의 작은 조정만 가능합니다. 구성 자체를 바꾸기는 어렵습니다.</li>
-    </ul>
-
-    <h2 id="g-sound">5. 음향 / FD</h2>
-    <ul class="rules">
-      <li><b>어떤 장비를 몇 개</b>: 합창 마이크 4개(단상 앞), 무선 마이크 n개, 유선 마이크 n개, 마이크 거치대, 악기(카혼 마이킹·기타 DI 등).</li>
-      <li><b>누가</b>: 무선·핸드 마이크를 쓰는 사람(주인공, 솔로 1·2). 솔로가 번갈아 쓰면 행마다 '핸드마이크 1 ON'처럼 적습니다.</li>
-      <li><b>언제·어떻게(FD)</b>: 무대 사이에 마이크 세팅이 바뀌면 영상 송출 중에 무엇을 어디로 옮기는지 적습니다.<br><i>예) 영상2가 송출될 때 무대 앞쪽에 있던 합창 마이크 4대를 단상 바로 앞까지 붙여 배치해주세요.</i><br><i>예) 무대 중앙에 마이크 거치대 1개에 무선 마이크 1개를 꽂아 설치, 나머지 무선 마이크 1대는 무대 오른편 계단에서 기다리는 단원에게 전달.</i></li>
-      <li>마이크를 쓰지 않는 구간은 X, 영상 구간은 영상 음향으로 나갑니다.</li>
-    </ul>
-
-    <h2 id="g-check">6. 제출 전 체크리스트</h2>
-    <ul class="checklist" id="checklist">
-      <li><label><input type="checkbox"> 양식(열·머리글)을 바꾸지 않았다</label></li>
-      <li><label><input type="checkbox"> 모든 행에 '00:00 ~ 00:00 (n초)' Run Time이 있고, 앞 행 끝 = 다음 행 시작이다</label></li>
-      <li><label><input type="checkbox"> 무대 시간(인트로 제외)이 11분 이하다</label></li>
-      <li><label><input type="checkbox"> 가사 슬라이드·대형·조명이 바뀌는 지점마다 행을 나눴다</label></li>
-      <li><label><input type="checkbox"> 무대·대기 인원에 인원 수를 숫자로 적었다</label></li>
-      <li><label><input type="checkbox"> 세부 내용에 언제·어디서·누가·무엇을·어떻게가 있다</label></li>
-      <li><label><input type="checkbox"> 음향 장비 종류·개수·사용자, 무대 사이 마이크 재배치를 적었다</label></li>
-      <li><label><input type="checkbox"> 무대·상단은 구역 / 색상 / 밝기%, Pin은 ON·X로만 적었다(색 없음)</label></li>
-      <li><label><input type="checkbox"> FX는 2개까지만, FX1·FX2로 지정해 Details에 적었다</label></li>
-      <li><label><input type="checkbox"> 조명 시간이 Run Time과 같은 기준이다</label></li>
-      <li><label><input type="checkbox"> 빈칸이 없다(없으면 X, 이어지면 유지), 미정은 '논의 중'으로 표시했다</label></li>
-    </ul>
-  </div>
-</section>
-
-<!-- ============ 모범 예시 ============ -->
-<section id="view-example" class="view" hidden>
-  <div class="doc wide">
-    <h1>모범 예시</h1>
-    <p class="lead">2026 2차 큐시트 중 가장 양식과 절차에 맞게 쓴 큐시트(공시)의 작성 방식을 그대로 따른 <b>가상 학부</b>의 예시입니다. 실제 학부의 무대 내용은 공개하지 않습니다.</p>
-    <div class="why-grid">
-      <div><b>Run Time</b> 모든 행에 시작 ~ 끝 (단시), 앞 행 끝 = 다음 행 시작, 인트로 이후 00:00 기준</div>
-      <div><b>행 나누기</b> 가사·대형·조명이 바뀌는 지점마다 행 분리, 공통 항목은 셀 병합</div>
-      <div><b>무대·세부</b> 무대/단상 인원 수, 동선·대형 변화·소품을 구체적으로</div>
-      <div><b>음향/FD</b> 장비·개수·사용자, 영상 중 마이크 전달까지</div>
-      <div><b>조명</b> 구역 / 색상 / 밝기%, Pin은 ON/X, 핀 위치로 이동, FX는 Details에</div>
-      <div><b>Details</b> 시간 + 객관적 시점 + 즉시/서서히 전환 방식</div>
-    </div>
-    <div class="grid-wrap example-wrap" id="example-grid"></div>
-  </div>
-</section>
-</main>
-
-<footer class="footer">
-  <p>기준 자료: 2026 학부합창대회 2차 큐시트 양식 · 학부 디렉터 OT '무대 큐시트 작성 예시' · 2026 조명 큐시트 작성 가이드 · 2025/2026 공시 큐시트(음향/FD 작성 방식)</p>
-  <p>엑셀 파일과 붙여넣은 내용은 이 브라우저 안에서만 처리합니다. 구글 시트 링크는 시트를 내려받기 위해 서버를 한 번 거치지만 저장하지 않습니다.</p>
-</footer>
+<footer class="footer">2026 학부합창대회 TFT · 2차 큐시트 양식 · OT 작성 예시 · 2026 조명 가이드 기준</footer>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="tip" id="tip" role="tooltip" hidden></div>

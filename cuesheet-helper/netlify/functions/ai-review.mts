@@ -67,6 +67,7 @@ interface Payload {
 
 export default async (req: Request) => {
   const apiKey = Netlify.env.get("ANTHROPIC_API_KEY");
+  if (req.method === "GET") return json({ enabled: !!apiKey });
   if (!apiKey) {
     return json({ error: "AI 대안 기능이 아직 켜져 있지 않습니다. 사이트 관리자가 Netlify 환경 변수 ANTHROPIC_API_KEY를 설정하면 사용할 수 있습니다. (규칙 기반 피드백과 수정본은 그대로 쓸 수 있습니다.)" }, 501);
   }
@@ -118,4 +119,4 @@ export default async (req: Request) => {
   }
 };
 
-export const config: Config = { path: "/api/ai-review", method: ["POST"] };
+export const config: Config = { path: "/api/ai-review", method: ["GET", "POST"] };
