@@ -63,14 +63,18 @@ code { background: #1c2130; border: 1px solid var(--line); padding: 1px 6px; bor
 .nav a:hover { color: #fff; }
 .nav a.active { color: #fff; background: rgba(255,255,255,0.08); }
 .subnav { border-top: 1px solid rgba(255,255,255,0.05); }
-.subnav-inner { max-width: 1320px; margin: 0 auto; padding: 8px 22px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
-.subnav-inner::-webkit-scrollbar { display: none; }
+.subnav-inner { max-width: 1320px; margin: 0 auto; padding: 8px 22px; display: flex; align-items: center; gap: 6px; }
+.subnav-scroll { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.subnav-scroll::-webkit-scrollbar { display: none; }
 .subnav a { flex: 0 0 auto; text-decoration: none; color: var(--text-2); font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 8px; border: 1px solid transparent; display: inline-flex; gap: 6px; align-items: center; }
 .subnav a:hover { color: #fff; background: rgba(255,255,255,0.05); }
 .subnav a.active { color: #fff; border-color: var(--blue); background: var(--blue-soft); }
 .subnav .n { font-size: 11px; border-radius: 999px; padding: 0 6px; background: var(--red-soft); color: var(--red); }
 .subnav .n.ok { background: var(--green-soft); color: var(--green); }
 .subnav .sep { width: 1px; background: var(--line-2); margin: 4px 6px; flex: 0 0 auto; }
+.subnav .cur { flex: 0 0 auto; max-width: 200px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 4px 6px 0; color: #fff; font-size: 13px; font-weight: 800; white-space: nowrap; }
+.subnav .cur .ic { color: var(--blue-2); flex: 0 0 auto; }
+.subnav .cur span { overflow: hidden; text-overflow: ellipsis; }
 
 main { max-width: 1320px; margin: 0 auto; padding: 26px 22px 60px; }
 .page { animation: fade 0.25s ease; }
@@ -119,18 +123,12 @@ h1, h2, h3 { letter-spacing: -0.02em; }
 .hint { color: var(--text-3); font-size: 13px; margin: 10px 0 0; }
 .status { margin-top: 12px; font-size: 14px; color: var(--text-2); min-height: 22px; }
 .status.err { color: var(--red); }
-.quick { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
 .picker { margin-top: 14px; display: flex; gap: 10px; }
 .picker select { flex: 1; background: rgba(0,0,0,0.55); border: 1px solid #2a3150; border-radius: 12px; padding: 12px 14px; color: #fff; }
-
-/* 넷플릭스식 카드 줄 */
-.rail { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 1fr); gap: 14px; overflow-x: auto; padding: 4px 2px 14px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
-.poster { scroll-snap-align: start; position: relative; min-height: 150px; border-radius: 14px; padding: 18px; text-decoration: none; color: #fff; overflow: hidden; background: linear-gradient(160deg, #13182a 0%, #0b0e18 100%); border: 1px solid var(--line); transition: 0.18s; display: flex; flex-direction: column; justify-content: flex-end; }
-.poster::before { content: attr(data-no); position: absolute; right: 12px; top: -10px; font-family: var(--display); font-size: 92px; color: rgba(0,96,209,0.22); line-height: 1; }
-.poster:hover { transform: translateY(-3px) scale(1.02); border-color: var(--blue); box-shadow: 0 12px 34px rgba(0,96,209,0.25); }
-.poster b { font-size: 18px; position: relative; }
-.poster span { color: var(--text-2); font-size: 13px; position: relative; }
-.poster .ic { position: absolute; left: 18px; top: 18px; color: var(--blue-2); }
+.text-link { background: none; border: 0; padding: 0; color: var(--text-3); font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.text-link u { color: var(--text-2); font-weight: 700; text-underline-offset: 3px; }
+.text-link:hover u { color: #fff; }
+.paste-box { margin-top: 12px; }
 
 /* ---------- 칩 · 무대 시간(Run Time) · 제출 상태(수정본 받기) ---------- */
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -306,6 +304,7 @@ details.more textarea { width: 100%; margin-top: 12px; min-height: 120px; backgr
   .brand small { display: none; }
   .nav a { padding: 6px 10px; font-size: 13px; }
   .subnav-inner { padding: 8px 14px; }
+  .subnav .cur { max-width: 136px; }
   .hero { padding: 40px 22px 30px; border-radius: 18px; }
   .field { flex-direction: column; }
   .ready .btn { width: 100%; }

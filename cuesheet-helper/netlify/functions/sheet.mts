@@ -14,7 +14,7 @@ function json(body: unknown, status = 200) {
 }
 
 const NOT_PUBLIC =
-  "시트를 열 수 없습니다. 공유 설정을 '링크가 있는 모든 사용자: 뷰어'로 바꾸거나, 파일 → 다운로드 → Microsoft Excel(.xlsx)로 받아 '엑셀 파일' 탭에서 올려주세요.";
+  "시트를 열 수 없습니다. 공유 설정을 '링크가 있는 모든 사용자: 뷰어'로 바꾸거나, 아래 칸에 표를 복사해서 붙여넣어 주세요.";
 
 export default async (req: Request) => {
   const url = new URL(req.url);

@@ -7,10 +7,10 @@ import { fmtDurationKo } from './engine/time.js';
 import { readWorkbook, looksLikeCueSheet, gridFromHtml, gridFromTsv } from './io/importers.js';
 import { exportXlsx, safeSheetName } from './io/export-xlsx.js';
 import { toHtmlTable, toTsv } from './io/export-html.js';
-import { SAMPLE_DRAFT, SAMPLE_MODEL } from './samples.js';
+import { SAMPLE_MODEL } from './samples.js';
 import { icon, wordmark } from './ui/icons.js';
 import { sheetHtml, esc } from './ui/sheetview.js';
-import { GUIDE, guideIndexHtml, guidePageHtml } from './ui/guide.js';
+import { guideIndexHtml, guidePageHtml } from './ui/guide.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -102,8 +102,8 @@ function annotateKinds(model) {
   }
 }
 
-// 불러오면 결과 요약 없이 고칠 것이 있는 첫 항목으로 바로 이동 (없으면 수정본 받기)
-function loadGrid(grid, name, { go } = {}) {
+// 불러오면 고칠 것이 있는 첫 항목으로 바로 이동 (없으면 수정본 받기)
+function loadGrid(grid, name) {
   const model = parseGrid(grid);
   if (!model.rows.length) throw new Error('큐시트 내용 행을 찾지 못했습니다. 머리글(항목, Run Time …)부터 복사해주세요.');
   annotateKinds(model);
@@ -126,12 +126,10 @@ function loadGrid(grid, name, { go } = {}) {
   state.ai.items = [];
   run(false);
   const first = firstTodoPage();
-  location.hash = go || (first ? `#/check/${first.id}` : '#/download');
+  location.hash = first ? `#/check/${first.id}` : '#/download';
   render();
-  if (!go) {
-    const c = state.result.summary.counts;
-    toast(first ? `필수 ${c.error} · 권장 ${c.warn} — 위 탭에서 항목별로 고치세요` : '고칠 것이 없습니다. 바로 내려받으세요.', 4000);
-  }
+  const c = state.result.summary.counts;
+  toast(first ? `필수 ${c.error} · 권장 ${c.warn} — 위 탭에서 항목별로 고치세요` : '고칠 것이 없습니다. 바로 내려받으세요.', 4000);
 }
 
 function ensureExcel() {
@@ -224,9 +222,19 @@ async function loadFromLink() {
   } catch (e) {
     console.error(e);
     setStatus(e.message, true);
+    togglePaste(true); // 링크가 안 되면 붙여넣기 칸을 바로 열어 줌
   } finally {
     btn.disabled = false;
   }
+}
+
+function togglePaste(open) {
+  const box = $('#paste-box');
+  if (!box) return;
+  const show = open ?? box.hidden;
+  box.hidden = !show;
+  $('#btn-paste').setAttribute('aria-expanded', String(show));
+  if (show) $('#paste').focus({ preventScroll: true });
 }
 
 function onPaste(e) {
@@ -242,25 +250,6 @@ function onPaste(e) {
   } catch (err) {
     setStatus(err.message, true);
   }
-}
-
-function blankGrid() {
-  const e = () => new Array(16).fill('');
-  const row = (v) => Object.assign(e(), v);
-  return {
-    name: '새 큐시트',
-    mergeInfo: true,
-    merges: [],
-    cells: [
-      ['항목', 'Run Time', '무대', '대기 인원', '세부 내용', '개사 내용', '음향 / FD', '화면(영상)', '조명', '', '', '', '', '', '', '비고'],
-      ['', '', '', '', '', '', '', '', '무대', '상단', 'Pin1', 'Pin2', 'Pin3', 'Pin4', 'Details', ''],
-      row({ 0: '학부 소개 및 투표(사회자)', 2: '사회자' }),
-      row({ 0: '학부 인트로 영상', 2: '무대 단원 대기 및 입장', 7: '영상' }),
-      row({ 0: '자체영상 1', 1: '00:00 ~ 00:30 (30초)', 7: '영상' }),
-      row({ 0: '무대 1\n(곡 제목 - 가수)', 1: '00:30 ~ 00:45 (15초)', 7: '가사 영상 1' }),
-      row({ 1: '00:45 ~ 01:10 (25초)' }),
-    ],
-  };
 }
 
 // ---------------- 직접 수정 ----------------
@@ -367,58 +356,33 @@ function needResult() {
 }
 
 // ---------------- 페이지: 홈 ----------------
+// 구글 시트 링크 하나로 시작. 붙여넣기는 링크가 안 될 때만 쓰는 보조 방법.
 function pageHome() {
-  const r = state.result;
   app.innerHTML = `<section class="page">
     <div class="hero">
       ${wordmark('wm hero-wm')}
       <h1>큐시트, 넣기만 하세요.</h1>
       <p>피드백부터 2차 큐시트 양식 수정본까지 바로 돌려드립니다.</p>
       <div class="start">
-        <div class="seg" role="tablist">
-          <button class="active" data-mode="link">구글 시트 링크</button>
-          <button data-mode="paste">복사해서 붙여넣기</button>
-        </div>
-        <div data-panel="link">
-          <div class="field"><input id="sheet-url" type="url" placeholder="구글 시트 주소를 붙여넣으세요" autocomplete="off"><button class="btn primary big" id="btn-link">시작하기</button></div>
-          <p class="hint">공유: '링크가 있는 모든 사용자 · 뷰어' · 학부 탭 주소(#gid=…)면 바로 그 탭을 엽니다</p>
-        </div>
-        <div data-panel="paste" hidden>
+        <div class="field"><input id="sheet-url" type="url" placeholder="구글 시트 주소를 붙여넣으세요" autocomplete="off"><button class="btn primary big" id="btn-link">시작하기</button></div>
+        <p class="hint">공유: '링크가 있는 모든 사용자 · 뷰어' · 학부 탭 주소(#gid=…)면 바로 그 탭을 엽니다</p>
+        <div class="picker" id="picker" hidden><select id="picker-select"></select><button class="btn primary" id="btn-pick">이 탭 점검</button></div>
+        <div class="status" id="status" role="status"></div>
+        <button class="text-link" id="btn-paste" type="button" aria-expanded="false" aria-controls="paste-box">링크가 안 되면? <u>표를 복사해서 붙여넣기</u></button>
+        <div class="paste-box" id="paste-box" hidden>
           <div class="paste" id="paste" contenteditable="true" spellcheck="false" aria-label="여기에 붙여넣기"></div>
           <p class="hint">구글 시트에서 '항목' 머리글부터 마지막 행까지 복사</p>
         </div>
-        <div class="picker" id="picker" hidden><select id="picker-select"></select><button class="btn primary" id="btn-pick">이 탭 점검</button></div>
-        <div class="status" id="status" role="status"></div>
-        <div class="quick">
-          ${r ? `<a class="btn" href="#/check">${icon('list', 18)} '${esc(state.name)}' 이어서 점검</a>` : ''}
-          <button class="btn ghost" id="btn-demo">${icon('play', 18)} 예시로 체험</button>
-          <button class="btn ghost" id="btn-blank">${icon('pencil', 18)} 빈 양식으로 작성</button>
-        </div>
       </div>
     </div>
-    <h2 class="row-title">작성 가이드 <small>짧게, 하나씩</small></h2>
-    <div class="rail">${GUIDE.map((g, i) => `<a class="poster" data-no="${i + 1}" href="#/guide/${g.id}">${icon(g.icon, 26)}<b>${g.title}</b><span>${g.short}</span></a>`).join('')}
-      <a class="poster" data-no="★" href="#/example">${icon('play', 26)}<b>모범 예시</b><span>기준을 모두 지킨 큐시트</span></a>
-    </div>
   </section>`;
-  $$('.seg button', app).forEach((b) =>
-    b.addEventListener('click', () => {
-      $$('.seg button', app).forEach((x) => x.classList.toggle('active', x === b));
-      $$('[data-panel]', app).forEach((p) => (p.hidden = p.dataset.panel !== b.dataset.mode));
-      if (b.dataset.mode === 'paste') $('#paste').focus();
-    }),
-  );
   $('#btn-link').addEventListener('click', loadFromLink);
   $('#sheet-url').addEventListener('keydown', (e) => e.key === 'Enter' && loadFromLink());
+  $('#btn-paste').addEventListener('click', () => togglePaste());
   $('#paste').addEventListener('paste', onPaste);
   $('#btn-pick').addEventListener('click', () => {
     const s = state.sheets[Number($('#picker-select').value)];
     loadGrid(s, s.name);
-  });
-  $('#btn-demo').addEventListener('click', () => loadGrid(clone(SAMPLE_DRAFT), '예시학부'));
-  $('#btn-blank').addEventListener('click', () => {
-    loadGrid(blankGrid(), '새 큐시트', { go: '#/sheet' });
-    toast('빈 양식을 열었습니다. 칸을 눌러 바로 작성하세요.');
   });
 }
 
@@ -804,7 +768,8 @@ function renderNav(route) {
   links.push(`<a href="#/sheet" class="${route.name === 'sheet' ? 'active' : ''}">${icon('grid', 16)} 전체 표</a>`);
   links.push(`<a href="#/download" class="${route.name === 'download' ? 'active' : ''}">${icon('download', 16)} 수정본 받기</a>`);
   if (state.ai.enabled) links.push(`<a href="#/ai" class="${route.name === 'ai' ? 'active' : ''}">${icon('sparkle', 16)} AI 대안</a>`);
-  $('#subnav-inner').innerHTML = links.join('');
+  // 맨 앞(고정): 지금 점검 중인 학부(탭) 이름 · 그 옆 항목 탭은 가로로 넘김
+  $('#subnav-inner').innerHTML = `<span class="cur" title="지금 점검 중: ${esc(state.name)}">${icon('clipboard', 16)}<span>${esc(state.name)}</span></span><span class="sep"></span><div class="subnav-scroll">${links.join('')}</div>`;
   const act = $('#subnav-inner a.active');
   if (act) act.scrollIntoView({ block: 'nearest', inline: 'center' });
 }
