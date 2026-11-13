@@ -13,6 +13,25 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// 구글이 붙여 주는 파일 이름(Content-Disposition)에서 스프레드시트 제목을 꺼낸다.
+// 결과 화면에 '어떤 큐시트를 점검했는지' 보여주는 데만 쓴다.
+export function titleFrom(disposition: string): string {
+  let name = "";
+  const star = disposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+  if (star) {
+    try {
+      name = decodeURIComponent(star[1].trim());
+    } catch {
+      name = "";
+    }
+  }
+  if (!name) {
+    const plain = disposition.match(/filename\s*=\s*"([^"]*)"/i);
+    if (plain) name = plain[1];
+  }
+  return name.replace(/\.(xlsx|tsv)$/i, "").trim().slice(0, 200);
+}
+
 const NOT_PUBLIC =
   "시트를 열 수 없습니다. 공유 설정을 '링크가 있는 모든 사용자: 뷰어'로 바꾸거나, 아래 칸에 표를 복사해서 붙여넣어 주세요.";
 
@@ -38,10 +57,11 @@ export default async (req: Request) => {
   const type = res.headers.get("content-type") || "";
   if (res.status === 404) return json({ error: "시트를 찾지 못했습니다. 주소를 확인해주세요." }, 404);
   if (!res.ok || type.includes("text/html")) return json({ error: NOT_PUBLIC }, 403);
+  const sheetTitle = encodeURIComponent(titleFrom(res.headers.get("content-disposition") || ""));
 
   if (format === "tsv") {
     const text = (await res.text()).slice(0, 400_000);
-    return new Response(text, { headers: { "content-type": "text/tab-separated-values; charset=utf-8", "cache-control": "no-store" } });
+    return new Response(text, { headers: { "content-type": "text/tab-separated-values; charset=utf-8", "cache-control": "no-store", "x-sheet-title": sheetTitle } });
   }
   const len = Number(res.headers.get("content-length") || 0);
   if (len > 19 * 1024 * 1024) return json({ error: "시트 파일이 너무 큽니다. 학부 탭 주소(#gid=…)로 다시 시도하거나 붙여넣기를 이용해주세요.", tooLarge: true }, 413);
@@ -49,6 +69,7 @@ export default async (req: Request) => {
     headers: {
       "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "cache-control": "no-store",
+      "x-sheet-title": sheetTitle,
     },
   });
 };

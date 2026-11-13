@@ -54,6 +54,8 @@ const state = {
   showAll: new Set(), // '더 보기'를 누른 항목
   scrollTo: null,
   fbText: null,
+  source: null, // 첨부한 큐시트: { kind: 'link'|'paste', title, tab, url, rows, at }
+  pendingSource: null, // 탭 고르기 중인 링크
   ai: { enabled: false, items: [], running: false },
   sheets: null,
 };
@@ -64,7 +66,7 @@ function save() {
     if (!state.original) return sessionStorage.removeItem(STORE);
     sessionStorage.setItem(
       STORE,
-      JSON.stringify({ name: state.name, original: state.original, base: state.base, disabled: [...state.disabled], fx: state.fx, editMode: state.editMode, firstBase: state.firstBase, firstDisabled: state.firstDisabled }),
+      JSON.stringify({ name: state.name, source: state.source, original: state.original, base: state.base, disabled: [...state.disabled], fx: state.fx, editMode: state.editMode, firstBase: state.firstBase, firstDisabled: state.firstDisabled }),
     );
   } catch {
     /* 저장 공간이 없어도 동작에는 문제 없음 */
@@ -74,7 +76,7 @@ function restore() {
   try {
     const d = JSON.parse(sessionStorage.getItem(STORE) || 'null');
     if (!d || !d.original) return;
-    Object.assign(state, { name: d.name, original: d.original, base: d.base, disabled: new Set(d.disabled || []), fx: d.fx || { FX1: '', FX2: '' }, editMode: !!d.editMode, firstBase: d.firstBase || null, firstDisabled: d.firstDisabled || [] });
+    Object.assign(state, { name: d.name, source: d.source || null, original: d.original, base: d.base, disabled: new Set(d.disabled || []), fx: d.fx || { FX1: '', FX2: '' }, editMode: !!d.editMode, firstBase: d.firstBase || null, firstDisabled: d.firstDisabled || [] });
     state.originalMap = new Map(state.original.rows.map((r) => [r.id, r]));
     state.result = analyze(state.base, { disabled: state.disabled, fx: state.fx });
   } catch {
@@ -104,13 +106,16 @@ function annotateKinds(model) {
   }
 }
 
-// 불러오면 결과 한 화면으로 (항목은 모두 접힌 채)
-function loadGrid(grid, name) {
+// 큐시트를 첨부하면 그 큐시트의 피드백 결과로 이어짐 (항목은 모두 접힌 채)
+// source: 어떤 큐시트를 첨부했는지 — 결과 화면 맨 위에 그대로 보여줌
+function loadGrid(grid, name, source = {}) {
   const model = parseGrid(grid);
   if (!model.rows.length) throw new Error('큐시트 내용 행을 찾지 못했습니다. 머리글(항목, Run Time …)부터 복사해주세요.');
   annotateKinds(model);
   Object.assign(state, {
     name: (name || grid.name || '큐시트').replace(/\.xlsx$/i, ''),
+    source: { kind: 'link', ...source, rows: model.rows.length, at: Date.now() },
+    pendingSource: null,
     original: model,
     originalMap: new Map(model.rows.map((r) => [r.id, r])),
     base: clone(model),
@@ -178,34 +183,47 @@ async function loadFromLink() {
   btn.disabled = true;
   setStatus('불러오는 중…');
   const q = `id=${encodeURIComponent(parsed.id)}`;
+  // 스프레드시트 제목(서버가 구글 파일 이름에서 꺼내 줌) — 결과 화면에 '어떤 큐시트인지' 표시
+  const titleOf = (r) => {
+    try {
+      return decodeURIComponent(r.headers.get('x-sheet-title') || '');
+    } catch {
+      return '';
+    }
+  };
   const tsvP = parsed.gid
     ? fetch(`/api/sheet?${q}&gid=${parsed.gid}&format=tsv`)
-        .then((r) => (r.ok ? r.text() : null))
+        .then(async (r) => (r.ok ? { text: await r.text(), title: titleOf(r) } : null))
         .catch(() => null)
     : Promise.resolve(null);
   try {
     let sheets = null;
     let err = null;
+    let title = '';
     try {
       const res = await fetch(`/api/sheet?${q}`);
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.error || `불러오기 실패 (${res.status})`);
       }
+      title = titleOf(res);
       sheets = await readWorkbook(ensureExcel(), await res.arrayBuffer());
     } catch (e) {
       err = e;
     }
-    const tsv = await tsvP;
+    const tsvRes = await tsvP;
+    const tsv = tsvRes && tsvRes.text;
+    const src = { kind: 'link', url: input.value.trim(), title: title || (tsvRes && tsvRes.title) || '' };
     if (sheets && sheets.length) {
       const gidIdx = matchGid(sheets, tsv);
       const cue = sheets.map((s, i) => ({ s, i, score: looksLikeCueSheet(s) })).filter((x) => x.score >= 5);
-      if (gidIdx >= 0) return loadGrid(sheets[gidIdx], sheets[gidIdx].name);
+      if (gidIdx >= 0) return loadGrid(sheets[gidIdx], sheets[gidIdx].name, { ...src, tab: sheets[gidIdx].name });
       if (sheets.length === 1 || cue.length === 1) {
         const s = sheets.length === 1 ? sheets[0] : cue[0].s;
-        return loadGrid(s, s.name);
+        return loadGrid(s, s.name, { ...src, tab: s.name });
       }
       state.sheets = sheets;
+      state.pendingSource = src;
       const pick = $('#picker');
       $('#picker-select').innerHTML = sheets.map((s, i) => `<option value="${i}">${esc(s.name)}${looksLikeCueSheet(s) >= 5 ? '' : ' (큐시트 아님?)'}</option>`).join('');
       if (cue.length) $('#picker-select').value = String(cue[0].i);
@@ -214,7 +232,7 @@ async function loadFromLink() {
       return;
     }
     if (tsv) {
-      loadGrid({ ...gridFromTsv(tsv), name: '구글 시트' }, '구글 시트');
+      loadGrid({ ...gridFromTsv(tsv), name: '구글 시트' }, src.title || '구글 시트', { ...src, note: '셀 병합 없이 불러옴' });
       toast('셀 병합 없이 탭 내용만 불러왔습니다.');
       return;
     }
@@ -246,7 +264,7 @@ function onPaste(e) {
   if (!grid && text) grid = gridFromTsv(text);
   if (!grid || !grid.cells.length) return setStatus('붙여넣은 내용에서 표를 찾지 못했습니다.', true);
   try {
-    loadGrid(grid, '붙여넣은 큐시트');
+    loadGrid(grid, '붙여넣은 큐시트', { kind: 'paste' });
   } catch (err) {
     setStatus(err.message, true);
   }
@@ -332,7 +350,7 @@ function timeCardHtml() {
 
 function needResult() {
   if (state.result) return false;
-  app.innerHTML = `<section class="page"><div class="empty-ok"><b style="color:#fff">먼저 큐시트를 불러와주세요</b><a class="btn primary" href="#/" style="margin-top:12px">${icon('link', 18)} 큐시트 불러오기</a></div></section>`;
+  app.innerHTML = `<section class="page"><div class="empty-ok"><b style="color:#fff">큐시트를 첨부하면 피드백 결과가 여기에 나옵니다</b><a class="btn primary" href="#/" style="margin-top:12px">${icon('link', 18)} 큐시트 첨부하기</a></div></section>`;
   return true;
 }
 
@@ -345,7 +363,7 @@ function pageHome() {
       <h1>큐시트, 넣기만 하세요.</h1>
       <p>피드백부터 2차 큐시트 양식 수정본까지 바로 돌려드립니다.</p>
       <div class="start">
-        <div class="field"><input id="sheet-url" type="url" placeholder="구글 시트 주소를 붙여넣으세요" autocomplete="off"><button class="btn primary big" id="btn-link">시작하기</button></div>
+        <div class="field"><input id="sheet-url" type="url" placeholder="구글 시트 주소를 붙여넣으세요" autocomplete="off"><button class="btn primary big" id="btn-link">피드백 받기</button></div>
         <p class="hint">공유: '링크가 있는 모든 사용자 · 뷰어' · 학부 탭 주소(#gid=…)면 바로 그 탭을 엽니다</p>
         <div class="picker" id="picker" hidden><select id="picker-select"></select><button class="btn primary" id="btn-pick">이 탭 점검</button></div>
         <div class="status" id="status" role="status"></div>
@@ -363,7 +381,7 @@ function pageHome() {
   $('#paste').addEventListener('paste', onPaste);
   $('#btn-pick').addEventListener('click', () => {
     const s = state.sheets[Number($('#picker-select').value)];
-    loadGrid(s, s.name);
+    loadGrid(s, s.name, { ...(state.pendingSource || { kind: 'link' }), tab: s.name });
   });
 }
 
@@ -429,6 +447,17 @@ function redrawSec(id) {
   el.replaceWith(tmp.firstElementChild);
 }
 
+// 어떤 큐시트를 첨부했는지: 구글 시트 제목 › 탭 (시트 열기) 또는 붙여넣은 표 · 행 수 · 첨부 시각
+function sourceHtml() {
+  const s = state.source;
+  if (!s) return esc(state.name);
+  const what = s.kind === 'paste' ? '복사해서 붙여넣은 표' : ['구글 시트', s.title ? `'${esc(s.title)}'` : '', s.tab ? `› ${esc(s.tab)} 탭` : ''].filter(Boolean).join(' ');
+  const time = s.at ? new Date(s.at).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' }) : '';
+  const extra = [s.note, s.rows ? `${s.rows}행` : '', time ? `${time} 첨부` : ''].filter(Boolean).join(' · ');
+  const open = s.kind === 'link' && /^https:\/\/docs\.google\.com\/spreadsheets\/d\//.test(s.url || '') ? `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">시트 열기 ↗</a>` : '';
+  return `${what}${extra ? ` <span class="muted">· ${esc(extra)}</span>` : ''}${open}`;
+}
+
 function pageResult() {
   if (needResult()) return;
   const { summary } = state.result;
@@ -437,13 +466,16 @@ function pageResult() {
   const over = summary.totalSec > 660;
   app.innerHTML = `<section class="page result">
     <div class="card res-head">
-      <div class="res-info">
-        <h1>${esc(state.name)}</h1>
-        <div class="chips">
-          ${ok ? '<span class="pill ok">제출 가능</span>' : ''}${c.error ? `<span class="pill error">필수 ${c.error}</span>` : ''}${c.warn ? `<span class="pill warn">권장 ${c.warn}</span>` : ''}${summary.pendingCount ? `<span class="pill pending">논의 중 ${summary.pendingCount}</span>` : ''}
-          <span class="pill ${over ? 'error' : ''}">무대 시간 ${summary.totalText}${over ? ` · ${fmtDurationKo(summary.totalSec - 660)} 초과` : ' / 11분'}</span>
-          ${summary.autoCells ? `<span class="pill info">자동 수정 ${summary.autoCells}칸</span>` : ''}
-        </div>
+      <div class="res-top"><span class="eyebrow">피드백 결과</span><a class="btn small" href="#/">${icon('link', 16)} 다른 큐시트 첨부</a></div>
+      <h1>${esc(state.name)}</h1>
+      <dl class="res-meta">
+        <div><dt>첨부한 큐시트</dt><dd>${sourceHtml()}</dd></div>
+        <div><dt>점검 기준</dt><dd>2026 2차 큐시트 양식 · OT 작성 예시 · 2026 조명 가이드 · 모범 큐시트(공시)<a href="#/guide">자세히</a></dd></div>
+      </dl>
+      <div class="chips">
+        ${ok ? '<span class="pill ok">제출 가능</span>' : ''}${c.error ? `<span class="pill error">필수 ${c.error}</span>` : ''}${c.warn ? `<span class="pill warn">권장 ${c.warn}</span>` : ''}${summary.pendingCount ? `<span class="pill pending">논의 중 ${summary.pendingCount}</span>` : ''}
+        <span class="pill ${over ? 'error' : ''}">무대 시간 ${summary.totalText}${over ? ` · ${fmtDurationKo(summary.totalSec - 660)} 초과` : ' / 11분'}</span>
+        ${summary.autoCells ? `<span class="pill info">자동 수정 ${summary.autoCells}칸</span>` : ''}
       </div>
       <div class="res-actions">
         <button class="btn primary" id="d-submit">${icon('download', 18)} 수정본 엑셀</button>
@@ -514,7 +546,7 @@ function pageSheet() {
   const isOrig = state.sheetView === 'original';
   const S = isOrig ? state.original : state.result.revised;
   app.innerHTML = `<section class="page">
-    <a class="back" href="#/result">${icon('left', 18)} 결과</a>
+    <a class="back" href="#/result">${icon('left', 18)} 피드백 결과</a>
     <h1 class="page-title">전체 표</h1>
     <p class="page-sub">${esc(state.name)} · 2차 큐시트 모양 그대로 · 칸을 눌러 바로 고칠 수 있습니다</p>
     <div class="sheet-tools">
@@ -689,7 +721,7 @@ function pageAI() {
   if (needResult()) return;
   const items = state.ai.items;
   app.innerHTML = `<section class="page">
-    <a class="back" href="#/result">${icon('left', 18)} 결과</a>
+    <a class="back" href="#/result">${icon('left', 18)} 피드백 결과</a>
     <h1 class="page-title">AI 대안 <span class="pill info">베타</span></h1>
     <p class="page-sub">무대마다 문장·조명 대안을 받아 골라서 반영합니다. 큐시트 내용이 Anthropic Claude API로 전송됩니다.</p>
     <button class="btn primary" id="b-ai" ${state.ai.running ? 'disabled' : ''}>${icon('sparkle', 18)} ${state.ai.running ? '받는 중…' : items.length ? '다시 받기' : '대안 받기'}</button>
@@ -760,8 +792,8 @@ async function runAI() {
 }
 
 // ---------------- 라우터 ----------------
+// 상단 메뉴는 홈 · 가이드만. 피드백 결과는 메뉴가 아니라 큐시트를 첨부한 다음 단계로만 나옴
 function renderNav(route) {
-  $('#nav-result').hidden = !state.result;
   $$('.nav a').forEach((a) => a.classList.toggle('active', a.dataset.nav === route.top));
 }
 
@@ -769,11 +801,11 @@ function parseRoute() {
   const h = (location.hash || '#/').replace(/^#\/?/, '');
   const [a, b] = h.split('/');
   if (!a) return { name: 'home', top: 'home' };
-  if (a === 'result') return { name: 'result', top: 'result' };
+  if (a === 'result') return { name: 'result', top: '' };
   // 예전 주소(#/check, #/check/항목, #/report, #/download)는 결과 화면으로
-  if (a === 'check' || a === 'report' || a === 'download') return { name: 'legacy', id: a === 'check' ? b : null, top: 'result' };
-  if (a === 'sheet') return { name: 'sheet', top: 'result' };
-  if (a === 'ai') return { name: 'ai', top: 'result' };
+  if (a === 'check' || a === 'report' || a === 'download') return { name: 'legacy', id: a === 'check' ? b : null, top: '' };
+  if (a === 'sheet') return { name: 'sheet', top: '' };
+  if (a === 'ai') return { name: 'ai', top: '' };
   if (a === 'guide') return { name: 'guide', id: b, top: 'guide' };
   if (a === 'example') return { name: 'example', top: 'guide' };
   return { name: 'home', top: 'home' };
