@@ -145,7 +145,15 @@ h1, h2, h3 { letter-spacing: -0.02em; }
 .res-meta dd { margin: 0; min-width: 0; color: var(--text-2); overflow-wrap: anywhere; word-break: keep-all; }
 .res-meta a { margin-left: 8px; color: var(--blue-2); font-weight: 700; text-decoration: none; white-space: nowrap; }
 .res-meta a:hover { text-decoration: underline; }
-.res-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
+.res-out { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.res-out h2 { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; font-size: 15px; }
+.res-out h2 small { color: var(--text-3); font-size: 12.5px; font-weight: 600; }
+.res-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.make-note { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: var(--blue-soft); border: 1px solid rgba(29,124,242,0.35); font-size: 14px; line-height: 1.6; word-break: keep-all; }
+.make-note b .ic { vertical-align: -4px; color: var(--green); }
+.make-note ol { margin: 6px 0 4px; padding-left: 20px; }
+.make-note p { margin: 4px 0 0; color: var(--text-2); font-size: 12.5px; }
+.make-note a { color: #7fb4ff; font-weight: 700; }
 .sections { display: grid; gap: 10px; }
 .sec { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; scroll-margin-top: 80px; }
 .sec.open { border-color: var(--line-2); }

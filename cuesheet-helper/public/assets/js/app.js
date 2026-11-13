@@ -228,7 +228,7 @@ async function loadFromLink() {
       $('#picker-select').innerHTML = sheets.map((s, i) => `<option value="${i}">${esc(s.name)}${looksLikeCueSheet(s) >= 5 ? '' : ' (큐시트 아님?)'}</option>`).join('');
       if (cue.length) $('#picker-select').value = String(cue[0].i);
       pick.hidden = false;
-      setStatus(`탭 ${sheets.length}개 — 점검할 학부 탭을 고르세요.`);
+      setStatus(`탭이 ${sheets.length}개 있습니다 — 큐시트가 있는 탭을 고르세요.`);
       return;
     }
     if (tsv) {
@@ -361,11 +361,11 @@ function pageHome() {
     <div class="hero">
       ${wordmark('wm hero-wm')}
       <h1>큐시트, 넣기만 하세요.</h1>
-      <p>피드백부터 2차 큐시트 양식 수정본까지 바로 돌려드립니다.</p>
+      <p>우리 학부 큐시트 시트 링크를 넣으면, 피드백과 함께 수정본을 새 시트로 만들어 드립니다.</p>
       <div class="start">
-        <div class="field"><input id="sheet-url" type="url" placeholder="구글 시트 주소를 붙여넣으세요" autocomplete="off"><button class="btn primary big" id="btn-link">피드백 받기</button></div>
-        <p class="hint">공유: '링크가 있는 모든 사용자 · 뷰어' · 학부 탭 주소(#gid=…)면 바로 그 탭을 엽니다</p>
-        <div class="picker" id="picker" hidden><select id="picker-select"></select><button class="btn primary" id="btn-pick">이 탭 점검</button></div>
+        <div class="field"><input id="sheet-url" type="url" placeholder="우리 학부 큐시트의 구글 시트 주소를 붙여넣으세요" autocomplete="off"><button class="btn primary big" id="btn-link">피드백 받기</button></div>
+        <p class="hint">공유 설정을 '링크가 있는 모든 사용자 · 뷰어'로 바꿔 주세요 · 원본 시트는 읽기만 하고 바꾸지 않습니다</p>
+        <div class="picker" id="picker" hidden><select id="picker-select"></select><button class="btn primary" id="btn-pick">이 탭으로 피드백 받기</button></div>
         <div class="status" id="status" role="status"></div>
         <button class="text-link" id="btn-paste" type="button" aria-expanded="false" aria-controls="paste-box">링크가 안 되면? <u>표를 복사해서 붙여넣기</u></button>
         <div class="paste-box" id="paste-box" hidden>
@@ -453,7 +453,7 @@ function sourceHtml() {
   if (!s) return esc(state.name);
   const what = s.kind === 'paste' ? '복사해서 붙여넣은 표' : ['구글 시트', s.title ? `'${esc(s.title)}'` : '', s.tab ? `› ${esc(s.tab)} 탭` : ''].filter(Boolean).join(' ');
   const time = s.at ? new Date(s.at).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' }) : '';
-  const extra = [s.note, s.rows ? `${s.rows}행` : '', time ? `${time} 첨부` : ''].filter(Boolean).join(' · ');
+  const extra = [s.note, s.rows ? `${s.rows}행` : '', time ? `${time} 첨부` : '', '원본은 바꾸지 않음'].filter(Boolean).join(' · ');
   const open = s.kind === 'link' && /^https:\/\/docs\.google\.com\/spreadsheets\/d\//.test(s.url || '') ? `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">시트 열기 ↗</a>` : '';
   return `${what}${extra ? ` <span class="muted">· ${esc(extra)}</span>` : ''}${open}`;
 }
@@ -469,7 +469,7 @@ function pageResult() {
       <div class="res-top"><span class="eyebrow">피드백 결과</span><a class="btn small" href="#/">${icon('link', 16)} 다른 큐시트 첨부</a></div>
       <h1>${esc(state.name)}</h1>
       <dl class="res-meta">
-        <div><dt>첨부한 큐시트</dt><dd>${sourceHtml()}</dd></div>
+        <div><dt>첨부한 원본</dt><dd>${sourceHtml()}</dd></div>
         <div><dt>점검 기준</dt><dd>2026 2차 큐시트 양식 · OT 작성 예시 · 2026 조명 가이드 · 모범 큐시트(공시)<a href="#/guide">자세히</a></dd></div>
       </dl>
       <div class="chips">
@@ -477,21 +477,25 @@ function pageResult() {
         <span class="pill ${over ? 'error' : ''}">무대 시간 ${summary.totalText}${over ? ` · ${fmtDurationKo(summary.totalSec - 660)} 초과` : ' / 11분'}</span>
         ${summary.autoCells ? `<span class="pill info">자동 수정 ${summary.autoCells}칸</span>` : ''}
       </div>
-      <div class="res-actions">
-        <button class="btn primary" id="d-submit">${icon('download', 18)} 수정본 엑셀</button>
-        <button class="btn" id="d-review">${icon('list', 18)} 검토용 엑셀</button>
-        <button class="btn" id="d-copy">${icon('copy', 18)} 구글 시트에 붙여넣기</button>
-        <button class="btn" id="d-msg">${icon('chat', 18)} 피드백 메시지 복사</button>
-        ${state.ai.enabled ? `<a class="btn ghost" href="#/ai">${icon('sparkle', 18)} AI 대안</a>` : ''}
+      <div class="res-out">
+        <h2>수정본 받기 <small>원본은 그대로 두고, 수정본을 새 시트로 따로 만듭니다</small></h2>
+        <div class="res-actions">
+          <button class="btn primary" id="d-new">${icon('grid', 18)} 새 구글 시트로 만들기</button>
+          <button class="btn" id="d-submit">${icon('download', 18)} 엑셀 파일로 받기</button>
+          <button class="btn" id="d-review">${icon('list', 18)} 검토용 엑셀</button>
+          <button class="btn" id="d-msg">${icon('chat', 18)} 피드백 메시지 복사</button>
+          ${state.ai.enabled ? `<a class="btn ghost" href="#/ai">${icon('sparkle', 18)} AI 대안</a>` : ''}
+        </div>
+        <div class="make-note" id="make-note" role="status" hidden></div>
       </div>
     </div>
     <div class="sections">${PAGES.map(sectionHtml).join('')}</div>
     <div class="res-foot"><a class="btn" href="#/sheet">${icon('grid', 18)} 전체 표에서 직접 고치기 ${icon('right', 18)}</a>${state.firstBase ? '<button class="btn ghost" id="b-undo">처음 결과로 되돌리기</button>' : ''}</div>
     <details class="more"><summary>큐시트 1행 TFT 피드백 문구 고치기</summary><textarea id="fb-text">${esc(state.fbText ?? summary.feedbackText)}</textarea></details>
   </section>`;
+  $('#d-new').addEventListener('click', makeNewSheet);
   $('#d-submit').addEventListener('click', () => exportFile('submit'));
   $('#d-review').addEventListener('click', () => exportFile('review'));
-  $('#d-copy').addEventListener('click', copySheet);
   $('#d-msg').addEventListener('click', () => copyText(reportText(), '피드백 메시지를 복사했습니다.'));
   $('#fb-text').addEventListener('input', (e) => (state.fbText = e.target.value));
   if ($('#b-undo')) $('#b-undo').addEventListener('click', undoAll);
@@ -655,27 +659,67 @@ async function exportFile(mode) {
     toast(`엑셀을 만들지 못했습니다: ${e.message}`);
   }
 }
-async function copySheet() {
-  const S = state.result.revised;
-  const html = toHtmlTable(S, { includeHeader: true });
-  const text = toTsv(S);
+// ---------------- 수정본을 새 구글 시트로 ----------------
+// 첨부한 원본 시트는 읽기만 하고 건드리지 않는다.
+// 수정본(2차 양식 서식·셀 병합 포함)을 복사해 두고, 내 구글 드라이브에 새 빈 시트를 열어 A1에 붙여넣게 한다.
+function revisedHtml() {
+  return toHtmlTable(state.result.revised, { includeHeader: true, feedbackText: state.fbText ?? state.result.summary.feedbackText });
+}
+// 클릭 안에서 바로(동기) 복사: 새 탭이 열려 이 화면이 포커스를 잃기 전에 복사해야 한다
+function copyHtmlSync(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  Object.assign(div.style, { position: 'fixed', left: '-9999px', top: '0' });
+  document.body.appendChild(div);
+  const sel = getSelection();
+  const range = document.createRange();
+  range.selectNodeContents(div);
+  sel.removeAllRanges();
+  sel.addRange(range);
+  let ok = false;
   try {
-    await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) })]);
+    ok = document.execCommand('copy');
   } catch {
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    Object.assign(div.style, { position: 'fixed', left: '-9999px' });
-    document.body.appendChild(div);
-    const range = document.createRange();
-    range.selectNodeContents(div);
-    const sel = getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-    document.execCommand('copy');
-    sel.removeAllRanges();
-    div.remove();
+    ok = false;
   }
-  toast('복사했습니다. 새 구글 시트의 A1 칸에 붙여넣으세요.', 3600);
+  sel.removeAllRanges();
+  div.remove();
+  return ok;
+}
+async function copyRevised() {
+  const html = revisedHtml();
+  if (copyHtmlSync(html)) return true;
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([toTsv(state.result.revised)], { type: 'text/plain' }) })]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+const newSheetUrl = () => `https://docs.google.com/spreadsheets/create?title=${encodeURIComponent(`${state.name} 2026 큐시트 수정본`)}`;
+
+function makeNewSheet() {
+  const copied = copyHtmlSync(revisedHtml());
+  const w = window.open(newSheetUrl(), '_blank');
+  if (w) w.opener = null;
+  showMakeNote(copied, !!w);
+}
+function showMakeNote(copied, opened) {
+  const note = $('#make-note');
+  if (!note) return;
+  const openLink = `<a href="${esc(newSheetUrl())}" target="_blank" rel="noopener noreferrer">새 구글 시트 열기 ↗</a>`;
+  note.hidden = false;
+  note.innerHTML = copied
+    ? `<b>${icon('check', 18)} 수정본을 복사했고, ${opened ? '새 구글 시트를 열었습니다' : '새 구글 시트만 열면 됩니다'}.</b>
+      <ol><li>${opened ? '새로 열린 시트' : `${openLink} 한 뒤 그 시트`}에서 <b>A1 칸</b>을 누르고</li><li><b>Ctrl+V</b>(맥은 ⌘+V)를 누르면 수정본이 들어갑니다.</li></ol>
+      <p>새 시트는 내 구글 드라이브에 따로 만들어지고, 첨부한 원본 시트는 그대로입니다. 열 너비까지 2차 양식 그대로 쓰려면 '엑셀 파일로 받기'로 받은 파일을 구글 드라이브에 올려 열어도 됩니다.</p>`
+    : `<b>복사가 되지 않았습니다.</b> <button class="btn small" id="b-recopy">${icon('copy', 16)} 다시 복사</button> 를 누른 뒤 새 시트의 A1 칸에 붙여넣어 주세요.${opened ? '' : ` ${openLink}`}`;
+  const rc = $('#b-recopy');
+  if (rc)
+    rc.addEventListener('click', async () => {
+      if (await copyRevised()) showMakeNote(true, opened);
+      else toast("복사하지 못했습니다. '엑셀 파일로 받기'를 이용해 주세요.", 3600);
+    });
 }
 async function copyText(text, msg) {
   try {

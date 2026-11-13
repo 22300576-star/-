@@ -2,6 +2,8 @@
 import { KEYS, COLS, GUIDE_ROW } from '../engine/constants.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+// 2차 큐시트 열 너비(px) — 붙여넣는 곳이 열 너비를 받아 주면 그대로 쓰이도록 함께 보냄
+const COL_PX = { item: 150, runtime: 234, stage: 234, waiting: 175, detail: 292, lyrics: 234, sound: 234, screen: 190, lStage: 164, lTop: 164, pin1: 100, pin2: 100, pin3: 100, pin4: 100, details: 402, note: 100 };
 const BG = { guide: '#f4cccc', host: '#cfe2f3', intro: '#d9ead3', video: '#efefef', pending: '#d9d2e9', feedback: '#fff2cc' };
 
 function td(text, { rs = 1, cs = 1, bg, bold, size = 10, color } = {}) {
@@ -36,7 +38,7 @@ function spans(S, key) {
 }
 
 export function toHtmlTable(S, { feedbackText = '', includeHeader = true } = {}) {
-  const out = ['<table style="border-collapse:collapse">'];
+  const out = ['<table style="border-collapse:collapse">', `<colgroup>${KEYS.map((k) => `<col width="${COL_PX[k]}" style="width:${COL_PX[k]}px">`).join('')}</colgroup>`];
   if (includeHeader) {
     out.push(`<tr>${td(feedbackText ? '피드백' : '', { bold: true, color: '#ff0000' })}${td(feedbackText, { cs: 15, bg: BG.feedback, bold: !!feedbackText, color: '#ff0000' })}</tr>`);
     let r2 = '';
