@@ -33,7 +33,7 @@ export function titleFrom(disposition: string): string {
 }
 
 const NOT_PUBLIC =
-  "시트를 열 수 없습니다. 공유 설정을 '링크가 있는 모든 사용자: 뷰어'로 바꾸거나, 아래 칸에 표를 복사해서 붙여넣어 주세요.";
+  "시트를 열 수 없습니다. 공유 설정을 '링크가 있는 모든 사용자 · 뷰어'로 바꾼 뒤 다시 시도해 주세요.";
 
 export default async (req: Request) => {
   const url = new URL(req.url);
@@ -64,7 +64,7 @@ export default async (req: Request) => {
     return new Response(text, { headers: { "content-type": "text/tab-separated-values; charset=utf-8", "cache-control": "no-store", "x-sheet-title": sheetTitle } });
   }
   const len = Number(res.headers.get("content-length") || 0);
-  if (len > 19 * 1024 * 1024) return json({ error: "시트 파일이 너무 큽니다. 학부 탭 주소(#gid=…)로 다시 시도하거나 붙여넣기를 이용해주세요.", tooLarge: true }, 413);
+  if (len > 19 * 1024 * 1024) return json({ error: "시트 파일이 너무 큽니다. 큐시트가 있는 탭을 열어 둔 상태의 주소(…#gid=…)로 다시 시도해 주세요.", tooLarge: true }, 413);
   return new Response(res.body, {
     headers: {
       "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

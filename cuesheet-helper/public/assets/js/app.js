@@ -4,7 +4,7 @@ import { classifyItem } from './engine/classify.js';
 import { analyze } from './engine/analyze.js';
 import { KEYS, LEVELS, colName } from './engine/constants.js';
 import { fmtDurationKo } from './engine/time.js';
-import { readWorkbook, looksLikeCueSheet, gridFromHtml, gridFromTsv } from './io/importers.js';
+import { readWorkbook, looksLikeCueSheet, gridFromTsv } from './io/importers.js';
 import { exportXlsx, safeSheetName } from './io/export-xlsx.js';
 import { toHtmlTable, toTsv } from './io/export-html.js';
 import { SAMPLE_MODEL } from './samples.js';
@@ -54,7 +54,7 @@ const state = {
   showAll: new Set(), // '더 보기'를 누른 항목
   scrollTo: null,
   fbText: null,
-  source: null, // 첨부한 큐시트: { kind: 'link'|'paste', title, tab, url, rows, at }
+  source: null, // 첨부한 큐시트: { kind: 'link', title, tab, url, rows, at } ('paste'는 예전 버전에서 저장된 것)
   pendingSource: null, // 탭 고르기 중인 링크
   ai: { enabled: false, items: [], running: false },
   sheets: null,
@@ -240,33 +240,8 @@ async function loadFromLink() {
   } catch (e) {
     console.error(e);
     setStatus(e.message, true);
-    togglePaste(true); // 링크가 안 되면 붙여넣기 칸을 바로 열어 줌
   } finally {
     btn.disabled = false;
-  }
-}
-
-function togglePaste(open) {
-  const box = $('#paste-box');
-  if (!box) return;
-  const show = open ?? box.hidden;
-  box.hidden = !show;
-  $('#btn-paste').setAttribute('aria-expanded', String(show));
-  if (show) $('#paste').focus({ preventScroll: true });
-}
-
-function onPaste(e) {
-  e.preventDefault();
-  const html = e.clipboardData.getData('text/html');
-  const text = e.clipboardData.getData('text/plain');
-  let grid = null;
-  if (html && /<table/i.test(html)) grid = gridFromHtml(html);
-  if (!grid && text) grid = gridFromTsv(text);
-  if (!grid || !grid.cells.length) return setStatus('붙여넣은 내용에서 표를 찾지 못했습니다.', true);
-  try {
-    loadGrid(grid, '붙여넣은 큐시트', { kind: 'paste' });
-  } catch (err) {
-    setStatus(err.message, true);
   }
 }
 
@@ -355,7 +330,7 @@ function needResult() {
 }
 
 // ---------------- 페이지: 홈 ----------------
-// 구글 시트 링크 하나로 시작. 붙여넣기는 링크가 안 될 때만 쓰는 보조 방법.
+// 우리 학부 큐시트의 구글 시트 링크 하나로 시작
 function pageHome() {
   app.innerHTML = `<section class="page">
     <div class="hero">
@@ -367,18 +342,11 @@ function pageHome() {
         <p class="hint">공유 설정을 '링크가 있는 모든 사용자 · 뷰어'로 바꿔 주세요 · 원본 시트는 읽기만 하고 바꾸지 않습니다</p>
         <div class="picker" id="picker" hidden><select id="picker-select"></select><button class="btn primary" id="btn-pick">이 탭으로 피드백 받기</button></div>
         <div class="status" id="status" role="status"></div>
-        <button class="text-link" id="btn-paste" type="button" aria-expanded="false" aria-controls="paste-box">링크가 안 되면? <u>표를 복사해서 붙여넣기</u></button>
-        <div class="paste-box" id="paste-box" hidden>
-          <div class="paste" id="paste" contenteditable="true" spellcheck="false" aria-label="여기에 붙여넣기"></div>
-          <p class="hint">구글 시트에서 '항목' 머리글부터 마지막 행까지 복사</p>
-        </div>
       </div>
     </div>
   </section>`;
   $('#btn-link').addEventListener('click', loadFromLink);
   $('#sheet-url').addEventListener('keydown', (e) => e.key === 'Enter' && loadFromLink());
-  $('#btn-paste').addEventListener('click', () => togglePaste());
-  $('#paste').addEventListener('paste', onPaste);
   $('#btn-pick').addEventListener('click', () => {
     const s = state.sheets[Number($('#picker-select').value)];
     loadGrid(s, s.name, { ...(state.pendingSource || { kind: 'link' }), tab: s.name });

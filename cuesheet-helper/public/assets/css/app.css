@@ -102,18 +102,12 @@ h1, h2, h3 { letter-spacing: -0.02em; }
 .field { display: flex; gap: 10px; }
 .field input { flex: 1; min-width: 0; background: rgba(0,0,0,0.55); border: 1px solid #2a3150; border-radius: 12px; padding: 15px 16px; font-size: 15px; color: #fff; }
 .field input::placeholder { color: #69718a; }
-.field input:focus, .paste:focus, textarea:focus { outline: 2px solid rgba(29,124,242,0.55); border-color: var(--blue-2); }
-.paste { min-height: 120px; max-height: 220px; overflow: auto; border: 1.5px dashed #3a4466; border-radius: 12px; padding: 16px; background: rgba(0,0,0,0.45); color: var(--text-2); font-size: 14px; }
-.paste:empty::before { content: '여기를 누르고 붙여넣기 (Ctrl / ⌘ + V)'; color: #69718a; }
+.field input:focus, textarea:focus { outline: 2px solid rgba(29,124,242,0.55); border-color: var(--blue-2); }
 .hint { color: var(--text-3); font-size: 13px; margin: 10px 0 0; }
 .status { margin-top: 12px; font-size: 14px; color: var(--text-2); min-height: 22px; }
 .status.err { color: var(--red); }
 .picker { margin-top: 14px; display: flex; gap: 10px; }
 .picker select { flex: 1; background: rgba(0,0,0,0.55); border: 1px solid #2a3150; border-radius: 12px; padding: 12px 14px; color: #fff; }
-.text-link { background: none; border: 0; padding: 0; color: var(--text-3); font-size: 13.5px; font-weight: 600; cursor: pointer; }
-.text-link u { color: var(--text-2); font-weight: 700; text-underline-offset: 3px; }
-.text-link:hover u { color: #fff; }
-.paste-box { margin-top: 12px; }
 
 /* ---------- 칩 · 무대 시간(Run Time) · 제출 상태(수정본 받기) ---------- */
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
