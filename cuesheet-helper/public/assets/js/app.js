@@ -6,7 +6,6 @@ import { KEYS, LEVELS, colName } from './engine/constants.js';
 import { fmtDurationKo } from './engine/time.js';
 import { readWorkbook, looksLikeCueSheet, gridFromTsv } from './io/importers.js';
 import { exportXlsx, safeSheetName } from './io/export-xlsx.js';
-import { toHtmlTable, toTsv } from './io/export-html.js';
 import { SAMPLE_MODEL } from './samples.js';
 import { icon, wordmark } from './ui/icons.js';
 import { sheetHtml, esc } from './ui/sheetview.js';
@@ -611,7 +610,8 @@ function download(buf, filename) {
   a.click();
   setTimeout(() => (URL.revokeObjectURL(a.href), a.remove()), 1000);
 }
-async function exportFile(mode) {
+// 내려받은 파일 이름을 돌려줌 (실패하면 null)
+async function exportFile(mode, { quiet = false } = {}) {
   try {
     const buf = await exportXlsx(ensureExcel(), state.result.revised, {
       mode,
@@ -620,74 +620,46 @@ async function exportFile(mode) {
       title: safeSheetName(state.name),
     });
     const base = state.name.replace(/[\\/:*?"<>|]/g, ' ').trim() || '큐시트';
-    download(buf, `${base}_2026큐시트_${mode === 'review' ? '검토용' : '수정본'}.xlsx`);
-    toast('엑셀을 내려받았습니다.');
+    const file = `${base}_2026큐시트_${mode === 'review' ? '검토용' : '수정본'}.xlsx`;
+    download(buf, file);
+    if (!quiet) toast('엑셀을 내려받았습니다.');
+    return file;
   } catch (e) {
     console.error(e);
     toast(`엑셀을 만들지 못했습니다: ${e.message}`);
+    return null;
   }
 }
+
 // ---------------- 수정본을 새 구글 시트로 ----------------
-// 첨부한 원본 시트는 읽기만 하고 건드리지 않는다.
-// 수정본(2차 양식 서식·셀 병합 포함)을 복사해 두고, 내 구글 드라이브에 새 빈 시트를 열어 A1에 붙여넣게 한다.
-function revisedHtml() {
-  return toHtmlTable(state.result.revised, { includeHeader: true, feedbackText: state.fbText ?? state.result.summary.feedbackText });
-}
-// 클릭 안에서 바로(동기) 복사: 새 탭이 열려 이 화면이 포커스를 잃기 전에 복사해야 한다
-function copyHtmlSync(html) {
-  const div = document.createElement('div');
-  div.innerHTML = html;
-  Object.assign(div.style, { position: 'fixed', left: '-9999px', top: '0' });
-  document.body.appendChild(div);
-  const sel = getSelection();
-  const range = document.createRange();
-  range.selectNodeContents(div);
-  sel.removeAllRanges();
-  sel.addRange(range);
-  let ok = false;
-  try {
-    ok = document.execCommand('copy');
-  } catch {
-    ok = false;
-  }
-  sel.removeAllRanges();
-  div.remove();
-  return ok;
-}
-async function copyRevised() {
-  const html = revisedHtml();
-  if (copyHtmlSync(html)) return true;
-  try {
-    await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([toTsv(state.result.revised)], { type: 'text/plain' }) })]);
-    return true;
-  } catch {
-    return false;
-  }
-}
+// 복사·붙여넣기는 열 너비가 빠지고 이 사이트의 글자색이 섞여 2026 양식이 깨진다.
+// 그래서 2026 2차 양식 그대로인 엑셀(열 너비·셀 색·글꼴·테두리·병합·틀 고정)을 내려받고,
+// 내 구글 드라이브에 새 빈 시트를 열어 '파일 → 가져오기'로 그 엑셀을 넣게 한다. 첨부한 원본 시트는 건드리지 않는다.
 const newSheetUrl = () => `https://docs.google.com/spreadsheets/create?title=${encodeURIComponent(`${state.name} 2026 큐시트 수정본`)}`;
 
-function makeNewSheet() {
-  const copied = copyHtmlSync(revisedHtml());
-  const w = window.open(newSheetUrl(), '_blank');
+async function makeNewSheet() {
+  const w = window.open(newSheetUrl(), '_blank'); // 클릭 안에서 바로 열어야 팝업 차단에 걸리지 않음
   if (w) w.opener = null;
-  showMakeNote(copied, !!w);
+  const file = await exportFile('submit', { quiet: true });
+  showMakeNote(!!w, file);
 }
-function showMakeNote(copied, opened) {
+function showMakeNote(opened, file) {
   const note = $('#make-note');
   if (!note) return;
-  const openLink = `<a href="${esc(newSheetUrl())}" target="_blank" rel="noopener noreferrer">새 구글 시트 열기 ↗</a>`;
   note.hidden = false;
-  note.innerHTML = copied
-    ? `<b>${icon('check', 18)} 수정본을 복사했고, ${opened ? '새 구글 시트를 열었습니다' : '새 구글 시트만 열면 됩니다'}.</b>
-      <ol><li>${opened ? '새로 열린 시트' : `${openLink} 한 뒤 그 시트`}에서 <b>A1 칸</b>을 누르고</li><li><b>Ctrl+V</b>(맥은 ⌘+V)를 누르면 수정본이 들어갑니다.</li></ol>
-      <p>새 시트는 내 구글 드라이브에 따로 만들어지고, 첨부한 원본 시트는 그대로입니다. 열 너비까지 2차 양식 그대로 쓰려면 '엑셀 파일로 받기'로 받은 파일을 구글 드라이브에 올려 열어도 됩니다.</p>`
-    : `<b>복사가 되지 않았습니다.</b> <button class="btn small" id="b-recopy">${icon('copy', 16)} 다시 복사</button> 를 누른 뒤 새 시트의 A1 칸에 붙여넣어 주세요.${opened ? '' : ` ${openLink}`}`;
-  const rc = $('#b-recopy');
-  if (rc)
-    rc.addEventListener('click', async () => {
-      if (await copyRevised()) showMakeNote(true, opened);
-      else toast("복사하지 못했습니다. '엑셀 파일로 받기'를 이용해 주세요.", 3600);
-    });
+  if (!file) {
+    note.innerHTML = '<b>수정본 엑셀을 만들지 못했습니다.</b> 잠시 후 다시 눌러 주세요.';
+    return;
+  }
+  const openLink = `<a href="${esc(newSheetUrl())}" target="_blank" rel="noopener noreferrer">새 구글 시트 열기 ↗</a>`;
+  note.innerHTML = `<b>${icon('check', 18)} ${opened ? '새 구글 시트를 열고, ' : ''}수정본 엑셀을 내려받았습니다.</b>
+    <ol>
+      ${opened ? '' : `<li>${openLink}</li>`}
+      <li>새 시트에서 <b>파일 → 가져오기 → 업로드</b>를 누르고, 방금 받은 <b>${esc(file)}</b> 파일을 고릅니다.</li>
+      <li>가져오기 위치를 <b>스프레드시트 바꾸기</b>로 두고 <b>데이터 가져오기</b>를 누릅니다.</li>
+    </ol>
+    <p>2026 2차 양식(열 너비 · 셀 색 · 글꼴 · 셀 병합)이 그대로 들어가고, 첨부한 원본 시트는 그대로입니다. <button class="linkbtn" id="b-redl" type="button">엑셀 다시 받기</button></p>`;
+  $('#b-redl').addEventListener('click', () => exportFile('submit'));
 }
 async function copyText(text, msg) {
   try {

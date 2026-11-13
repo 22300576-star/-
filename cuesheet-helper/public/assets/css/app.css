@@ -148,6 +148,7 @@ h1, h2, h3 { letter-spacing: -0.02em; }
 .make-note ol { margin: 6px 0 4px; padding-left: 20px; }
 .make-note p { margin: 4px 0 0; color: var(--text-2); font-size: 12.5px; }
 .make-note a { color: #7fb4ff; font-weight: 700; }
+.linkbtn { background: none; border: 0; padding: 0; color: #7fb4ff; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font-size: inherit; }
 .sections { display: grid; gap: 10px; }
 .sec { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; scroll-margin-top: 80px; }
 .sec.open { border-color: var(--line-2); }
