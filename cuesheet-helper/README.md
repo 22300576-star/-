@@ -10,11 +10,13 @@
 | 주소 | 화면 |
 |---|---|
 | `#/` | 홈 — 구글 시트 링크 또는 복사·붙여넣기로 시작, 예시 체험, 빈 양식 |
-| `#/report` | 결과 요약 — 완성도, 필수/권장 수, 무대 시간(11분), 8개 항목 카드 |
-| `#/check/{time,stage,detail,lyrics,sound,screen,light,form}` | 항목별 — 고칠 것(펼쳐서 바로 수정), 자동으로 고친 것(끄기 가능), 그 항목 열만 보는 표 |
+| `#/check/{time,stage,detail,lyrics,sound,screen,light,form}` | 항목별 — 고칠 것(펼쳐서 바로 수정), 자동으로 고친 것(끄기 가능), 그 항목 열만 보는 표. Run Time에는 무대 시간(11분 기준선) 막대 |
+| `#/check` | 마지막으로 본 항목(없으면 고칠 것이 있는 첫 항목)으로 이동 — 상단 '점검' 메뉴 |
 | `#/sheet` | 전체 표 — 수정본/원본, 칸 바로 수정, 행 추가·삭제 |
-| `#/download` | 수정본 엑셀, 검토용 엑셀, 구글 시트 붙여넣기용 복사, 피드백 메시지 복사 |
+| `#/download` | 남은 필수·권장 개수와 제출 가능 여부, 수정본 엑셀, 검토용 엑셀, 구글 시트 붙여넣기용 복사, 피드백 메시지 복사 |
 | `#/guide`, `#/guide/{basic,time,content,sound,light,check}`, `#/example` | 주제별 짧은 가이드, 모범 예시 |
+
+결과 요약 화면은 따로 없습니다. 큐시트를 불러오면 고칠 것이 있는 첫 항목(필수 → 권장 순)으로 바로 이동하고, 고칠 것이 없으면 수정본 받기로 갑니다. 항목별 남은 개수는 위쪽 탭 줄에 항상 보입니다. 예전 주소 `#/report`는 `#/check`로 넘어갑니다.
 
 불러온 큐시트는 브라우저 탭(sessionStorage)에만 남고, 새로고침해도 이어서 볼 수 있습니다.
 
@@ -47,7 +49,7 @@ tests/engine.test.mjs   npm test
 
 ## AI 대안 기능 켜기 (선택)
 
-규칙 기반 피드백과 수정본은 API 키 없이 동작합니다. Netlify 프로젝트 설정 → Environment variables에 `ANTHROPIC_API_KEY`(범위: Functions)를 넣고 다시 배포하면 결과 요약 화면에 'AI 대안' 버튼이 나타납니다. 모델은 `claude-opus-5-5`, 서버 측 대체 모델(`fallbacks: "default"`)을 켜 두었습니다. AI를 쓰면 무대별 큐시트 내용이 Anthropic API로 전송됩니다.
+규칙 기반 피드백과 수정본은 API 키 없이 동작합니다. Netlify 프로젝트 설정 → Environment variables에 `ANTHROPIC_API_KEY`(범위: Functions)를 넣고 다시 배포하면 위쪽 탭 줄에 'AI 대안'이 나타납니다. 모델은 `claude-opus-5-5`, 서버 측 대체 모델(`fallbacks: "default"`)을 켜 두었습니다. AI를 쓰면 무대별 큐시트 내용이 Anthropic API로 전송됩니다.
 
 ## 다시 배포
 

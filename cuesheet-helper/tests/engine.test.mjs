@@ -41,7 +41,6 @@ test('모범 예시는 고칠 점이 없다', () => {
   const res = analyze(parseGrid(clone(SAMPLE_MODEL)));
   assert.equal(res.summary.counts.error, 0, titles(res).join(' / '));
   assert.equal(res.summary.counts.warn, 0, titles(res).join(' / '));
-  assert.equal(res.summary.score, 100);
 });
 
 test('수정 전 예시의 대표 오류를 모두 찾는다', () => {

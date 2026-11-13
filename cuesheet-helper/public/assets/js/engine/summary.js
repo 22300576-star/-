@@ -14,20 +14,6 @@ export function buildSummary(S, findings, fixes) {
     c[f.level]++;
     c.items.push(f);
   }
-  // 영역별 점수
-  const scored = ['time', 'stage', 'detail', 'lyrics', 'sound', 'screen', 'light'];
-  let total = 0;
-  const catStatus = {};
-  for (const c of scored) {
-    const x = byCat[c];
-    let s;
-    if (x.error) s = Math.max(0, 40 - (x.error - 1) * 10);
-    else if (x.warn) s = Math.max(55, 85 - (x.warn - 1) * 5);
-    else s = 100;
-    catStatus[c] = { score: s, status: x.error ? 'error' : x.warn ? 'warn' : 'ok', ...x };
-    total += s;
-  }
-  const score = Math.round(total / scored.length);
   const pendingCount = byCat.pending ? byCat.pending.items.length : 0;
   const autoFixes = [...fixes.values()].filter((f) => f.cells.length);
   const autoCells = autoFixes.reduce((n, f) => n + (f.enabled ? f.cells.length : 0), 0);
@@ -53,8 +39,6 @@ export function buildSummary(S, findings, fixes) {
 
   return {
     counts,
-    score,
-    catStatus,
     pendingCount,
     autoCells,
     totalSec: S.totalSec || 0,

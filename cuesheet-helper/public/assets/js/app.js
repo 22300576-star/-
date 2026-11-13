@@ -3,7 +3,7 @@ import { parseGrid, buildBlocks } from './engine/parser.js';
 import { classifyItem } from './engine/classify.js';
 import { analyze } from './engine/analyze.js';
 import { KEYS, LEVELS, colName } from './engine/constants.js';
-import { fmtClock } from './engine/time.js';
+import { fmtDurationKo } from './engine/time.js';
 import { readWorkbook, looksLikeCueSheet, gridFromHtml, gridFromTsv } from './io/importers.js';
 import { exportXlsx, safeSheetName } from './io/export-xlsx.js';
 import { toHtmlTable, toTsv } from './io/export-html.js';
@@ -50,6 +50,8 @@ const state = {
   sheetView: 'revised',
   selectedRow: null,
   open: new Set(),
+  lastCheck: null,
+  showAll: null,
   ai: { enabled: false, items: [], running: false },
   sheets: null,
 };
@@ -100,7 +102,8 @@ function annotateKinds(model) {
   }
 }
 
-function loadGrid(grid, name, { go = '#/report' } = {}) {
+// 불러오면 결과 요약 없이 고칠 것이 있는 첫 항목으로 바로 이동 (없으면 수정본 받기)
+function loadGrid(grid, name, { go } = {}) {
   const model = parseGrid(grid);
   if (!model.rows.length) throw new Error('큐시트 내용 행을 찾지 못했습니다. 머리글(항목, Run Time …)부터 복사해주세요.');
   annotateKinds(model);
@@ -117,11 +120,18 @@ function loadGrid(grid, name, { go = '#/report' } = {}) {
     open: new Set(),
     selectedRow: null,
     sheetView: 'revised',
+    lastCheck: null,
+    showAll: null,
   });
   state.ai.items = [];
   run(false);
-  location.hash = go;
+  const first = firstTodoPage();
+  location.hash = go || (first ? `#/check/${first.id}` : '#/download');
   render();
+  if (!go) {
+    const c = state.result.summary.counts;
+    toast(first ? `필수 ${c.error} · 권장 ${c.warn} — 위 탭에서 항목별로 고치세요` : '고칠 것이 없습니다. 바로 내려받으세요.', 4000);
+  }
 }
 
 function ensureExcel() {
@@ -312,11 +322,42 @@ function pageStats(id) {
   };
 }
 
-function scoreRing(score) {
-  const r = 56;
-  const c = 2 * Math.PI * r;
-  const color = score >= 90 ? '#3ddc97' : score >= 70 ? '#ffb547' : '#ff5a5f';
-  return `<div class="score"><svg width="132" height="132" viewBox="0 0 132 132"><circle cx="66" cy="66" r="${r}" fill="none" stroke="#1d2232" stroke-width="12"/><circle cx="66" cy="66" r="${r}" fill="none" stroke="${color}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${(c * score) / 100} ${c}"/></svg><div class="num"><div><b>${score}</b><small>완성도</small></div></div></div>`;
+// 필수 → 권장 순으로 고칠 것이 남은 첫 항목
+function firstTodoPage() {
+  return PAGES.find((p) => pageStats(p.id).error) || PAGES.find((p) => pageStats(p.id).warn) || null;
+}
+
+// Run Time 페이지: 무대 시간 막대 (11분 기준선)
+function timeCardHtml() {
+  const { summary, timeline } = state.result;
+  const blocks = [];
+  for (const t of timeline) {
+    const last = blocks[blocks.length - 1];
+    if (last && last.block === t.block) last.end = t.end;
+    else blocks.push({ ...t });
+  }
+  const total = Math.max(660, ...blocks.map((b) => b.end), 1);
+  const over = summary.totalSec > 660;
+  const lim = (660 / total) * 100;
+  const segs = blocks.map((b) => `<i class="${b.kind}" style="left:${(b.start / total) * 100}%;width:${((b.end - b.start) / total) * 100}%" title="${esc(b.label)}"></i>`).join('');
+  return `<div class="card timecard">
+    <div class="tc-head"><b>무대 시간</b><span class="${over ? 'over' : ''}">${summary.totalText} / 11분${over ? ` · ${fmtDurationKo(summary.totalSec - 660)} 초과` : ''}</span></div>
+    <div class="timebar"><div class="bar-wrap"><div class="track">${segs}</div><span class="limit" style="left:${lim}%"></span></div><div class="labels"><span>00:00</span><span class="lim ${over ? '' : 'end'}" style="left:${lim}%">11분</span></div></div>
+  </div>`;
+}
+
+// 수정본 받기 페이지: 남은 개수 / 제출 가능
+function readyCardHtml() {
+  const { summary } = state.result;
+  const c = summary.counts;
+  const ok = !c.error && !c.warn;
+  const first = firstTodoPage();
+  return `<div class="card ready ${ok ? 'ok' : c.error ? 'error' : 'warn'}">
+    <div><b>${ok ? '제출 가능' : '아직 고칠 것이 있습니다'}</b>
+      <div class="chips">${c.error ? `<span class="pill error">필수 ${c.error}</span>` : ''}${c.warn ? `<span class="pill warn">권장 ${c.warn}</span>` : ''}${summary.pendingCount ? `<span class="pill pending">논의 중 ${summary.pendingCount}</span>` : ''}${ok ? '<span class="pill ok">기준 모두 통과</span>' : ''}${summary.autoCells ? `<span class="pill info">자동 수정 ${summary.autoCells}칸 반영</span>` : ''}</div>
+    </div>
+    ${first ? `<a class="btn primary" href="#/check/${first.id}">${icon('right', 18)} ${first.name} 고치기</a>` : ''}
+  </div>`;
 }
 
 function needResult() {
@@ -349,7 +390,7 @@ function pageHome() {
         <div class="picker" id="picker" hidden><select id="picker-select"></select><button class="btn primary" id="btn-pick">이 탭 점검</button></div>
         <div class="status" id="status" role="status"></div>
         <div class="quick">
-          ${r ? `<a class="btn" href="#/report">${icon('list', 18)} '${esc(state.name)}' 결과 이어보기</a>` : ''}
+          ${r ? `<a class="btn" href="#/check">${icon('list', 18)} '${esc(state.name)}' 이어서 점검</a>` : ''}
           <button class="btn ghost" id="btn-demo">${icon('play', 18)} 예시로 체험</button>
           <button class="btn ghost" id="btn-blank">${icon('pencil', 18)} 빈 양식으로 작성</button>
         </div>
@@ -381,51 +422,6 @@ function pageHome() {
   });
 }
 
-// ---------------- 페이지: 결과 요약 ----------------
-function pageReport() {
-  if (needResult()) return;
-  const { summary, timeline } = state.result;
-  const c = summary.counts;
-  const blocks = [];
-  for (const t of timeline) {
-    const last = blocks[blocks.length - 1];
-    if (last && last.block === t.block) last.end = t.end;
-    else blocks.push({ ...t });
-  }
-  const total = Math.max(660, ...blocks.map((b) => b.end), 1);
-  const segs = blocks.map((b) => `<i class="${b.kind}" style="left:${(b.start / total) * 100}%;width:${((b.end - b.start) / total) * 100}%" title="${esc(b.label)}"></i>`).join('');
-  const firstErr = PAGES.find((p) => pageStats(p.id).error) || PAGES.find((p) => pageStats(p.id).warn);
-  const tiles = PAGES.map((p) => {
-    const s = pageStats(p.id);
-    const status = s.error ? 'error' : s.warn ? 'warn' : 'ok';
-    const label = s.error ? `필수 ${s.error}${s.warn ? ` · 권장 ${s.warn}` : ''}` : s.warn ? `권장 ${s.warn}` : '통과';
-    return `<a class="tile ${status}" href="#/check/${p.id}">${icon(p.icon, 28)}<div><b>${p.name}</b><span class="st">${label}</span>${s.auto ? `<span class="muted" style="font-size:12px"> · 자동 수정 ${s.auto}</span>` : ''}</div><i class="bar" style="width:${status === 'ok' ? 100 : status === 'warn' ? 60 : 30}%"></i></a>`;
-  }).join('');
-  app.innerHTML = `<section class="page">
-    <div class="card report-head">
-      ${scoreRing(summary.score)}
-      <div>
-        <h1>${esc(state.name)}</h1>
-        <div class="meta">무대 시간 ${summary.totalText} / 11분 · 자동 수정 ${summary.autoCells}칸${state.editMode ? ' · 직접 고침' : ''}</div>
-        <div class="chips">
-          <span class="pill error">필수 수정 ${c.error}</span>
-          <span class="pill warn">권장 ${c.warn}</span>
-          ${summary.pendingCount ? `<span class="pill pending">논의 중 ${summary.pendingCount}</span>` : ''}
-          ${!c.error && !c.warn ? '<span class="pill ok">제출 가능</span>' : ''}
-        </div>
-        <div class="timebar"><div class="track">${segs}<span class="limit" style="left:${(660 / total) * 100}%"></span></div><div class="labels"><span>00:00</span><span>11분 ▲</span><span>${fmtClock(total)}</span></div></div>
-      </div>
-      <div class="next">
-        ${firstErr ? `<a class="btn primary" href="#/check/${firstErr.id}">${icon('right', 18)} ${firstErr.name}부터 고치기</a>` : ''}
-        <a class="btn" href="#/download">${icon('download', 18)} 수정본 받기</a>
-        ${state.ai.enabled ? `<a class="btn ghost" href="#/ai">${icon('sparkle', 18)} AI 대안</a>` : ''}
-      </div>
-    </div>
-    <h2 class="row-title">항목별 점검 <small>눌러서 하나씩 확인하고 고치세요</small></h2>
-    <div class="tiles">${tiles}</div>
-  </section>`;
-}
-
 // ---------------- 페이지: 항목별 ----------------
 function issueHtml(f) {
   const open = state.open.has(f.id);
@@ -446,12 +442,14 @@ function issueHtml(f) {
 function pageCheck(id) {
   if (needResult()) return;
   const p = PAGE[id];
-  if (!p) return (location.hash = '#/report');
+  if (!p) return location.replace('#/check');
+  state.lastCheck = id;
   const s = pageStats(id);
   const S = state.result.revised;
   const todo = s.fs.filter((f) => f.level === 'error' || f.level === 'warn').sort((a, b) => LEVELS[a.level].order - LEVELS[b.level].order);
   const autos = s.fs.filter((f) => f.fixId);
-  const notes = s.fs.filter((f) => f.level === 'info' && !f.fixId);
+  // 총 무대 시간 안내는 Run Time의 무대 시간 카드가 대신 보여줌
+  const notes = s.fs.filter((f) => f.level === 'info' && !f.fixId && f.id !== 'time:total');
   const i = PAGES.indexOf(p);
   const prev = PAGES[i - 1];
   const next = PAGES[i + 1];
@@ -462,11 +460,11 @@ function pageCheck(id) {
           .join('')}</div>`
       : '';
   app.innerHTML = `<section class="page">
-    <a class="back" href="#/report">${icon('left', 18)} 결과 요약</a>
     <div class="cat-head">
       <div><h1>${icon(p.icon, 34)} ${p.name}</h1><div class="rule">${p.rule}</div></div>
       <div class="chips">${s.error ? `<span class="pill error">필수 ${s.error}</span>` : ''}${s.warn ? `<span class="pill warn">권장 ${s.warn}</span>` : ''}${s.auto ? `<span class="pill info">자동 수정 ${s.auto}</span>` : ''}${!s.error && !s.warn ? '<span class="pill ok">통과</span>' : ''}</div>
     </div>
+    ${id === 'time' ? timeCardHtml() : ''}
     ${todo.length ? `<h2 class="row-title">고칠 것 <small>${todo.length}개 · 눌러서 자세히 보고 바로 고치기</small></h2><div class="issues">${todo.slice(0, state.showAll === id ? todo.length : 6).map(issueHtml).join('')}</div>${todo.length > 6 && state.showAll !== id ? `<button class="btn ghost" id="b-more" style="margin-top:10px;width:100%">나머지 ${todo.length - 6}개 더 보기</button>` : ''}` : `<div class="empty-ok"><b>고칠 것이 없습니다</b>${p.name} 기준을 모두 지켰습니다.</div>`}
     ${fx ? `<h2 class="row-title">FX</h2>${fx}` : ''}
     ${autos.length ? `<h2 class="row-title">자동으로 고친 것 <small>${state.editMode ? '직접 고친 뒤에는 되돌리기로만 끌 수 있습니다' : '끄면 원래 내용으로 돌아갑니다'}</small></h2><div class="fixes">${autos
@@ -477,7 +475,7 @@ function pageCheck(id) {
       <div class="sheet-card"><div class="grid-wrap">${sheetHtml(S, { cols: p.cols, editable: true, findings: state.result.findings, originalMap: state.originalMap, showDiff: true })}</div></div>
       <div class="legend"><span><i class="sw changed"></i>자동 수정</span><span><i class="sw ph"></i>직접 작성</span><span><i class="sw pd"></i>논의 중</span><span><i class="dot error"></i>필수</span><span><i class="dot warn"></i>권장</span></div>` : ''}
     <div class="pager">
-      ${prev ? `<a href="#/check/${prev.id}"><small>이전</small>${prev.name}</a>` : '<a href="#/report"><small>이전</small>결과 요약</a>'}
+      ${prev ? `<a href="#/check/${prev.id}"><small>이전</small>${prev.name}</a>` : ''}
       ${next ? `<a class="next" href="#/check/${next.id}"><small>다음</small>${next.name}</a>` : '<a class="next" href="#/download"><small>다음</small>수정본 받기</a>'}
     </div>
   </section>`;
@@ -595,7 +593,7 @@ function delRow() {
 // ---------------- 페이지: 내려받기 ----------------
 function reportText() {
   const { summary, findings } = state.result;
-  const L = [`[2026 학부합창대회 큐시트 피드백] ${state.name}`, `완성도 ${summary.score}점 · 필수 수정 ${summary.counts.error} · 권장 ${summary.counts.warn} · 무대 시간 ${summary.totalText}/11분`];
+  const L = [`[2026 학부합창대회 큐시트 피드백] ${state.name}`, `필수 수정 ${summary.counts.error} · 권장 ${summary.counts.warn} · 무대 시간 ${summary.totalText}/11분`];
   for (const p of PAGES) {
     const items = findings.filter((f) => pageOf(f) === p.id && (f.level === 'error' || f.level === 'warn'));
     if (!items.length) continue;
@@ -611,6 +609,7 @@ function pageDownload() {
   app.innerHTML = `<section class="page">
     <h1 class="page-title">수정본 받기</h1>
     <p class="page-sub">2026 2차 큐시트 양식 그대로 내려받거나 바로 붙여넣으세요</p>
+    ${readyCardHtml()}
     <div class="dl-grid">
       <button class="dl main" id="d-submit">${icon('download', 30)}<div><b>수정본 엑셀</b><span>2차 큐시트 양식 그대로 · 제출용</span></div></button>
       <button class="dl" id="d-review">${icon('list', 30)}<div><b>검토용 엑셀</b><span>바뀐 칸 표시 + 메모 + 피드백 목록</span></div></button>
@@ -717,7 +716,6 @@ function pageAI() {
   if (needResult()) return;
   const items = state.ai.items;
   app.innerHTML = `<section class="page">
-    <a class="back" href="#/report">${icon('left', 18)} 결과 요약</a>
     <h1 class="page-title">AI 대안 <span class="pill info">베타</span></h1>
     <p class="page-sub">무대마다 문장·조명 대안을 받아 골라서 반영합니다. 큐시트 내용이 Anthropic Claude API로 전송됩니다.</p>
     <button class="btn primary" id="b-ai" ${state.ai.running ? 'disabled' : ''}>${icon('sparkle', 18)} ${state.ai.running ? '받는 중…' : items.length ? '다시 받기' : '대안 받기'}</button>
@@ -790,13 +788,13 @@ async function runAI() {
 // ---------------- 라우터 ----------------
 function renderNav(route) {
   const has = !!state.result;
-  $('#nav-report').hidden = !has;
+  $('#nav-check').hidden = !has;
   $$('.nav a').forEach((a) => a.classList.toggle('active', a.dataset.nav === route.top));
   const sub = $('#subnav');
-  const show = has && ['report', 'check', 'sheet', 'download', 'ai'].includes(route.name);
+  const show = has && ['check', 'sheet', 'download', 'ai'].includes(route.name);
   sub.hidden = !show;
   if (!show) return;
-  const links = [`<a href="#/report" class="${route.name === 'report' ? 'active' : ''}">요약</a>`];
+  const links = [];
   for (const p of PAGES) {
     const s = pageStats(p.id);
     const n = s.error + s.warn;
@@ -805,6 +803,7 @@ function renderNav(route) {
   links.push('<span class="sep"></span>');
   links.push(`<a href="#/sheet" class="${route.name === 'sheet' ? 'active' : ''}">${icon('grid', 16)} 전체 표</a>`);
   links.push(`<a href="#/download" class="${route.name === 'download' ? 'active' : ''}">${icon('download', 16)} 수정본 받기</a>`);
+  if (state.ai.enabled) links.push(`<a href="#/ai" class="${route.name === 'ai' ? 'active' : ''}">${icon('sparkle', 16)} AI 대안</a>`);
   $('#subnav-inner').innerHTML = links.join('');
   const act = $('#subnav-inner a.active');
   if (act) act.scrollIntoView({ block: 'nearest', inline: 'center' });
@@ -814,11 +813,12 @@ function parseRoute() {
   const h = (location.hash || '#/').replace(/^#\/?/, '');
   const [a, b] = h.split('/');
   if (!a) return { name: 'home', top: 'home' };
-  if (a === 'report') return { name: 'report', top: 'report' };
-  if (a === 'check') return { name: 'check', id: b, top: 'report' };
-  if (a === 'sheet') return { name: 'sheet', top: 'report' };
-  if (a === 'download') return { name: 'download', top: 'report' };
-  if (a === 'ai') return { name: 'ai', top: 'report' };
+  // #/check(항목 미지정)과 예전 주소 #/report는 이어서 볼 항목으로 보냄
+  if (a === 'report' || (a === 'check' && !b)) return { name: 'checkStart', top: 'check' };
+  if (a === 'check') return { name: 'check', id: b, top: 'check' };
+  if (a === 'sheet') return { name: 'sheet', top: 'check' };
+  if (a === 'download') return { name: 'download', top: 'check' };
+  if (a === 'ai') return { name: 'ai', top: 'check' };
   if (a === 'guide') return { name: 'guide', id: b, top: 'guide' };
   if (a === 'example') return { name: 'example', top: 'guide' };
   return { name: 'home', top: 'home' };
@@ -827,6 +827,11 @@ function parseRoute() {
 let lastRouteKey = '';
 function render() {
   const route = parseRoute();
+  if (route.name === 'checkStart' && state.result) {
+    const p = PAGE[state.lastCheck] || firstTodoPage() || PAGES[0];
+    location.replace(`#/check/${p.id}`);
+    return;
+  }
   const key = `${route.name}/${route.id || ''}`;
   const sameRoute = key === lastRouteKey;
   const y = window.scrollY;
@@ -835,7 +840,7 @@ function render() {
   $('#tip').hidden = true;
   renderNav(route);
   if (route.name === 'home') pageHome();
-  else if (route.name === 'report') pageReport();
+  else if (route.name === 'checkStart') needResult();
   else if (route.name === 'check') pageCheck(route.id);
   else if (route.name === 'sheet') pageSheet();
   else if (route.name === 'download') pageDownload();
@@ -913,5 +918,5 @@ initDelegates();
 window.addEventListener('hashchange', render);
 render();
 checkAI().then(() => {
-  if (state.ai.enabled && parseRoute().name === 'report') render();
+  if (state.ai.enabled && state.result) renderNav(parseRoute());
 });

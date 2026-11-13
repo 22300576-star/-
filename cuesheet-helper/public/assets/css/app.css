@@ -132,37 +132,37 @@ h1, h2, h3 { letter-spacing: -0.02em; }
 .poster span { color: var(--text-2); font-size: 13px; position: relative; }
 .poster .ic { position: absolute; left: 18px; top: 18px; color: var(--blue-2); }
 
-/* ---------- 결과 요약 ---------- */
-.report-head { display: grid; grid-template-columns: auto 1fr auto; gap: 28px; align-items: center; padding: 26px 28px; background: radial-gradient(500px 220px at 0% 0%, rgba(0,96,209,0.22), transparent 70%), var(--panel); }
-.score { width: 132px; height: 132px; position: relative; }
-.score svg { transform: rotate(-90deg); }
-.score .num { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
-.score .num b { font-family: var(--display); font-weight: 400; font-size: 54px; line-height: 0.9; display: block; }
-.score .num small { color: var(--text-3); font-size: 12px; font-weight: 700; }
-.report-head h1 { margin: 0 0 6px; font-size: 26px; }
-.report-head .meta { color: var(--text-3); font-size: 13.5px; margin-bottom: 12px; }
+/* ---------- 칩 · 무대 시간(Run Time) · 제출 상태(수정본 받기) ---------- */
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
-.next { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
-.timebar { margin-top: 16px; }
+.timecard { padding: 18px 20px; margin-bottom: 8px; }
+.tc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.tc-head b { font-size: 15px; }
+.tc-head span { color: var(--text-2); font-size: 15px; font-weight: 800; }
+.tc-head span.over { color: var(--red); }
+.timebar { margin-top: 12px; }
+.bar-wrap { position: relative; }
 .track { position: relative; height: 12px; border-radius: 999px; background: #1a1f2d; overflow: hidden; }
 .track i { position: absolute; top: 0; bottom: 0; }
 .track i.stage { background: var(--blue); }
 .track i.video { background: #3a4257; }
-.track .limit { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--red); }
-.timebar .labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-3); margin-top: 6px; }
+.bar-wrap .limit { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 2px; background: var(--red); }
+.timebar .labels { position: relative; height: 18px; margin-top: 6px; font-size: 12px; color: var(--text-3); }
+.timebar .labels span { position: absolute; top: 0; left: 0; white-space: nowrap; }
+.timebar .labels .lim { color: var(--red); font-weight: 700; transform: translateX(-50%); }
+.timebar .labels .lim.end { transform: translateX(-100%); }
+.ready { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 18px 20px; margin-bottom: 18px; border-left: 4px solid var(--amber); }
+.ready.error { border-left-color: var(--red); }
+.ready.ok { border-left-color: var(--green); }
+.ready b { display: block; font-size: 18px; margin-bottom: 8px; }
+.ready.ok b { color: var(--green); }
+
+/* ---------- 가이드 카드 ---------- */
 .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .tile { position: relative; text-decoration: none; color: #fff; border-radius: 16px; padding: 20px; min-height: 148px; background: linear-gradient(165deg, #151a29 0%, #0d1019 100%); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; transition: 0.18s; overflow: hidden; }
 .tile:hover { transform: translateY(-3px); border-color: var(--blue); box-shadow: 0 14px 34px rgba(0,96,209,0.22); }
 .tile .ic { color: var(--blue-2); }
 .tile b { font-size: 18px; display: block; margin-top: 10px; }
-.tile .st { font-size: 13px; font-weight: 800; }
-.tile.error { border-color: rgba(255,90,95,0.45); }
-.tile.error .st { color: var(--red); }
-.tile.warn .st { color: var(--amber); }
-.tile.ok .st { color: var(--green); }
-.tile .bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--green); }
-.tile.error .bar { background: var(--red); }
-.tile.warn .bar { background: var(--amber); }
+.tile .bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--blue); }
 
 /* ---------- 항목 페이지 ---------- */
 .cat-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
@@ -290,15 +290,13 @@ details.more textarea { width: 100%; margin-top: 12px; min-height: 120px; backgr
 .guide-nav a.active { color: #fff; border-color: var(--blue); background: var(--blue-soft); }
 
 /* ---------- 토스트 / 바닥 ---------- */
-.toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px); background: #fff; color: #000; padding: 12px 18px; border-radius: 12px; font-size: 14px; font-weight: 700; opacity: 0; transition: 0.2s; z-index: 200; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.4); max-width: calc(100vw - 32px); }
+.toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px); background: #fff; color: #000; padding: 12px 18px; border-radius: 12px; font-size: 14px; font-weight: 700; opacity: 0; transition: 0.2s; z-index: 200; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.4); max-width: calc(100vw - 32px); word-break: keep-all; text-align: center; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .footer { max-width: 1320px; margin: 0 auto; padding: 10px 22px 40px; color: var(--text-3); font-size: 12.5px; }
 
 /* ---------- 반응형 ---------- */
 @media (max-width: 1000px) {
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .report-head { grid-template-columns: auto 1fr; }
-  .report-head .next { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
   .split { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
@@ -310,7 +308,7 @@ details.more textarea { width: 100%; margin-top: 12px; min-height: 120px; backgr
   .subnav-inner { padding: 8px 14px; }
   .hero { padding: 40px 22px 30px; border-radius: 18px; }
   .field { flex-direction: column; }
-  .report-head { grid-template-columns: 1fr; padding: 20px; justify-items: start; }
+  .ready .btn { width: 100%; }
   .tiles { gap: 10px; }
   .tile { min-height: 124px; padding: 16px; }
   .dl-grid { grid-template-columns: 1fr; }
