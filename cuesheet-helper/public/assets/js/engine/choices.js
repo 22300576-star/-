@@ -104,6 +104,29 @@ function splitRow(S, row, parts, by) {
   S.rows.splice(at + 1, 0, ...add);
 }
 
+// 새 행 넣기 (AI 작성): afterRow 다음에 차례로. 항목이 비어 있으면 같은 순서(묶음)의 행 → 빈 공통 칸은 위 칸과 병합
+function insertRows(S, afterRow, list, by) {
+  let at = S.rows.indexOf(afterRow);
+  if (at < 0) return;
+  // 같은 행 뒤에 이미 넣은 행이 있으면 그 뒤로
+  while (S.rows[at + 1] && S.rows[at + 1].insertedAfter === afterRow.id) at++;
+  const ids = new Set(S.rows.map((r) => r.id));
+  for (const cells of list) {
+    let n = 1;
+    while (ids.has(`${afterRow.id}-a${n}`)) n++;
+    const nr = { id: `${afterRow.id}-a${n}`, src: null, kind: afterRow.kind, inserted: true, insertedAfter: afterRow.id, c: {}, cont: {}, extra: {}, marks: blankMarks() };
+    ids.add(nr.id);
+    const sameBlock = !norm(cells.item);
+    for (const k of KEYS) {
+      const v = norm(cells[k]);
+      nr.c[k] = v;
+      nr.cont[k] = sameBlock && !v && MERGEABLE.includes(k);
+      if (v) mark(nr, k, '', by, v);
+    }
+    S.rows.splice(++at, 0, nr);
+  }
+}
+
 /**
  * 고른 피드백을 반영한 큐시트
  * @param {object} res analyze() 결과
@@ -119,8 +142,8 @@ export function buildOutput(res, choice = new Map(), edits = new Map(), extra = 
   const owners = new Map(); // 'rowId|key' → 그 칸을 통째로 바꾼 항목들
   const applied = [];
   const conflicts = new Map();
-  // extra: 'AI 대안'에서 반영을 누른 문장처럼 항상 반영하는 작업 [{ id, ops }]
-  for (const item of [...choiceItems(res), ...extra.map((x) => ({ ...x, apply: 'op', defaultOn: true, editable: false }))]) {
+  // extra: AI 큐시트 작성에서 온 항목 (apply: 'op', 고르기는 같은 choice로)
+  for (const item of [...choiceItems(res), ...extra]) {
     if (item.apply === 'auto') {
       if (isChosen(item, choice)) applied.push(item.id);
       continue;
@@ -130,6 +153,14 @@ export function buildOutput(res, choice = new Map(), edits = new Map(), extra = 
     const ops = edited !== undefined && edited !== null && item.editable !== false && item.ops.length === 1 ? editOps(item, edited) : item.ops;
     let did = false;
     for (const op of ops) {
+      if (op.insert) {
+        const after = rows.get(op.afterRowId);
+        if (!after) continue;
+        insertRows(S, after, op.insert, item.id);
+        rows = rowById();
+        did = true;
+        continue;
+      }
       const row = rows.get(op.rowId);
       if (!row) continue;
       if (op.split) {
@@ -165,8 +196,8 @@ export function buildOutput(res, choice = new Map(), edits = new Map(), extra = 
 }
 
 // 반영 현황: 전체 고를 수 있는 항목 · 반영 · 수정요망 중 반영
-export function choiceStats(res, choice) {
-  const items = choiceItems(res);
+export function choiceStats(res, choice, extra = []) {
+  const items = [...choiceItems(res), ...extra];
   const on = items.filter((i) => isChosen(i, choice));
   const todo = res.findings.filter((f) => f.level === 'error' || f.level === 'warn');
   return {
@@ -174,6 +205,7 @@ export function choiceStats(res, choice) {
     on: on.length,
     auto: on.filter((i) => i.apply === 'auto').length,
     picked: on.filter((i) => i.apply !== 'auto').length,
+    ai: on.filter((i) => i.source === 'ai').length,
     todo: todo.length,
     todoOn: todo.filter((f) => isChosen(f, choice)).length,
     manual: todo.filter((f) => f.apply === 'manual' || f.apply === 'none').length,

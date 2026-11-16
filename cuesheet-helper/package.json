@@ -5,10 +5,11 @@
   "description": "2026 학부합창대회 학부 무대 큐시트 피드백·수정본 작성 도우미",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --experimental-strip-types --no-warnings --test tests/*.test.mjs"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "1.8.0"
+    "@netlify/blobs": "11.1.7",
+    "openai": "7.45.0"
   },
   "devDependencies": {
     "@netlify/functions": "6.1.1",
