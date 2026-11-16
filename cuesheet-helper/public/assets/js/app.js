@@ -31,6 +31,8 @@ const PAGES = [
   { id: 'form', name: '양식', icon: 'clipboard', rule: '<b>양식 유지</b> · 빈칸 없이 X / 유지 · 공통 항목 셀 병합' },
 ];
 const PAGE = Object.fromEntries(PAGES.map((p) => [p.id, p]));
+// 항목 → 가이드 페이지 (결과 화면에서 그 기준의 작성법으로 바로 이동)
+const GUIDE_OF = { time: 'time', stage: 'content', detail: 'content', lyrics: 'content', sound: 'sound', screen: 'content', light: 'light', form: 'basic' };
 const CAT_PAGE = { time: 'time', stage: 'stage', detail: 'detail', lyrics: 'lyrics', sound: 'sound', screen: 'screen', light: 'light', fx: 'light', form: 'form' };
 const pageOf = (f) => CAT_PAGE[f.cat] || 'form';
 // 고칠 것: 화면에는 큰 문제(error)와 나머지(warn)를 나누지 않고 모두 '수정요망'으로 보여줌
@@ -408,7 +410,7 @@ function baHtml(f) {
 function adviceHtml(cat) {
   const list = (state.result.advice || []).filter((a) => a[cat].length);
   if (!list.length) return '';
-  return `<h3 class="sub-title">이 무대에 맞춘 ${cat === 'sound' ? '음향' : '조명'} 제안 <small>무대 내용·개사를 분석한 제안이라 수정요망 개수에는 넣지 않습니다</small></h3>
+  return `<h3 class="sub-title">이 무대에 맞춘 ${cat === 'sound' ? '음향' : '조명'} 제안 <small>무대 내용·개사를 분석한 제안이라 수정요망 개수에는 넣지 않습니다</small><a class="g-link small" href="#/guide/plan">구성법 ${icon('right', 14)}</a></h3>
     <div class="advice">${list
       .map(
         (a) => `<div class="adv"><div class="adv-h"><b>${esc(a.label)}</b>${a.title ? ` <span>${esc(a.title)}</span>` : ''}${a.about ? `<small>${esc(a.about)}</small>` : ''}</div>
@@ -443,7 +445,7 @@ function sectionHtml(p) {
     const notes = s.fs.filter((f) => f.level === 'info' && !f.fixId && f.id !== 'time:total');
     const all = state.showAll.has(p.id);
     body = `<div class="sec-body">
-      <div class="rule">${p.rule}</div>
+      <div class="rule">${p.rule} <a class="g-link small" href="#/guide/${GUIDE_OF[p.id]}">가이드 ${icon('right', 14)}</a></div>
       ${p.id === 'time' ? timeCardHtml() : ''}
       ${todo.length ? `<div class="issues">${todo.slice(0, all ? todo.length : 6).map(issueHtml).join('')}</div>${todo.length > 6 && !all ? `<button class="btn ghost small more" data-more="${p.id}">나머지 ${todo.length - 6}개 더 보기</button>` : ''}` : '<div class="sec-ok">고칠 것이 없습니다.</div>'}
       ${p.id === 'sound' || p.id === 'light' ? adviceHtml(p.id) : ''}
@@ -489,7 +491,7 @@ function overviewHtml() {
     <h2>${icon('chat', 20)} 총평</h2>
     <p class="ov-lead">${esc(o.lead)}</p>
     ${dirs.length ? `<h3>수정 방향</h3><ol class="ov-dirs">${shown.map(li).join('')}</ol>${dirs.length > shown.length ? `<button class="btn ghost small more" id="b-dirs" type="button">나머지 ${dirs.length - shown.length}가지 더 보기</button>` : ''}` : ''}
-    ${o.advice && o.advice.length ? `<h3>음향 · 조명 제안 <small>무대 내용 · 개사 분석</small></h3><ul class="ov-adv">${o.advice.map((a) => `<li><b>${esc(a.label)}</b>${a.title ? ` <span class="muted">${esc(a.title)}</span>` : ''} — ${esc(a.brief)}</li>`).join('')}</ul><p class="ov-hint">무대별 자세한 제안은 아래 '음향 · FD'와 '조명' 항목을 펼치면 볼 수 있습니다.</p>` : ''}
+    ${o.advice && o.advice.length ? `<h3>음향 · 조명 제안 <small>무대 내용 · 개사 분석</small></h3><ul class="ov-adv">${o.advice.map((a) => `<li><b>${esc(a.label)}</b>${a.title ? ` <span class="muted">${esc(a.title)}</span>` : ''} — ${esc(a.brief)}</li>`).join('')}</ul><p class="ov-hint">무대별 자세한 제안은 아래 '음향 · FD'와 '조명' 항목을 펼치면 볼 수 있습니다. <a class="g-link small" href="#/guide/plan">음향 · 조명 구성법 ${icon('right', 14)}</a></p>` : ''}
     ${o.autoNote ? `<p class="ov-auto">${esc(o.autoNote)}</p>` : ''}
   </section>`;
 }
@@ -505,7 +507,7 @@ function pageResult() {
       <h1>${esc(state.name)}</h1>
       <dl class="res-meta">
         <div><dt>첨부한 원본</dt><dd>${sourceHtml()}</dd></div>
-        <div><dt>점검 기준</dt><dd>2026 2차 큐시트 양식 · OT 작성 예시 · 2026 조명 가이드 · 모범 큐시트(공시)<a href="#/guide">자세히</a></dd></div>
+        <div><dt>점검 기준</dt><dd>2026 2차 큐시트 양식 · OT 작성 예시 · 2026 조명 가이드 · 모범 큐시트(공시) · 주인공 조명 Details · 무대 내용·개사 분석<a href="#/guide">가이드</a><a href="#/guide/feedback">피드백 읽는 법</a></dd></div>
       </dl>
       <div class="chips">
         ${ok ? '<span class="pill ok">제출 가능</span>' : `<span class="pill error">수정요망 ${summary.todo}</span>`}
