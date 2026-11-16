@@ -251,15 +251,18 @@ export async function runJob(job: Job, { client, models = modelList(), effort = 
   const input = buildInput(job);
   let lastErr: unknown = null;
   for (const model of models) {
-    for (const withReasoning of [true, false]) {
+    // 모델마다: reasoning을 못 받으면 빼고, 출력 한도가 크다고 하면 줄여서 다시 (최대 4번)
+    let withReasoning = !!effort;
+    let maxTokens = 32000;
+    for (let attempt = 0; attempt < 4; attempt++) {
       try {
         const res = await client.responses.create({
           model,
           instructions: SYSTEM,
           input,
           text: { format: { type: "json_schema", name: job.mode === "edit" ? "cuesheet_edit" : "cuesheet_create", schema, strict: true } },
-          max_output_tokens: 32000,
-          ...(withReasoning && effort ? { reasoning: { effort } } : {}),
+          max_output_tokens: maxTokens,
+          ...(withReasoning ? { reasoning: { effort } } : {}),
         });
         if (res && res.status === "incomplete") {
           throw new JobError(res.incomplete_details && res.incomplete_details.reason === "max_output_tokens" ? "AI 응답이 너무 길어 중간에 끊겼습니다. 요청을 나눠서(예: 무대 하나씩) 다시 해 주세요." : "AI 응답이 완료되지 않았습니다. 다시 시도해 주세요.", 502);
@@ -278,8 +281,16 @@ export async function runJob(job: Job, { client, models = modelList(), effort = 
         lastErr = err;
         const status = err && err.status;
         const msg = String((err && err.message) || "");
-        if (withReasoning && status === 400 && /reasoning/i.test(msg)) continue; // reasoning 없이 다시
-        if (status === 404 || (status === 400 && /model/i.test(msg))) break; // 다음 모델
+        if (status === 400 && withReasoning && /reasoning/i.test(msg)) {
+          withReasoning = false; // reasoning 없이 다시
+          continue;
+        }
+        if (status === 400 && maxTokens > 16000 && /max_output_tokens|max_tokens|output tokens/i.test(msg)) {
+          maxTokens = 16000; // 출력 한도를 줄여 다시
+          continue;
+        }
+        // 없는 모델 · 이 키로 못 쓰는 모델(게이트웨이) → 다음 모델
+        if (status === 404 || status === 403 || ((status === 400 || status === 422) && /model/i.test(msg))) break;
         throw err;
       }
     }

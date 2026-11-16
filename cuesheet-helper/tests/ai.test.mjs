@@ -107,6 +107,24 @@ test('모델 호출: 없는 모델은 다음으로, reasoning을 못 받으면 �
   await assert.rejects(runJob(job, { client: cut, models: ['m'] }), /너무 길어/);
   const refuse = { responses: { create: async () => ({ status: 'completed', output: [{ content: [{ type: 'refusal', refusal: 'no' }] }], output_text: '' }) } };
   await assert.rejects(runJob(job, { client: refuse, models: ['m'] }), /답하지 않았습니다/);
+  // 게이트웨이가 모델을 막으면(403) 다음 모델, 출력 한도가 크다고 하면 줄여서 다시
+  const seen = [];
+  const gw = {
+    responses: {
+      create: async (p) => {
+        seen.push([p.model, p.max_output_tokens]);
+        if (p.model === 'blocked') throw Object.assign(new Error('Model not allowed'), { status: 403 });
+        if (p.max_output_tokens > 16000) throw Object.assign(new Error('max_output_tokens is too large: 32000. This model supports at most 16384'), { status: 400 });
+        return { status: 'completed', output: [], output_text: okText };
+      },
+    },
+  };
+  const r2 = await runJob(job, { client: gw, models: ['blocked', 'small'], effort: '' });
+  assert.equal(r2.model, 'small');
+  assert.deepEqual(seen, [['blocked', 32000], ['small', 32000], ['small', 16000]]);
+  // 키가 틀리면(401) 다른 모델로 넘어가지 않고 바로 알려 줌
+  const bad = { responses: { create: async () => { throw Object.assign(new Error('Incorrect API key'), { status: 401 }); } } };
+  await assert.rejects(runJob(job, { client: bad, models: ['a', 'b'] }), (e) => e.status === 401);
   assert.match(errorMessage(Object.assign(new Error('x'), { status: 429 })), /요청이 많아/);
   assert.match(errorMessage(Object.assign(new Error('x'), { status: 401 })), /키가 올바르지 않거나/);
 });
