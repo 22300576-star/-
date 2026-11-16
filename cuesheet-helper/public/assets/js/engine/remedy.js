@@ -5,6 +5,8 @@
 //  sure           : 시트 안의 값만으로 계산한 확실한 수정(기본으로 반영) — 아니면 예시라 학부가 골라서 반영
 //  editable       : 반영 전에 '수정 후' 문구를 고칠 수 있는지 (ops가 칸 하나일 때)
 //  pairs          : 여러 칸을 바꾸는 경우 칸별 원래 → 수정 후 [{ loc, before, after }]
+//  merged · also  : 같은 칸을 바꾸는 피드백을 한 장으로 묶은 것(첫 피드백이 최종 문구를 맡음) · 함께 해결되는 피드백 제목
+//  dupOf · choiceId : 묶여 들어간 피드백 — 따로 보이지 않고, 반영 여부는 묶은 피드백을 따른다
 import { fmtClock, fmtRunTime, fmtDurationKo, parseRunTime } from './time.js';
 import { norm, isBlank, OFF_ONLY_RE, PENDING_RE, SUBJECTIVE_RE, ZONE_RE, COLOR_WORD_RE, FX_TYPES, LOC_WORDS, INSTRUMENT_RE } from './vocab.js';
 import { PIN_POS, PIN_KEYS, LIGHT_KEYS, PLACEHOLDER, STAGE_LIMIT_SEC, colName } from './constants.js';
@@ -618,5 +620,50 @@ export function attachRemedies(ctx, stages) {
   for (const f of ctx.findings) {
     // 기본 선택: 자동 정리는 반영, 시트 값만으로 계산한 확실한 수정요망도 반영, 예시가 들어가는 것과 참고는 골라서
     f.defaultOn = f.apply === 'auto' ? true : f.apply === 'op' ? !!f.sure && f.level !== 'info' : false;
+  }
+  mergeSameCell(ctx.findings, rowById);
+}
+
+// 같은 칸을 바꾸는 피드백은 한 장으로 — 칸 하나 = 결정 하나 (수정요망끼리, 참고끼리)
+//  예) 조명 Details 한 칸에 'FX로 지정하지 않음' 3개 + '스트로브를 오래' → 최종 문구 하나와 함께 해결되는 피드백 목록
+//  최종 문구(차례대로 적용한 결과)는 칸을 통째로 바꾸는 마지막 피드백이 맡고(없으면 첫 피드백), 나머지는 dupOf로 따라간다
+export function mergeSameCell(findings, rowById) {
+  const tier = (f) => (f.level === 'error' || f.level === 'warn' ? 'todo' : 'opt');
+  const groups = new Map();
+  for (const f of findings) {
+    if (f.apply !== 'op' || !f.ops || !f.ops.length) continue;
+    const cells = new Set(f.ops.map((o) => (o.rowId && o.key && !o.split && !o.insert ? `${o.rowId}|${o.key}` : '')));
+    if (cells.size !== 1 || cells.has('')) continue;
+    const k = `${tier(f)}|${[...cells][0]}`;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(f);
+  }
+  for (const fs of groups.values()) {
+    if (fs.length < 2) continue;
+    const setters = fs.filter((f) => f.ops.some((o) => o.set !== undefined));
+    const p = setters.length ? setters[setters.length - 1] : fs[0];
+    const rest = fs.filter((f) => f !== p);
+    const { rowId, key } = p.ops[0];
+    const row = rowById.get(rowId);
+    if (!row) continue;
+    let text = cur(row, key);
+    for (const f of fs) for (const o of f.ops) text = applyText(text, o);
+    p.merged = fs.map((f) => f.id);
+    p.also = [...new Set(rest.map((f) => f.title))].filter((t) => t !== p.title);
+    p.ops = [{ rowId, key, set: text }];
+    p.after = text;
+    p.afterKind = 'example';
+    p.afterNote = '';
+    p.pairs = null;
+    p.pairsMore = 0;
+    p.editable = true;
+    p.sure = fs.every((f) => f.sure);
+    if (fs.some((f) => f.level === 'error')) p.level = 'error';
+    p.defaultOn = !EX_RE.test(text) && fs.some((f) => f.defaultOn);
+    for (const f of rest) {
+      f.dupOf = p.id;
+      f.choiceId = p.id;
+      f.defaultOn = p.defaultOn;
+    }
   }
 }

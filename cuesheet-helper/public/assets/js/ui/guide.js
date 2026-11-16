@@ -276,37 +276,38 @@ export const GUIDE = [
     group: 'submit',
     icon: 'chat',
     title: '피드백 고르고 받기',
-    short: '반영 / 반영 안 함 · 원래 → 수정 후 · 새 구글 시트',
-    body: () => `<p class="g-intro">큐시트 링크를 넣으면 결과 화면이 이어서 나옵니다. 맨 위에 첨부한 원본 · 수정요망 개수 · 무대 시간, 그 아래 <b>총평</b>(요약 · 수정 방향 · 음향 · 조명 제안), 그다음 <b>반영할 피드백 고르기</b>(항목 8개)와 <b>피드백 반영한 구글 시트 받기</b>가 이어집니다. 화면 아래 막대에 지금 반영하기로 고른 개수가 보입니다. 'AI 작성'에서 받은 수정이 있으면 <b>AI 요청 반영</b>이 함께 나오고, 같은 방식으로 고릅니다.</p>
+    short: '같은 종류는 한 묶음 · 반영 / 반영 안 함 · 새 구글 시트',
+    body: () => `<p class="g-intro">큐시트 링크를 넣으면 결과 화면이 이어서 나옵니다. 맨 위 <b>요약</b>(수정요망 개수 · 총평 · 무대 시간 · 항목별 고칠 곳)을 보고, <b>고칠 것</b>을 중요한 순서대로 고른 뒤, <b>피드백 반영한 구글 시트</b>를 받습니다. 형식만 맞춘 <b>자동 정리</b>와 꼭은 아닌 <b>더 좋게 하려면</b>(참고 수정 · 무대별 음향 · 조명 제안)은 접혀 있어 필요할 때만 펼쳐 봅니다.</p>
 
-    <h2 class="g-h2">피드백 카드 읽기</h2>
-    <div class="issue error open sample" aria-label="피드백 카드 예">
-      <div class="issue-top"><div class="t"><b>조명 Details에 주인공의 동선·의상·위치가 없음</b><div class="loc">8행 · 무대 1 · 조명-Details</div><div class="ba-mini"><span class="k">원래</span><span class="v b">주인공 따라 핀 이동</span><span class="arr">→</span><span class="k a">수정 후</span><span class="v">00:40 주인공(<mark>흰 드레스</mark>)이 무대 아래 왼쪽 계단에서 무대 중앙으로…</span></div></div><div class="choice" role="group" aria-label="반영 여부 예"><button type="button" data-v="1" class="on" tabindex="-1">${icon('check', 15)} 반영</button><button type="button" data-v="0" tabindex="-1">반영 안 함</button></div></div>
-      <div class="issue-body"><div class="ba is-example"><div class="ba-col b"><div class="ba-k">원래</div><div class="ba-v">주인공 따라 핀 이동</div></div><div class="ba-arrow" aria-hidden="true">→</div><div class="ba-col a"><div class="ba-k">수정 후 <span class="pill info">반영하면 이렇게</span></div><div class="ba-v">00:40 주인공(<mark>흰 드레스</mark>)이 무대 아래 왼쪽 계단에서 무대 중앙으로 걸어 올라옴 → 무대 중앙(Pin3 자리)에 서면 Pin3 즉시 ON</div><div class="ba-note">파란 글씨는 예시 — 반영하면 시트에 '[ ]'로 들어가고 붉게 표시되니, 받은 시트에서 실제 내용으로 바꿔 적어 주세요</div></div></div></div>
-    </div>
+    <h2 class="g-h2">고칠 것 읽기</h2>
+    <section class="grp warn sample" aria-label="고칠 것 예">
+      <div class="grp-h"><span class="grp-no">10</span><div class="grp-t"><b>조명 Details에 주인공의 동선 · 의상 · 위치를 구체적으로 적기</b><div class="grp-sub"><span class="grp-tag">조명</span><span class="grp-why">근거 · TFT 조명 Details 기준</span></div></div></div>
+      <div class="places"><div class="place is-off"><div class="pl-loc">8행 · 무대 1 · 조명-Details</div><div class="pl-main"><div class="pl-ba"><s>주인공 따라 핀 이동</s><span class="arr">→</span><span class="pl-after">00:40 주인공(<mark>흰 드레스</mark>)이 무대 아래 왼쪽 계단에서 무대 중앙으로 걸어 올라옴 → 무대 중앙(Pin3 자리)에 서면 Pin3 즉시 ON</span></div><div class="pl-also">함께 해결 · Pin3이 사람을 따라가도록 요청함</div></div><div class="pl-act"><div class="choice" role="group" aria-label="반영 여부 예"><button type="button" data-v="1" tabindex="-1">${icon('check', 15)} 반영</button><button type="button" data-v="0" class="on" tabindex="-1">반영 안 함</button></div><span class="pl-edit" aria-hidden="true">${icon('pencil', 15)}</span></div></div></div>
+    </section>
     <ul class="g-bullets">
-      <li><b>원래</b>는 학부가 처음 적은 내용, <b>수정 후</b>는 반영하면 그 칸에 들어갈 내용입니다. 접힌 카드에서는 한 줄로, 펼치면 두 칸으로 보입니다.</li>
-      <li>오른쪽 <b>반영 / 반영 안 함</b>으로 고릅니다. 반영한 것만 새 구글 시트에 들어가고, 반영 안 함으로 둔 칸은 원래 내용 그대로 남습니다.</li>
-      <li><mark>파란 글씨</mark>는 학부만 아는 내용(의상, 대형 등)이라 예로 넣은 부분입니다. '수정 후 문구 고치기'로 실제 내용으로 바꿔 저장하면 그 문구로 반영됩니다.</li>
+      <li><b>굵은 제목</b>이 고칠 방법입니다. 같은 종류의 피드백은 한 묶음이라 설명과 근거는 한 번만 나오고, 아래 줄마다 <b>위치 · 원래 → 수정 후</b>가 있습니다.</li>
+      <li>줄마다 <b>반영 / 반영 안 함</b>을 고릅니다(묶음 전체는 '모두 반영'). 반영한 것만 새 구글 시트에 들어가고, 반영 안 함으로 둔 칸은 원래 내용 그대로 남습니다.</li>
+      <li><mark>파란 글씨</mark>는 학부만 아는 내용(의상, 대형 등)이라 예로 넣은 부분입니다. ${icon('pencil', 14)}을 눌러 수정 후 문구 고치기 — 실제 내용으로 바꿔 저장하면 그 문구로 반영됩니다.</li>
+      <li>한 칸에 여러 피드백이 걸리면 한 줄로 합쳐 최종 문구 하나만 보여 주고, 함께 해결되는 피드백을 '함께 해결'에 적습니다.</li>
     </ul>
 
     <h2 class="g-h2">항목의 세 종류</h2>
     <div class="kinds">
-      <div class="kind"><span class="pill ok">자동 정리</span><p>Run Time · 조명 표기, 빈칸 X / 유지, 셀 병합처럼 형식을 맞추는 수정. 처음부터 '반영'으로 골라져 있고, 끄면 원래대로 둡니다.</p></div>
+      <div class="kind"><span class="pill ok">자동 정리</span><p>Run Time · 조명 표기, 빈칸 X / 유지, 셀 병합처럼 형식을 맞추는 수정. 접힌 상자에 모여 있고 처음부터 '반영' — 펼쳐서 끌 수 있습니다.</p></div>
       <div class="kind"><span class="pill info">반영하면 이렇게</span><p>그 칸에 들어갈 문구가 정해진 수정. 예시(파란 글씨)가 들어가는 것은 처음에 '반영 안 함' — 확인하고 골라서 반영합니다.</p></div>
       <div class="kind"><span class="pill manual-pill">직접 고치기</span><p>무대 시간 11분 맞추기, FX 효과 고르기처럼 학부가 정해야 하는 것. 반영할 수 없어 받은 시트에서 고칩니다.</p></div>
     </div>
-    <p class="g-note">수정요망은 2026 기준에 맞지 않아 고쳐야 하는 것, '참고 — 골라서 반영'은 꼭은 아니지만 더 분명해지는 것, '이 무대에 맞춘 제안'은 무대 내용 · 개사를 분석한 음향 · 조명 아이디어입니다(마이크 OFF/ON 시각, 절정 볼륨처럼 칸에 넣을 수 있는 제안은 골라서 반영).</p>
+    <p class="g-note">'더 좋게 하려면'에는 꼭 고칠 것은 아니지만 반영하면 더 분명해지는 참고 수정과, 무대 내용 · 개사를 분석한 무대별 음향 · 조명 제안(마이크 OFF/ON 시각, 절정 볼륨처럼 칸에 넣을 수 있는 것은 골라서 반영), FX 지정이 있습니다.</p>
 
     <h2 class="g-h2">고르고 받기</h2>
     <ol class="points steps">
-      ${pt(1, '항목마다 반영 / 반영 안 함', "항목을 펼쳐 고르거나 한꺼번에 고릅니다: '수정요망 모두 반영' · '모두 반영' · '모두 반영 안 함' · '처음 선택으로', 항목 안에서는 '이 항목 모두 반영'.")}
-      ${pt(2, '문구를 고쳐서 반영', "'수정 후 문구 고치기'로 파란 글씨를 실제 내용으로 바꾸고 '저장하고 반영'. 같은 칸을 바꾸는 항목을 둘 다 고르면 알려 주고, 아래쪽 항목의 문구가 들어갑니다.")}
-      ${pt(3, '미리보기', '반영한 모습을 2026 양식 표로 확인합니다. 바뀐 칸 · 직접 채울 칸 · 아직 남은 수정요망이 표시됩니다.')}
+      ${pt(1, '보고 싶은 항목만', "맨 위 항목 칩(Run Time · 조명 …)을 누르면 그 항목의 고칠 것만 보입니다. 숫자는 고칠 곳 수, ✓는 고칠 것이 없는 항목입니다.")}
+      ${pt(2, '줄마다 반영 / 반영 안 함', "한꺼번에 고르려면 '수정요망 모두 반영' · '모두 반영 안 함' · '처음 선택으로', 묶음 안에서는 '모두 반영'.")}
+      ${pt(3, '문구를 고쳐서 반영 · 미리보기', "수정 후 문구 고치기(✎)로 파란 글씨를 실제 내용으로 바꾸고 '저장하고 반영'. 미리보기에서 반영한 모습을 2026 양식 표로 확인합니다.")}
       ${pt(4, '피드백 반영한 구글 시트 만들기', "버튼을 누르고 구글 계정으로 로그인해 '허용'하면, 고른 피드백만 반영된 큐시트가 <b>내 드라이브에 새 구글 시트</b>로 만들어지고 바로 열립니다. 2026 양식(열 너비 · 셀 색 · 글꼴 · 병합) 그대로이고, 첨부한 원본은 바뀌지 않습니다. 권한은 이 사이트가 만든 파일에만 접근하는 범위입니다.")}
       ${pt(5, '남은 칸 채우고 제출', "받은 시트의 붉은 칸('(작성 필요)', [ ] 예시)과 '직접 고치기' 항목을 고친 뒤, 그 시트 링크를 다시 넣어 수정요망 0건('제출 가능')을 확인하고 제출합니다.")}
     </ol>
-    <p class="g-note">'AI 작성'으로 요구사항을 말해 큐시트를 쓰거나 고칠 수도 있습니다 — <a href="#/guide/ai">AI로 작성 · 고치기</a>. '반영으로 바뀐 칸을 노란색으로 표시'를 켜면 받은 시트에서 바뀐 곳을 찾기 쉽습니다. '피드백 메시지 복사'에는 항목별 반영 여부와 원래 → 수정 후가, '검토용 엑셀'에는 반영 열과 총평이 들어갑니다. 구글 로그인을 쓸 수 없을 때는 반영본 엑셀을 내려받아 새 시트에서 '파일 → 가져오기'로 넣는 방법을 안내합니다.</p>`,
+    <p class="g-note">'AI 작성'으로 요구사항을 말해 큐시트를 쓰거나 고칠 수도 있습니다 — <a href="#/guide/ai">AI로 작성 · 고치기</a>. '반영으로 바뀐 칸을 노란색으로 표시'를 켜면 받은 시트에서 바뀐 곳을 찾기 쉽습니다. '피드백 메시지 복사'에는 고칠 것 묶음마다 위치별 반영 여부와 원래 → 수정 후가, '검토용 엑셀'에는 반영 열과 총평이 들어갑니다. 구글 로그인을 쓸 수 없을 때는 반영본 엑셀을 내려받아 새 시트에서 '파일 → 가져오기'로 넣는 방법을 안내합니다.</p>`,
   },
   {
     id: 'ai',

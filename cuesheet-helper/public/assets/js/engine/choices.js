@@ -13,17 +13,18 @@ import { splitText } from './remedy.js';
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const LIGHT_ROW_KEYS = ['lStage', 'lTop', 'pin1', 'pin2', 'pin3', 'pin4'];
 
-// 반영 여부: 사용자가 고른 값 → 없으면 기본값
+// 반영 여부: 사용자가 고른 값 → 없으면 기본값 (같은 칸으로 묶인 피드백은 묶은 피드백의 선택을 따름)
 export function isChosen(item, choice) {
   if (item.apply === 'auto') return item.fixEnabled !== false;
   if (item.apply !== 'op' || !item.ops) return false;
-  const c = choice && (choice instanceof Map ? choice.get(item.id) : choice[item.id]);
+  const id = item.choiceId || item.id;
+  const c = choice && (choice instanceof Map ? choice.get(id) : choice[id]);
   return c === undefined ? !!item.defaultOn : !!c;
 }
 
-// 고를 수 있는 모든 항목 (피드백 + 무대별 제안)
+// 고를 수 있는 모든 항목 (피드백 + 무대별 제안) — 같은 칸으로 묶여 들어간 피드백은 빼고
 export function choiceItems(res) {
-  const out = res.findings.filter((f) => f.apply === 'auto' || f.apply === 'op');
+  const out = res.findings.filter((f) => (f.apply === 'auto' || f.apply === 'op') && !f.dupOf);
   for (const a of res.advice || []) for (const act of a.actions || []) out.push(act);
   return out;
 }
@@ -188,6 +189,8 @@ export function buildOutput(res, choice = new Map(), edits = new Map(), extra = 
     }
     if (did) applied.push(item.id);
   }
+  // 같은 칸으로 묶여 들어간 피드백은 묶은 피드백이 반영되면 함께 반영된 것
+  for (const f of res.findings) if (f.dupOf && applied.includes(f.dupOf)) applied.push(f.id);
   // 행을 나눴으면 묶음·시간을 다시 계산
   S.blocks = buildBlocks(S.rows);
   annotateKinds(S, S.blocks);

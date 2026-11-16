@@ -68,6 +68,12 @@ const firstSentence = (s) => (String(s || '').match(/^.*?[.!?다요](?=\s|$)/) |
 // '빈 조명 칸 20곳 채움 (X 16 · 유지 4)' → '빈 조명 칸 채움'
 const plainTitle = (t) => String(t).replace(/\s*\([^)]*\)/g, '').replace(/\s*\d+곳/g, '').replace(/\s+/g, ' ').trim();
 
+// 묶음 이름: 고칠 방법 한 줄(ACTIONS) — 없으면 피드백 제목(숫자 · 괄호 뺌). 같은 종류의 피드백을 한 묶음으로 모을 때 쓴다
+export function groupLabel(f, c = {}) {
+  const hit = ACTIONS.find(([re]) => re.test(f.title));
+  return hit ? hit[1](c) : plainTitle(f.title);
+}
+
 function actionFor(f, c) {
   const hit = ACTIONS.find(([re]) => re.test(f.title));
   if (hit) return hit[1](c);
@@ -138,7 +144,7 @@ export function buildOverview(S, findings, { totalSec = 0, autoCells = 0, advice
   } else {
     if (good.length) lead.push(`${josa(good.join(' · '), '은/는')} 2026 기준에 맞게 잘 작성했습니다.`);
     const top = bad.slice(0, 3).map((it) => `${it.name}(${it.n}건)`).join(' · ');
-    lead.push(`수정이 필요한 곳은 ${top}${bad.length > 3 ? ' 등' : ''} 모두 ${todo.length}건이며, 아래 수정 방향 순서대로 고치면 됩니다.`);
+    lead.push(`수정이 필요한 곳은 ${top}${bad.length > 3 ? ' 등' : ''} 모두 ${todo.length}건이며, 아래 순서대로 고치면 됩니다.`);
   }
 
   // 음향·조명 제안: 무대 내용·개사를 분석해 무대마다 한 줄

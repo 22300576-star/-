@@ -2,11 +2,11 @@
 import { parseGrid, buildBlocks } from './engine/parser.js';
 import { classifyItem } from './engine/classify.js';
 import { analyze } from './engine/analyze.js';
-import { overviewText, placeText } from './engine/overview.js';
-import { adviceText } from './engine/advice.js';
-import { AFTER_LABEL } from './engine/remedy.js';
+import { overviewText } from './engine/overview.js';
+import { adviceText, compactAdvice } from './engine/advice.js';
 import { EX_RE } from './engine/ops.js';
 import { buildOutput, isChosen, choiceItems, choiceStats, editText } from './engine/choices.js';
+import { digest as buildDigest } from './engine/digest.js';
 import { KEYS, LEVELS, colName } from './engine/constants.js';
 import { fmtDurationKo } from './engine/time.js';
 import { readWorkbook, looksLikeCueSheet, gridFromTsv } from './io/importers.js';
@@ -59,11 +59,10 @@ const state = {
   editing: null, // '수정 후' 문구를 고치는 중인 항목 id
   showDiff: true,
   sheetView: 'output',
-  open: new Set(), // 펼친 피드백 카드
-  openSecs: new Set(), // 펼친 항목(Run Time, 조명 …)
-  showAll: new Set(), // '더 보기'를 누른 항목
-  showAllDirs: false, // 총평의 수정 방향 '더 보기'
-  scrollTo: null,
+  digest: null, // 결과 화면용으로 묶은 피드백 (고칠 것 · 자동 정리 · 참고)
+  filter: null, // 항목 칩으로 고른 항목만 보기 (Run Time, 조명 …)
+  showAllPlaces: new Set(), // '나머지 n곳 더 보기'를 누른 묶음
+  openBoxes: new Set(), // 펼친 상자 (자동 정리 · 더 좋게 하려면)
   fbText: null,
   source: null, // 첨부한 큐시트: { kind: 'link', title, tab, url, rows, at }
   pendingSource: null, // 탭 고르기 중인 링크
@@ -175,7 +174,10 @@ function markAIPlaceholders(S) {
 }
 // 자동 정리를 켜고 끄면 다시 분석, 고르기만 바꾸면 반영본만 다시 만든다 (AI 작성에서 받은 항목도 함께)
 function recompute({ reanalyze = true } = {}) {
-  if (reanalyze || !state.result) state.result = analyze(state.original, { disabled: state.disabled, fx: state.fx });
+  if (reanalyze || !state.result || !state.digest) {
+    state.result = analyze(state.original, { disabled: state.disabled, fx: state.fx });
+    state.digest = buildDigest(state.result);
+  }
   state.output = buildOutput(state.result, state.choice, state.edits, state.aiw.items);
   if (state.source && state.source.kind === 'ai') markAIPlaceholders(state.output.S);
 }
@@ -210,11 +212,10 @@ function loadGrid(grid, name, source = {}) {
     edits: new Map(),
     fx: { FX1: '', FX2: '' },
     editing: null,
-    open: new Set(),
     sheetView: 'output',
-    openSecs: new Set(),
-    showAll: new Set(),
-    showAllDirs: false,
+    filter: null,
+    showAllPlaces: new Set(),
+    openBoxes: new Set(),
     fbText: null,
     made: null,
   });
@@ -374,6 +375,21 @@ function bulkChoose(mode, pageId = null) {
   run(true, { reanalyze: true });
 }
 
+// 고칠 것 한 묶음(같은 종류)을 한꺼번에 반영 / 반영 안 함
+function bulkGroup(key, on) {
+  const g = groupByKey(key);
+  if (!g) return;
+  let auto = false;
+  for (const f of g.places) {
+    if (f.apply === 'auto') {
+      auto = true;
+      if (on) state.disabled.delete(f.fixId);
+      else state.disabled.add(f.fixId);
+    } else if (f.apply === 'op') state.choice.set(f.id, on);
+  }
+  run(true, { reanalyze: auto });
+}
+
 // AI 요청 하나(job)의 항목을 한꺼번에 반영 / 반영 안 함
 function bulkAI(job, on) {
   for (const i of state.aiw.items) if (job === '*' || i.job === job) state.choice.set(i.id, on);
@@ -408,19 +424,7 @@ function locText(f) {
 }
 const firstSentence = (s) => (String(s).match(/^.*?[.!?다요](?=\s|$)/) || [s])[0];
 
-function pageStats(id) {
-  const fs = state.result.findings.filter((f) => pageOf(f) === id);
-  const acts = id === 'sound' || id === 'light' ? allActions().filter((a) => a.cat === id) : [];
-  const pickable = [...fs.filter((f) => f.apply === 'auto' || f.apply === 'op'), ...acts];
-  return {
-    fs,
-    todo: fs.filter(isTodo).length,
-    pickable: pickable.length,
-    on: pickable.filter(chosen).length,
-  };
-}
-
-// Run Time 항목 안: 무대 시간 막대 (11분 기준선)
+// 무대 시간 막대 (11분 기준선)
 function timeCardHtml() {
   const { summary, timeline } = state.result;
   const blocks = [];
@@ -479,39 +483,13 @@ const clip = (t, n = 60) => {
   return v.length > n ? `${v.slice(0, n - 1)}…` : v;
 };
 const afterOf = (f) => (state.edits.has(f.id) ? state.edits.get(f.id) : f.after);
-// 접힌 카드: 한 줄로 원래 → 수정 후
-function baMini(f) {
-  if (f.cells) return `<div class="ba-mini"><span class="k a">새 행</span><span class="v">${markEx(clip(f.after, 90))}</span></div>`;
-  if (f.after == null) return `<div class="how">${esc(f.suggestion ? `→ ${f.suggestion}` : firstSentence(f.msg))}</div>`;
-  const before = f.before ? `<span class="v b">${esc(clip(f.before, 34))}</span>` : '<span class="v b empty">빈칸</span>';
-  return `<div class="ba-mini"><span class="k">원래</span>${before}<span class="arr">→</span><span class="k a">수정 후</span><span class="v">${markEx(clip(afterOf(f), 64))}</span></div>`;
-}
-// 펼친 카드: 원래 | 수정 후 두 칸
 // AI가 넣는 새 행: 칸마다 내용
 function insHtml(f) {
   const c = f.cells || {};
   const rows = KEYS.filter((k) => String(c[k] || '').trim())
     .map((k) => `<div><dt>${esc(colName(k))}</dt><dd>${markEx(String(c[k]).trim())}</dd></div>`)
     .join('');
-  return `<div class="ba-new"><div class="ba-k">새 행 <span class="pill ai">AI 작성</span></div><dl>${rows || '<div><dd>빈 행</dd></div>'}</dl><div class="ba-note">${esc(f.loc)}에 들어갑니다 · 비운 공통 칸(항목 · 무대 · 대기 인원 · 음향 · 화면)은 같은 순서면 위 칸과 병합</div></div>`;
-}
-function baHtml(f) {
-  if (f.after == null) return '';
-  if (f.cells) return insHtml(f);
-  const edited = state.edits.has(f.id);
-  const kind = edited ? '고친 문구' : f.afterKind === 'ai' ? 'AI 작성' : AFTER_LABEL[f.afterKind] || '';
-  const pill = f.apply === 'auto' ? 'ok' : f.afterKind === 'guide' ? '' : f.afterKind === 'ai' ? 'ai' : 'info';
-  const after = afterOf(f);
-  const note = [f.afterNote, hasEx(after) ? "파란 글씨는 예시 — 반영하면 시트에 '[ ]'로 들어가고 붉게 표시되니, 받은 시트에서 실제 내용으로 바꿔 적어 주세요" : ''].filter(Boolean);
-  const pairs =
-    f.pairs && f.pairs.length > 1
-      ? `<ul class="ba-pairs">${f.pairs.map((p) => `<li><span class="loc">${esc(p.loc)}</span><s>${esc(clip(p.before, 60) || '빈칸')}</s> → <b>${markEx(clip(p.after, 60))}</b></li>`).join('')}${f.pairsMore ? `<li class="muted">외 ${f.pairsMore}곳</li>` : ''}</ul>`
-      : '';
-  return `<div class="ba is-${esc(f.afterKind || 'none')}">
-    <div class="ba-col b"><div class="ba-k">원래</div><div class="ba-v">${f.before ? esc(f.before) : '<i>빈칸</i>'}</div></div>
-    <div class="ba-arrow" aria-hidden="true">→</div>
-    <div class="ba-col a"><div class="ba-k">수정 후 ${kind ? `<span class="pill ${pill}">${esc(kind)}</span>` : ''}</div><div class="ba-v">${markEx(after)}</div>${note.length ? `<div class="ba-note">${note.map(esc).join(' · ')}</div>` : ''}</div>
-  </div>${pairs}`;
+  return `<div class="ba-new"><dl>${rows || '<div><dd>빈 행</dd></div>'}</dl><div class="ba-note">비운 공통 칸(항목 · 무대 · 대기 인원 · 음향 · 화면)은 같은 순서면 위 칸과 병합</div></div>`;
 }
 
 // 반영 / 반영 안 함
@@ -521,107 +499,118 @@ function choiceHtml(f) {
     const attr = f.apply === 'auto' ? `data-fix="${esc(f.fixId)}"` : `data-choose="${esc(f.id)}"`;
     return `<div class="choice" role="group" aria-label="반영 여부"><button type="button" ${attr} data-v="1" class="${on ? 'on' : ''}" aria-pressed="${on}">${icon('check', 15)} 반영</button><button type="button" ${attr} data-v="0" class="${on ? '' : 'on'}" aria-pressed="${!on}">반영 안 함</button></div>`;
   }
-  if (isTodo(f)) return '<span class="pill manual-pill" title="자동으로 반영할 수 없어 받은 시트에서 직접 고칩니다">직접 고치기</span>';
-  return '';
+  return '<span class="pill manual-pill" title="자동으로 반영할 수 없어 받은 시트에서 직접 고칩니다">직접 고치기</span>';
 }
-function editHtml(f) {
-  if (f.apply !== 'op' || !f.editable) return '';
-  if (state.editing === f.id) {
-    const cur = state.edits.has(f.id) ? state.edits.get(f.id) : editText(f);
-    return `<div class="edit-after"><label>수정 후 문구 고치기 <small>저장하면 이 문구로 반영합니다${f.ops[0].split ? " · 한 줄에 'Run Time 가사 / 가사' 한 행" : ''}</small></label><textarea data-edit-text rows="${Math.min(10, Math.max(3, String(cur).split('\n').length + 1))}">${esc(cur)}</textarea>
-      <div class="acts"><button class="btn primary small" type="button" data-edit-save>${icon('check', 16)} 저장하고 반영</button><button class="btn small" type="button" data-edit-cancel>취소</button>${state.edits.has(f.id) ? '<button class="btn ghost small" type="button" data-edit-reset>예시로 되돌리기</button>' : ''}</div></div>`;
-  }
-  return `<div class="edit-after"><button class="linkbtn" type="button" data-edit-open>${icon('pencil', 14)} 수정 후 문구 고치기${hasEx(afterOf(f)) ? ' (파란 글씨를 실제 내용으로)' : ''}</button></div>`;
+// 수정 후 문구 고치기 (✎을 누른 곳만 펼침)
+function editorHtml(f) {
+  const cur = state.edits.has(f.id) ? state.edits.get(f.id) : editText(f);
+  return `<div class="edit-after"><label>수정 후 문구 고치기 <small>저장하면 이 문구로 반영합니다${f.ops[0].split ? " · 한 줄에 'Run Time 가사 / 가사' 한 행" : ''}</small></label><textarea data-edit-text rows="${Math.min(10, Math.max(3, String(cur).split('\n').length + 1))}">${esc(cur)}</textarea>
+    <div class="acts"><button class="btn primary small" type="button" data-edit-save>${icon('check', 16)} 저장하고 반영</button><button class="btn small" type="button" data-edit-cancel>취소</button>${state.edits.has(f.id) ? '<button class="btn ghost small" type="button" data-edit-reset>처음 문구로 되돌리기</button>' : ''}</div></div>`;
 }
 function conflictHtml(f) {
   const others = state.output && state.output.conflicts.get(f.id);
   if (!others || !others.length || !chosen(f)) return '';
   const names = [...new Set(others)].map((id) => findingById(id)).filter(Boolean).map((x) => `'${x.title}'`);
-  return `<p class="conflict">${icon('chat', 15)} 같은 칸을 바꾸는 ${names.join(', ')} 항목도 반영하기로 골라져 있어, 아래에 있는 항목의 문구가 최종으로 들어갑니다.</p>`;
+  return `<p class="conflict">${icon('chat', 15)} 같은 칸을 바꾸는 ${names.join(', ')}도 반영으로 골라져 있어, 아래쪽 문구가 최종으로 들어갑니다.</p>`;
 }
 
-function issueHtml(f) {
-  const open = state.open.has(f.id);
-  const on = chosen(f);
+// ---------------- 피드백 한 곳 (위치 한 줄) ----------------
+// 위치 · 원래 → 수정 후 · 반영 여부 · ✎ — 설명과 근거는 묶음에 한 번만
+function placeHtml(f, { loc = true } = {}) {
   const pickable = f.apply === 'auto' || f.apply === 'op';
-  const cls = ['issue', isTodo(f) ? 'error' : 'note', f.source === 'ai' ? 'ai' : '', pickable ? (on ? 'is-on' : 'is-off') : 'is-manual', open ? 'open' : ''].filter(Boolean).join(' ');
-  const msg = f.msg && !(f.source === 'ai' && f.msg === f.title) ? `<p>${esc(f.msg)}</p>` : '';
-  return `<div class="${cls}" data-id="${esc(f.id)}">
-    <div class="issue-top"><div class="t"><b>${esc(f.title)}</b><div class="loc">${esc(locText(f))}</div>${baMini(f)}</div>${choiceHtml(f)}${icon('chevron', 20).replace('class="ic"', 'class="ic chev"')}</div>
-    <div class="issue-body">${msg}${baHtml(f)}${editHtml(f)}${conflictHtml(f)}${f.apply === 'manual' ? `<p class="manual">${icon('pencil', 15)} ${esc(f.manual || '받은 시트에서 직접 고쳐 주세요.')}</p>` : ''}${f.why ? `<div class="why">근거 · ${esc(f.why)}</div>` : ''}</div>
+  const on = pickable && chosen(f);
+  const after = afterOf(f);
+  const edited = state.edits.has(f.id);
+  const before = f.before ? `<s>${esc(clip(f.before, 70))}</s>` : '<s class="empty">빈칸</s>';
+  let body;
+  if (f.cells) body = `<div class="pl-ba"><span class="pl-k">새 행</span></div>${insHtml(f)}`;
+  else if (f.pairs && f.pairs.length > 1)
+    body = `<ul class="pl-pairs">${f.pairs.map((p) => `<li><span class="pl-k">${esc(p.loc)}</span><s>${esc(clip(p.before, 40) || '빈칸')}</s><span class="arr">→</span><b>${markEx(clip(p.after, 60))}</b></li>`).join('')}${f.pairsMore ? `<li class="muted">외 ${f.pairsMore}곳</li>` : ''}</ul>`;
+  else if (after != null && f.afterKind === 'guide') body = `<div class="pl-ba guide">${f.before ? `${before}<span class="arr">→</span>` : ''}<span class="pl-after">${markEx(after)}</span></div>`;
+  else if (after != null) body = `<div class="pl-ba">${before}<span class="arr">→</span><span class="pl-after${edited ? ' edited' : ''}">${markEx(after)}</span>${edited ? '<span class="pill sel">고친 문구</span>' : ''}</div>`;
+  else body = `<div class="pl-msg">${esc(firstSentence(f.msg))}</div>`;
+  const also = f.also && f.also.length ? `<div class="pl-also">함께 해결 · ${esc(f.also.join(' · '))}</div>` : '';
+  const manual = f.apply === 'manual' && f.manual ? `<div class="pl-manual">${esc(f.manual)}</div>` : '';
+  const canEdit = f.apply === 'op' && f.editable !== false && f.ops && f.ops.length === 1 && !f.cells;
+  const editBtn = canEdit ? `<button class="pl-edit" type="button" data-edit-open title="수정 후 문구 고치기" aria-label="수정 후 문구 고치기">${icon('pencil', 15)}</button>` : '';
+  return `<div class="place ${pickable ? (on ? 'is-on' : 'is-off') : 'is-manual'}${f.source === 'ai' ? ' ai' : ''}${loc ? '' : ' no-loc'}" data-id="${esc(f.id)}">
+    ${loc ? `<div class="pl-loc">${esc(locText(f))}</div>` : ''}
+    <div class="pl-main">${body}${also}${manual}${conflictHtml(f)}</div>
+    <div class="pl-act">${choiceHtml(f)}${editBtn}</div>
+    ${state.editing === f.id && canEdit ? editorHtml(f) : ''}
   </div>`;
 }
 
-const fixEx = (f) => {
-  const p = f.pairs && f.pairs.length ? f.pairs[0] : f.after != null ? { before: f.before, after: f.after } : null;
-  return p ? `<span class="fx-ex"><s>${esc(clip(p.before, 36) || '빈칸')}</s> → <b>${esc(clip(p.after, 44))}</b></span>` : '';
+// ---------------- 고칠 것 한 가지 (같은 종류는 한 묶음) ----------------
+const PLACE_LIMIT = 4;
+// 근거는 화면에서 처음 나올 때 한 번만 (같은 근거를 쓰는 다른 묶음에서는 생략)
+let shownWhy = new Set();
+const groupByKey = (key) => {
+  const d = state.digest;
+  return d && [...d.todo, ...d.auto, ...d.extra].find((g) => g.key === key);
 };
-const autoHtml = (f) => `<div class="fix ${chosen(f) ? 'is-on' : 'is-off'}" data-id="${esc(f.id)}"><div class="t">${esc(f.title)}<small>${esc(firstSentence(f.msg))}</small>${fixEx(f)}</div>${choiceHtml(f)}</div>`;
-const noteHtml = (f) => `<div class="fix"><div class="t">${esc(f.title)}<small>${esc(firstSentence(f.msg))}</small></div></div>`;
-const fxHtml = () =>
-  `<div class="fix fx"><div class="t"><b>FX 지정</b><small>학부가 쓰는 효과 2개를 고르면 Details에 함께 적습니다</small></div><div class="fx-sel">${['FX1', 'FX2']
-    .map((k) => `<select data-fx="${k}" class="btn small">${FX_OPTIONS.map((o) => `<option value="${esc(o)}" ${state.fx[k] === o ? 'selected' : ''}>${o ? `${k}: ${o}` : `${k} 지정 안 함`}</option>`).join('')}</select>`)
-    .join('')}</div></div>`;
-
-// 음향 · 조명 항목 안: 무대 내용·개사를 분석한 제안 (반영할 수 있는 제안은 고르기)
-function actionHtml(a) {
-  return `<div class="act ${chosen(a) ? 'is-on' : 'is-off'}" data-id="${esc(a.id)}"><div class="t"><b>${esc(a.title)}</b><div class="ba-mini"><span class="k a">반영하면</span><span class="v">${markEx(clip(a.after, 90))}</span></div></div>${choiceHtml(a)}</div>`;
-}
-function adviceHtml(cat) {
-  const list = (state.result.advice || []).filter((a) => a[cat].length || (a.actions || []).some((x) => x.cat === cat));
-  if (!list.length) return '';
-  return `<h3 class="sub-title">이 무대에 맞춘 ${cat === 'sound' ? '음향' : '조명'} 제안 <small>무대 내용·개사를 분석한 제안 — 반영할 수 있는 것은 골라서 반영</small><a class="g-link small" href="#/guide/plan">구성법 ${icon('right', 14)}</a></h3>
-    <div class="advice">${list
-      .map(
-        (a) => `<div class="adv"><div class="adv-h"><b>${esc(a.label)}</b>${a.title ? ` <span>${esc(a.title)}</span>` : ''}${a.about ? `<small>${esc(a.about)}</small>` : ''}</div>
-        <ul>${a[cat].map((t) => `<li>${esc(t)}</li>`).join('')}</ul>${a.now.filter((n) => n.cat === cat).map((n) => `<p class="adv-now"><b>지금 큐시트</b> ${esc(n.text)}</p>`).join('')}
-        ${(a.actions || []).filter((x) => x.cat === cat).map(actionHtml).join('')}</div>`,
-      )
-      .join('')}</div>`;
-}
-
-function sectionHtml(p) {
-  const s = pageStats(p.id);
-  const open = state.openSecs.has(p.id);
-  const status = s.todo ? 'todo' : 'ok';
-  const chips = `${s.todo ? `<span class="pill error">수정요망 ${s.todo}</span>` : '<span class="pill ok">통과</span>'}${s.pickable ? `<span class="pill sel">반영 ${s.on}/${s.pickable}</span>` : ''}`;
-  let body = '';
-  if (open) {
-    const todo = s.fs.filter(isTodo).sort((a, b) => LEVELS[a.level].order - LEVELS[b.level].order);
-    const picks = s.fs.filter((f) => !isTodo(f) && f.apply === 'op');
-    const autos = s.fs.filter((f) => !isTodo(f) && f.apply === 'auto');
-    // 총 무대 시간 안내는 Run Time의 무대 시간 막대가 대신 보여줌
-    const notes = s.fs.filter((f) => !isTodo(f) && f.apply !== 'op' && f.apply !== 'auto' && f.id !== 'time:total');
-    const all = state.showAll.has(p.id);
-    body = `<div class="sec-body">
-      <div class="rule">${p.rule} <a class="g-link small" href="#/guide/${GUIDE_OF[p.id]}">가이드 ${icon('right', 14)}</a></div>
-      ${s.pickable ? `<div class="sec-bulk"><button class="btn small" type="button" data-bulk="all" data-page="${p.id}">${icon('check', 15)} 이 항목 모두 반영</button><button class="btn small" type="button" data-bulk="none" data-page="${p.id}">모두 반영 안 함</button></div>` : ''}
-      ${p.id === 'time' ? timeCardHtml() : ''}
-      ${todo.length ? `<div class="issues">${todo.slice(0, all ? todo.length : 6).map(issueHtml).join('')}</div>${todo.length > 6 && !all ? `<button class="btn ghost small more" data-more="${p.id}">나머지 ${todo.length - 6}개 더 보기</button>` : ''}` : '<div class="sec-ok">고칠 것이 없습니다.</div>'}
-      ${picks.length ? `<h3 class="sub-title">참고 — 골라서 반영 <small>꼭 고칠 것은 아니지만 반영하면 더 분명해지는 것</small></h3><div class="issues">${picks.map(issueHtml).join('')}</div>` : ''}
-      ${p.id === 'sound' || p.id === 'light' ? adviceHtml(p.id) : ''}
-      ${p.id === 'light' ? `<h3 class="sub-title">FX</h3>${fxHtml()}` : ''}
-      ${autos.length ? `<h3 class="sub-title">자동 정리 <small>형식을 맞추는 수정 — 처음부터 반영으로 골라져 있고, 반영 안 함을 누르면 원래대로 둡니다</small></h3><div class="fixes">${autos.map(autoHtml).join('')}</div>` : ''}
-      ${notes.length ? `<h3 class="sub-title">참고</h3><div class="fixes">${notes.map(noteHtml).join('')}</div>` : ''}
-    </div>`;
-  }
-  return `<section class="sec ${status}${open ? ' open' : ''}" data-sec="${p.id}">
-    <button class="sec-head" type="button" aria-expanded="${open}">${icon(p.icon, 22)}<b>${p.name}</b><span class="chips">${chips}</span>${icon('chevron', 20).replace('class="ic"', 'class="ic chev"')}</button>
-    ${body}
+function groupHtml(g, no = null) {
+  const pick = g.places.filter((f) => f.apply === 'op' || f.apply === 'auto');
+  const all = state.showAllPlaces.has(g.key);
+  const shown = all || g.places.length <= PLACE_LIMIT + 1 ? g.places : g.places.slice(0, PLACE_LIMIT);
+  const guide = GUIDE_OF[g.item];
+  const fresh = g.why && !shownWhy.has(g.why);
+  if (fresh) shownWhy.add(g.why);
+  const why = fresh ? `<span class="grp-why" title="${esc(g.why)}">근거 · ${esc(clip(g.why, 70))}</span>` : '';
+  return `<section class="grp ${g.level === 'error' ? 'error' : g.level === 'warn' ? 'warn' : 'note'}" data-group="${esc(g.key)}">
+    <div class="grp-h">
+      ${no != null ? `<span class="grp-no">${no}</span>` : ''}
+      <div class="grp-t"><b>${esc(g.label)}</b><div class="grp-sub"><span class="grp-tag">${esc(g.itemName)}</span>${g.places.length > 1 ? `<span>${g.places.length}곳</span>` : ''}${why}${guide ? `<a class="g-link small" href="#/guide/${guide}">가이드 ${icon('right', 13)}</a>` : ''}</div></div>
+      ${pick.length > 1 ? `<div class="grp-bulk"><button class="btn small" type="button" data-gbulk="1" data-group="${esc(g.key)}">${icon('check', 14)} 모두 반영</button><button class="btn small ghost" type="button" data-gbulk="0" data-group="${esc(g.key)}">모두 안 함</button></div>` : ''}
+    </div>
+    ${g.note ? `<p class="grp-note">${esc(g.note)}</p>` : ''}
+    <div class="places">${shown.map((f) => placeHtml(f, { loc: !!f.rowId || g.places.length > 1 })).join('')}</div>
+    ${shown.length < g.places.length ? `<button class="btn ghost small more" type="button" data-pmore="${esc(g.key)}">나머지 ${g.places.length - shown.length}곳 더 보기</button>` : ''}
   </section>`;
 }
 
-function redrawSec(id) {
-  const el = $(`.sec[data-sec="${id}"]`, app);
-  if (!el) return;
-  const tmp = document.createElement('div');
-  tmp.innerHTML = sectionHtml(PAGE[id]);
-  el.replaceWith(tmp.firstElementChild);
+// 무대마다 음향 · 조명 제안 (선택) — 칸에 넣을 수 있는 제안은 같은 방식으로 고르기
+function adviceCardHtml(a) {
+  const list = (title, items) => (items.length ? `<div class="adv-l"><b>${title}</b><ul>${items.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>` : '');
+  return `<div class="adv"><div class="adv-h"><b>${esc(a.label)}</b>${a.title ? ` <span>${esc(a.title)}</span>` : ''}${a.about ? `<small>${esc(a.about)}</small>` : ''}</div>
+    <div class="adv-cols">${list('음향', a.sound)}${list('조명', a.light)}</div>
+    ${a.now.map((n) => `<p class="adv-now"><b>지금 큐시트</b> ${esc(n.text)}</p>`).join('')}
+    ${(a.actions || []).length ? `<div class="places">${a.actions.map((x) => placeHtml(x)).join('')}</div>` : ''}</div>`;
+}
+const fxHtml = () =>
+  `<div class="fx-sel-row"><div class="t"><b>FX 지정</b><small>학부가 쓰는 효과 2개를 고르면 Details에 함께 적습니다</small></div><div class="fx-sel">${['FX1', 'FX2']
+    .map((k) => `<select data-fx="${k}" class="btn small">${FX_OPTIONS.map((o) => `<option value="${esc(o)}" ${state.fx[k] === o ? 'selected' : ''}>${o ? `${k}: ${o}` : `${k} 지정 안 함`}</option>`).join('')}</select>`)
+    .join('')}</div></div>`;
+
+// 접어 두는 상자 (자동 정리 · 더 좋게 하려면): 펼친 상태는 기억
+const boxAttr = (id) => `data-box="${id}" ${state.openBoxes.has(id) ? 'open' : ''}`;
+function autoBoxHtml() {
+  const d = state.digest;
+  if (!d.auto.length) return '';
+  const all = d.auto.flatMap((g) => g.places);
+  const on = all.filter(chosen).length;
+  const o = state.result.summary.overview;
+  return `<details class="box" ${boxAttr('auto')}><summary><span class="box-t">${icon('check', 18)} 자동 정리 <b>${d.auto.length}가지</b></span><small>표기 · 빈칸처럼 형식만 맞춘 수정 — ${on}/${all.length} 반영 중 · 펼쳐서 끌 수 있음</small></summary>
+    ${o.autoNote ? `<p class="box-lead">${esc(o.autoNote)}</p>` : ''}
+    <div class="groups compact">${d.auto.map((g) => groupHtml(g)).join('')}</div></details>`;
+}
+function extraBoxHtml() {
+  const d = state.digest;
+  const adv = compactAdvice(state.result.advice).filter((a) => a.sound.length || a.light.length || (a.actions || []).length);
+  const n = d.extra.reduce((k, g) => k + g.places.length, 0);
+  return `<details class="box" ${boxAttr('extra')}><summary><span class="box-t">${icon('sparkle', 18)} 더 좋게 하려면 <b>선택</b></span><small>${[n ? `참고 수정 ${n}` : '', adv.length ? `무대별 음향 · 조명 제안 ${adv.length}` : '', 'FX 지정'].filter(Boolean).join(' · ')} — 수정요망은 아님</small></summary>
+    ${d.extra.length ? `<h3 class="sub-title">참고 수정 <small>꼭 고칠 것은 아니지만 반영하면 더 분명해지는 것</small></h3><div class="groups compact">${d.extra.map((g) => groupHtml(g)).join('')}</div>` : ''}
+    ${adv.length ? `<h3 class="sub-title">무대별 음향 · 조명 제안 <small>무대 내용 · 개사를 분석한 제안</small><a class="g-link small" href="#/guide/plan">구성법 ${icon('right', 14)}</a></h3><div class="advice">${adv.map(adviceCardHtml).join('')}</div>` : ''}
+    <h3 class="sub-title">FX</h3>${fxHtml()}
+    ${d.notes.length ? `<h3 class="sub-title">참고</h3><ul class="box-notes">${d.notes.map((f) => `<li><b>${esc(f.title)}</b> ${esc(firstSentence(f.msg))}</li>`).join('')}</ul>` : ''}
+  </details>`;
 }
 
 // ---------------- AI 요청 결과 (반영 고르기) ----------------
 const timeOf = (t) => new Date(t).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' });
 const notesHtml = (notes) => (notes && notes.length ? `<ul class="w-notes">${notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>` : '');
+// AI 항목 한 줄: 제목(왜 바꿨는지) + 위치 · 원래 → 수정 후
+const aiPlaceHtml = (i) => `<div class="ai-item"><b class="ai-t">${esc(i.title)}</b>${placeHtml(i)}</div>`;
 function aiJobsHtml() {
   const w = state.aiw;
   return w.jobs
@@ -636,7 +625,7 @@ function aiJobsHtml() {
       ${notesHtml(j.notes)}
       ${
         items.length
-          ? `<div class="sec-bulk"><button class="btn small" type="button" data-aibulk="1" data-job="${esc(j.id)}">${icon('check', 15)} 이 요청 모두 반영</button><button class="btn small" type="button" data-aibulk="0" data-job="${esc(j.id)}">모두 반영 안 함</button><button class="btn ghost small" type="button" data-aidel="${esc(j.id)}">요청 지우기</button></div><div class="issues">${items.map(issueHtml).join('')}</div>`
+          ? `<div class="sec-bulk"><button class="btn small" type="button" data-aibulk="1" data-job="${esc(j.id)}">${icon('check', 15)} 이 요청 모두 반영</button><button class="btn small" type="button" data-aibulk="0" data-job="${esc(j.id)}">모두 반영 안 함</button><button class="btn ghost small" type="button" data-aidel="${esc(j.id)}">요청 지우기</button></div><div class="ai-items">${items.map(aiPlaceHtml).join('')}</div>`
           : `<p class="muted w-none">바꿀 칸은 없었습니다. <button class="linkbtn" type="button" data-aidel="${esc(j.id)}">지우기</button></p>`
       }
     </section>`;
@@ -653,20 +642,6 @@ function aiSectionHtml() {
     ${aiJobsHtml()}
   </section>`;
 }
-function redrawAISec() {
-  const el = $('#ai-sec', app);
-  if (!el) return render();
-  const tmp = document.createElement('div');
-  tmp.innerHTML = aiSectionHtml();
-  if (tmp.firstElementChild) el.replaceWith(tmp.firstElementChild);
-  else el.remove();
-}
-// 카드 하나를 다시 그림: 피드백은 그 항목(섹션)만, AI 항목은 AI 섹션(결과 화면) 또는 화면 전체
-function redrawItem(item) {
-  if (!item) return render();
-  if (item.source === 'ai') return parseRoute().name === 'result' ? redrawAISec() : render();
-  return redrawSec(pageOf(item));
-}
 
 // 어떤 큐시트를 첨부했는지: 구글 시트 제목 › 탭 (시트 열기) · 행 수 · 첨부 시각
 function sourceHtml() {
@@ -677,23 +652,6 @@ function sourceHtml() {
   const extra = [s.note, s.rows ? `${s.rows}행` : '', time ? `${time} ${s.kind === 'ai' ? '작성' : '첨부'}` : '', s.kind === 'ai' ? '' : '원본은 바꾸지 않음'].filter(Boolean).join(' · ');
   const open = s.kind === 'link' && /^https:\/\/docs\.google\.com\/spreadsheets\/d\//.test(s.url || '') ? `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">시트 열기 ↗</a>` : '';
   return `${what}${extra ? ` <span class="muted">· ${esc(extra)}</span>` : ''}${open}`;
-}
-
-// 총평 · 수정 방향: 항목별 피드백을 한눈에 이해할 수 있게 글로 묶은 것
-function overviewHtml() {
-  const o = state.result.summary.overview;
-  if (!o) return '';
-  const dirs = o.directions;
-  const shown = state.showAllDirs ? dirs : dirs.slice(0, 8);
-  const li = (d) =>
-    `<li class="${d.fixed ? 'fixed' : ''}"><b>${esc(d.item)}</b> ${esc(d.action)}${d.places.length ? ` <span class="muted">${esc(placeText(d).trim())}</span>` : ''}${d.fixed ? ' <span class="pill ok">자동 정리</span>' : ''}</li>`;
-  return `<section class="card overview">
-    <h2>${icon('chat', 20)} 총평</h2>
-    <p class="ov-lead">${esc(o.lead)}</p>
-    ${dirs.length ? `<h3>수정 방향</h3><ol class="ov-dirs">${shown.map(li).join('')}</ol>${dirs.length > shown.length ? `<button class="btn ghost small more" id="b-dirs" type="button">나머지 ${dirs.length - shown.length}가지 더 보기</button>` : ''}` : ''}
-    ${o.advice && o.advice.length ? `<h3>음향 · 조명 제안 <small>무대 내용 · 개사 분석</small></h3><ul class="ov-adv">${o.advice.map((a) => `<li><b>${esc(a.label)}</b>${a.title ? ` <span class="muted">${esc(a.title)}</span>` : ''} — ${esc(a.brief)}</li>`).join('')}</ul><p class="ov-hint">무대별 자세한 제안은 아래 '음향 · FD'와 '조명' 항목을 펼치면 볼 수 있습니다. <a class="g-link small" href="#/guide/plan">음향 · 조명 구성법 ${icon('right', 14)}</a></p>` : ''}
-    ${o.autoNote ? `<p class="ov-auto">${esc(o.autoNote)}</p>` : ''}
-  </section>`;
 }
 
 // 진행 단계: ① 첨부 ② 고르기 ③ 받기
@@ -712,16 +670,15 @@ function getPanelHtml() {
   const st = stats();
   return `<section class="card get" id="get">
     <h2><span class="g-no">3</span> 피드백 반영한 구글 시트 받기</h2>
-    <p class="get-lead">반영하기로 고른 <b>${st.on}개</b> 항목(자동 정리 ${st.auto} · 직접 고른 ${st.picked - st.ai}${st.ai ? ` · AI 작성 ${st.ai}` : ''})이 들어간 큐시트를 <b>내 구글 드라이브에 새 구글 시트</b>로 만듭니다. 2026 2차 양식(열 너비 · 셀 색 · 글꼴 · 병합)이 그대로 들어가고, 첨부한 원본 시트는 바뀌지 않습니다.${st.manual ? ` '직접 고치기' ${st.manual}개는 받은 시트에서 고쳐 주세요.` : ''}</p>
-    <label class="switch"><input type="checkbox" id="o-hl" ${state.highlight ? 'checked' : ''}><span>반영으로 바뀐 칸을 노란색으로 표시</span></label>
+    <p class="get-lead">반영으로 고른 <b>${st.on}개</b>가 들어간 큐시트를 <b>내 구글 드라이브에 새 구글 시트</b>로 만듭니다(2026 2차 양식 그대로, 첨부한 원본은 그대로).${st.manual ? ` '직접 고치기' ${st.manual}개는 받은 시트에서 고쳐 주세요.` : ''}</p>
     <div class="res-actions">
       <button class="btn primary" type="button" data-make ${state.gs.busy ? 'disabled' : ''}>${icon('grid', 18)} ${makeLabel()}</button>
       <a class="btn" href="#/sheet">${icon('list', 18)} 미리보기</a>
       <button class="btn" type="button" id="d-submit">${icon('download', 18)} 엑셀 파일로 받기</button>
       <button class="btn" type="button" id="d-review">${icon('list', 18)} 검토용 엑셀</button>
       <button class="btn" type="button" id="d-msg">${icon('chat', 18)} 피드백 메시지 복사</button>
-      <a class="btn ghost" href="#/write">${icon('sparkle', 18)} AI로 고치기</a>
     </div>
+    <label class="switch"><input type="checkbox" id="o-hl" ${state.highlight ? 'checked' : ''}><span>반영으로 바뀐 칸을 노란색으로 표시</span></label>
     <div class="make-note" id="make-note" role="status" ${state.made ? '' : 'hidden'}>${madeHtml()}</div>
   </section>`;
 }
@@ -730,45 +687,60 @@ const barHtml = () => {
   return `<div class="getbar" role="region" aria-label="반영 현황"><div class="gb-txt"><b>반영 ${st.on}개</b><span>수정요망 ${st.todoOn}/${st.todo} 반영${st.manual ? ` · 직접 고치기 ${st.manual}` : ''}</span></div><a class="btn small" href="#/sheet">미리보기</a><button class="btn primary small" type="button" data-make ${state.gs.busy ? 'disabled' : ''}>${state.gs.busy ? '만드는 중…' : '구글 시트 만들기'}</button></div>`;
 };
 
-function pageResult() {
-  if (needResult()) return;
+// 맨 위 요약: 상태 · 총평 · 무대 시간 · 항목별 고칠 곳(눌러서 그 항목만 보기)
+function summaryHtml() {
   const { summary } = state.result;
+  const d = state.digest;
   const ok = !summary.todo;
   const over = summary.totalSec > 660;
   const st = stats();
-  if (state.gs.clientId) loadGis().catch(() => {}); // 버튼을 누르기 전에 구글 로그인 모듈을 미리 불러 둠
-  app.innerHTML = `<section class="page result">
-    <div class="card res-head">
-      <div class="res-top"><span class="eyebrow">피드백 결과</span><span class="res-top-acts"><a class="btn small" href="#/write">${icon('sparkle', 16)} AI로 고치기</a><a class="btn small" href="#/">${icon('link', 16)} 다른 큐시트 첨부</a></span></div>
-      <h1>${esc(state.name)}</h1>
-      ${stepsHtml()}
-      <dl class="res-meta">
-        <div><dt>첨부한 원본</dt><dd>${sourceHtml()}</dd></div>
-        <div><dt>점검 기준</dt><dd>2026 2차 큐시트 양식 · OT 작성 예시 · 2026 조명 가이드 · 모범 큐시트(공시) · 주인공 조명 Details · 무대 내용·개사 분석<a href="#/guide">가이드</a><a href="#/guide/feedback">피드백 고르는 법</a></dd></div>
-      </dl>
+  const chip = (it) =>
+    `<button type="button" class="ichip ${it.todo ? 'bad' : 'ok'}${state.filter === it.id ? ' on' : ''}" data-filter="${it.id}" aria-pressed="${state.filter === it.id}">${esc(it.name)} ${it.todo ? `<b>${it.todo}</b>` : icon('check', 13)}</button>`;
+  return `<div class="res-sum">
       <div class="chips">
         ${ok ? '<span class="pill ok">제출 가능</span>' : `<span class="pill error">수정요망 ${summary.todo}</span>`}
         <span class="pill ${over ? 'error' : ''}">무대 시간 ${summary.totalText}${over ? ` · ${fmtDurationKo(summary.totalSec - 660)} 초과` : ' / 11분'}</span>
         <span class="pill sel">반영 ${st.on}개 선택</span>
       </div>
+      <p class="ov-lead">${esc(summary.overview.lead)}</p>
+      ${timeCardHtml()}
+      <div class="ichips" role="group" aria-label="항목별 고칠 곳 — 누르면 그 항목만 보기">${d.items.map(chip).join('')}</div>
+    </div>`;
+}
+
+function pageResult() {
+  if (needResult()) return;
+  const { summary } = state.result;
+  const d = state.digest;
+  if (state.gs.clientId) loadGis().catch(() => {}); // 버튼을 누르기 전에 구글 로그인 모듈을 미리 불러 둠
+  const groups = d.todo.filter((g) => !state.filter || g.item === state.filter);
+  shownWhy = new Set();
+  const fname = state.filter && (d.items.find((i) => i.id === state.filter) || {}).name;
+  app.innerHTML = `<section class="page result">
+    <div class="card res-head">
+      <div class="res-top"><span class="eyebrow">피드백 결과</span><span class="res-top-acts"><a class="btn small" href="#/write">${icon('sparkle', 16)} AI로 고치기</a><a class="btn small" href="#/">${icon('link', 16)} 다른 큐시트 첨부</a></span></div>
+      <h1>${esc(state.name)}</h1>
+      ${stepsHtml()}
+      ${summaryHtml()}
+      <dl class="res-meta">
+        <div><dt>첨부한 원본</dt><dd>${sourceHtml()}</dd></div>
+        <div><dt>점검 기준</dt><dd>2026 2차 큐시트 양식 · OT 작성 예시 · 2026 조명 가이드 · 모범 큐시트(공시) · 주인공 조명 Details · 무대 내용·개사 분석<a href="#/guide">가이드</a><a href="#/guide/feedback">피드백 고르는 법</a></dd></div>
+      </dl>
       ${state.made ? `<div class="made-top">${madeHtml()}</div>` : ''}
     </div>
-    ${overviewHtml()}
     <div class="pick-head">
-      <h2 class="sec-title"><span class="g-no">2</span> 반영할 피드백 고르기 <small>항목마다 반영 / 반영 안 함을 고르면, 반영한 것만 새 구글 시트에 들어갑니다</small></h2>
+      <h2 class="sec-title"><span class="g-no">2</span> 고칠 것 <small>${d.todo.length ? `${d.todo.length}가지 · 중요한 순서` : '없음'} — 반영으로 고른 것만 새 구글 시트에 들어갑니다</small></h2>
+      <p class="pick-tip"><mark>파란 글씨</mark>는 예시라 받은 시트에서 붉은 칸으로 표시되니 실제 내용으로 바꿔 적어 주세요 · ${icon('pencil', 13)}로 수정 후 문구를 먼저 고칠 수 있습니다 · <span class="pill manual-pill">직접 고치기</span>는 받은 시트에서 고칩니다</p>
       <div class="pick-bulk">
         <button class="btn small" type="button" data-bulk="todo">${icon('check', 15)} 수정요망 모두 반영</button>
-        <button class="btn small" type="button" data-bulk="all">모두 반영</button>
         <button class="btn small" type="button" data-bulk="none">모두 반영 안 함</button>
         <button class="btn ghost small" type="button" data-bulk="reset">처음 선택으로</button>
       </div>
-      <ul class="pick-legend">
-        <li><span class="pill ok">자동 정리</span> 표기 · 빈칸처럼 형식을 맞추는 수정 — 처음부터 반영</li>
-        <li><span class="pill info">반영하면 이렇게</span> 예시가 들어가는 수정 — 골라서 반영 (<mark>파란 글씨</mark>는 시트에서 바꿔 적기, 문구를 먼저 고쳐도 됨)</li>
-        <li><span class="pill manual-pill">직접 고치기</span> 자동으로 반영할 수 없는 것 — 받은 시트에서 고치기</li>
-      </ul>
+      ${state.filter ? `<p class="filter-note">'${esc(fname || '')}' 항목만 보는 중 <button class="linkbtn" type="button" data-filter="">전체 보기</button></p>` : ''}
     </div>
-    <div class="sections">${PAGES.map(sectionHtml).join('')}</div>
+    <div class="groups">${groups.length ? groups.map((g) => groupHtml(g, d.todo.indexOf(g) + 1)).join('') : `<div class="empty-ok"><b>${state.filter ? '이 항목은 고칠 것이 없습니다' : '고칠 것이 없습니다'}</b>${state.filter ? '' : '자동 정리만 확인하면 됩니다.'}</div>`}</div>
+    ${autoBoxHtml()}
+    ${extraBoxHtml()}
     ${aiSectionHtml()}
     ${getPanelHtml()}
     <details class="more"><summary>큐시트 1행 TFT 피드백 문구 고치기 (검토용 엑셀)</summary><textarea id="fb-text">${esc(state.fbText ?? summary.feedbackText)}</textarea></details>
@@ -777,7 +749,7 @@ function pageResult() {
   bindResult();
 }
 
-// 반영 / 반영 안 함 · 문구 고치기 · 카드 펼치기 · 구글 시트 만들기 (피드백 결과 · AI 작성 화면 공용) — 처리했으면 true
+// 반영 / 반영 안 함 · 문구 고치기 · 구글 시트 만들기 (피드백 결과 · AI 작성 화면 공용) — 처리했으면 true
 function pickClick(e) {
   if (e.target.closest('[data-make]')) return makeSheet(), true;
   const ru = e.target.closest('[data-reuse]');
@@ -800,6 +772,8 @@ function pickClick(e) {
   if (ab) return bulkAI(ab.dataset.job, ab.dataset.aibulk === '1'), true;
   const ad = e.target.closest('[data-aidel]');
   if (ad) return dropAIJob(ad.dataset.aidel), true;
+  const gb = e.target.closest('[data-gbulk]');
+  if (gb) return bulkGroup(gb.dataset.group, gb.dataset.gbulk === '1'), true;
   const pick = e.target.closest('[data-choose],[data-fix]');
   if (pick && pick.tagName === 'BUTTON') {
     const on = pick.dataset.v === '1';
@@ -809,16 +783,19 @@ function pickClick(e) {
     } else setChoice(pick.dataset.choose, on);
     return true;
   }
-  const card = e.target.closest('.issue');
+  const card = e.target.closest('.place');
   const fid = card && card.dataset.id;
   if (!fid) return false;
   if (e.target.closest('[data-edit-open]')) {
-    state.editing = fid;
-    return redrawItem(findingById(fid)), true;
+    state.editing = state.editing === fid ? null : fid;
+    render();
+    const ta = $(`.place[data-id="${CSS.escape(fid)}"] [data-edit-text]`, app);
+    if (ta) ta.focus();
+    return true;
   }
   if (e.target.closest('[data-edit-cancel]')) {
     state.editing = null;
-    return redrawItem(findingById(fid)), true;
+    return render(), true;
   }
   if (e.target.closest('[data-edit-reset]')) {
     state.edits.delete(fid);
@@ -834,13 +811,6 @@ function pickClick(e) {
     toast('고친 문구로 반영하도록 골랐습니다.');
     return true;
   }
-  const top = e.target.closest('.issue-top');
-  if (top && !e.target.closest('.choice')) {
-    if (state.open.has(fid)) state.open.delete(fid);
-    else state.open.add(fid);
-    card.classList.toggle('open');
-    return true;
-  }
   return false;
 }
 
@@ -853,27 +823,29 @@ function bindResult() {
     state.highlight = e.target.checked;
     save();
   });
-  if ($('#b-dirs'))
-    $('#b-dirs').addEventListener('click', () => {
-      state.showAllDirs = true;
-      render();
-    });
   const root = $('.result', app);
+  // 접는 상자: 펼친 상태 기억
+  for (const box of $$('details[data-box]', root))
+    box.addEventListener('toggle', () => {
+      if (box.open) state.openBoxes.add(box.dataset.box);
+      else state.openBoxes.delete(box.dataset.box);
+    });
   root.addEventListener('click', (e) => {
     if (pickClick(e)) return;
     const bulk = e.target.closest('[data-bulk]');
-    if (bulk) return bulkChoose(bulk.dataset.bulk, bulk.dataset.page || null);
-    const head = e.target.closest('.sec-head');
-    if (head) {
-      const id = head.closest('.sec').dataset.sec;
-      if (state.openSecs.has(id)) state.openSecs.delete(id);
-      else state.openSecs.add(id);
-      return redrawSec(id);
+    if (bulk) return bulkChoose(bulk.dataset.bulk);
+    const fl = e.target.closest('[data-filter]');
+    if (fl) {
+      state.filter = fl.dataset.filter && state.filter !== fl.dataset.filter ? fl.dataset.filter : null;
+      render();
+      const list = $('.pick-head', app);
+      if (list && state.filter) list.scrollIntoView({ block: 'start' });
+      return;
     }
-    const more = e.target.closest('[data-more]');
+    const more = e.target.closest('[data-pmore]');
     if (more) {
-      state.showAll.add(more.dataset.more);
-      return redrawSec(more.dataset.more);
+      state.showAllPlaces.add(more.dataset.pmore);
+      return render();
     }
   });
   root.addEventListener('change', (e) => {
@@ -924,22 +896,26 @@ function pageSheet() {
 // ---------------- 내보내기 · 메시지 ----------------
 // 학부 디렉터에게 보낼 메시지: 총평 · 수정 방향 → 항목별 피드백(반영 여부 · 원래 → 수정 후) → 음향·조명 제안
 function reportText() {
-  const { summary, findings } = state.result;
+  const { summary } = state.result;
+  const d = state.digest;
   const st = stats();
-  const L = [`[2026 학부합창대회 큐시트 피드백] ${state.name}`, `${summary.todo ? `수정요망 ${summary.todo}건` : '제출 가능'} · 무대 시간 ${summary.totalText}/11분 · 반영하기로 고른 항목 ${st.on}개`, '', '■ 총평', overviewText(summary.overview, { withAdvice: false })];
-  const items = [];
-  for (const p of PAGES) {
-    const fs = findings.filter((f) => pageOf(f) === p.id && isTodo(f));
-    if (!fs.length) continue;
-    items.push('', `[${p.name}]`);
-    fs.forEach((f) => {
-      const tag = f.apply === 'manual' || f.apply === 'none' ? '직접 고치기' : chosen(f) ? '반영' : '반영 안 함';
-      items.push(`- [${tag}] ${f.title}${f.rowId ? ` (${locText(f)})` : ''}`);
-      if (f.after != null) items.push(`  원래: ${clip(f.before, 90) || '(빈칸)'}`, `  수정 후: ${clip(afterOf(f), 140)}`);
-      else if (f.suggestion) items.push(`  → ${f.suggestion}`);
+  const L = [`[2026 학부합창대회 큐시트 피드백] ${state.name}`, `${summary.todo ? `수정요망 ${summary.todo}건` : '제출 가능'} · 무대 시간 ${summary.totalText}/11분 · 반영하기로 고른 항목 ${st.on}개`, '', '■ 총평', summary.overview.lead];
+  if (d.todo.length) {
+    L.push('', '■ 고칠 것 — 원래 → 수정 후, [ ]는 예시');
+    d.todo.forEach((g, i) => {
+      L.push(`${i + 1}. ${g.label} (${g.itemName}${g.places.length > 1 ? ` · ${g.places.length}곳` : ''})`);
+      for (const f of g.places) {
+        const tag = f.apply === 'op' || f.apply === 'auto' ? (chosen(f) ? '반영' : '반영 안 함') : '직접 고치기';
+        const after = afterOf(f);
+        const what = after != null ? `${clip(f.before, 60) || '(빈칸)'} → ${clip(after, 140)}` : firstSentence(f.msg);
+        L.push(`   - [${tag}] ${f.rowId ? `${locText(f)}: ` : ''}${what}`);
+      }
     });
   }
-  if (items.length) L.push('', '■ 항목별 피드백 (수정요망) — 원래 → 수정 후, [ ]는 예시', ...items);
+  if (d.auto.length) {
+    const places = d.auto.flatMap((g) => g.places);
+    L.push('', `■ 자동 정리 ${d.auto.length}가지 (형식 맞춤, ${places.filter(chosen).length}/${places.length} 반영): ${d.auto.map((g) => g.label).join(' · ')}`);
+  }
   if (state.aiw.items.length) {
     L.push('', '■ AI 요청 반영');
     for (const j of state.aiw.jobs) {
@@ -1526,11 +1502,8 @@ let lastRouteKey = '';
 function render() {
   const route = parseRoute();
   if (route.name === 'legacy') {
-    // #/check/조명 처럼 항목을 가리키던 주소면 그 항목을 펼쳐서 보여줌
-    if (PAGE[route.id]) {
-      state.openSecs.add(route.id);
-      state.scrollTo = route.id;
-    }
+    // #/check/조명 처럼 항목을 가리키던 주소면 그 항목만 보여줌
+    if (PAGE[route.id]) state.filter = route.id;
     location.replace('#/result');
     return;
   }
@@ -1558,11 +1531,6 @@ function render() {
       g2.scrollLeft = gs.l;
     }
   } else window.scrollTo(0, 0);
-  if (state.scrollTo) {
-    const sec = $(`.sec[data-sec="${state.scrollTo}"]`, app);
-    state.scrollTo = null;
-    if (sec) sec.scrollIntoView({ block: 'start' });
-  }
   lastRouteKey = key;
 }
 

@@ -220,11 +220,24 @@ export function buildAdvice(S, stages) {
 }
 
 
+// 앞 무대와 똑같은 제안은 짧게: '합창 마이크 4개 정도 — 콰이어 24명 기준…' → '합창 마이크 4개 정도 (무대 1과 같음)'
+export function compactAdvice(advice) {
+  const seen = new Map(); // 제안 문장 → 처음 나온 무대
+  const short = (a) => (t) => {
+    if (!seen.has(t)) {
+      seen.set(t, a.label);
+      return t;
+    }
+    return `${t.split(/ — |\. |: /)[0]} (${josa(seen.get(t), '과/와')} 같음)`;
+  };
+  return (advice || []).map((a) => ({ ...a, sound: a.sound.map(short(a)), light: a.light.map(short(a)) }));
+}
+
 // 메시지 · 검토용 엑셀에 넣는 글: 무대마다 음향 · 조명 제안
 export function adviceText(advice) {
   if (!advice || !advice.length) return '';
   const L = ['음향·조명 제안 (무대 내용·개사 분석 — 수정요망 개수에는 넣지 않음)'];
-  for (const a of advice) {
+  for (const a of compactAdvice(advice)) {
     L.push('', `■ ${a.label}${a.title ? ` ${a.title}` : ''}${a.about ? ` — ${a.about}` : ''}`);
     for (const t of a.sound) L.push(`[음향] ${t}`);
     for (const t of a.light) L.push(`[조명] ${t}`);

@@ -311,20 +311,27 @@ test('한 곡을 한 행으로 쓴 무대는 반영하면 가사 슬라이드마
   assert.deepEqual(parseSplitText('00:00 ~ 00:10 (10초) 가 / 나')[0], { runtime: '00:00 ~ 00:10 (10초)', lyrics: '가\n나' });
 });
 
-test('같은 칸을 바꾸는 항목을 함께 고르면 알려 주고, 제안도 반영할 수 있다', () => {
+test('같은 칸을 바꾸는 피드백은 한 장으로 묶고, 제안도 반영할 수 있다', () => {
   const res = analyze(parseGrid(clone(SAMPLE_DRAFT)));
   const follow = res.findings.find((f) => f.id === 'light:pinfollow:r7');
   const protag = res.findings.find((f) => f.id.startsWith('light:protag'));
-  const both = buildOutput(res, new Map([[follow.id, true], [protag.id, true]]), new Map());
-  assert.ok(both.conflicts.get(protag.id).includes(follow.id));
-  assert.equal(rowOf(both.S, 'r7').c.details, protag.after, '아래 항목(주인공)이 최종');
+  // 주인공 Details 문구가 그 칸의 최종 문구 → 주인공 피드백이 대표, '핀이 따라가도록'은 함께 해결
+  assert.equal(follow.dupOf, protag.id);
+  assert.deepEqual(protag.also, [follow.title]);
+  assert.ok(!choiceItems(res).some((i) => i.id === follow.id), '묶여 들어간 피드백은 따로 고르지 않음');
+  const both = buildOutput(res, new Map([[protag.id, true]]), new Map());
+  assert.equal(rowOf(both.S, 'r7').c.details, protag.after);
+  assert.equal(both.conflicts.size, 0, '같은 칸끼리 부딪치지 않음');
+  assert.ok(both.applied.includes(follow.id) && isChosen(follow, new Map([[protag.id, true]])), '함께 해결된 피드백도 반영으로');
+  // FX 한 칸에 걸린 4가지(FX로 지정 3 + 스트로브 길이)는 한 문구로
+  const fx = res.findings.find((f) => f.id === 'fx:unlabeled:strobe');
+  assert.equal(fx.merged.length, 4);
+  assert.equal(fx.after, '[03:38] 후렴에서 FX1 스트로브 2초간, FX2 바닥 고보 패턴 (무빙은 빼기 — FX는 2개까지)');
+  assert.deepEqual(editOps(fx, 'X'), [{ rowId: fx.rowId, key: 'details', set: 'X' }]);
   const mic = choiceItems(res).find((i) => i.id === 'adv:mic:3');
   const out = buildOutput(res, new Map([['adv:mic:3', true]]), new Map());
   const sound = rowOf(out.S, mic.rowId).c.sound;
   assert.match(sound, /00:40 ~ 00:52 간주: 합창 마이크 OFF\n00:52 가사 시작: 합창 마이크 ON/);
-  // FX 한 줄 바꾸기는 다른 줄을 건드리지 않음
-  const fx = res.findings.find((f) => f.id === 'fx:unlabeled:strobe');
-  assert.deepEqual(editOps(fx, 'X')[0].replace, [fx.ops[0].replace[0], 'X']);
 });
 
 test('검토용 엑셀의 반영 열: 반영함 · 반영 안 함 · 직접 고치기', async () => {
@@ -346,4 +353,36 @@ test('검토용 엑셀의 반영 열: 반영함 · 반영 안 함 · 직접 고�
   const cellAt = (wbk) => wbk.getWorksheet('예시학부').getCell(`M${out.S.rows.findIndex((r) => r.id === 'r7') + 5}`);
   assert.notEqual((cellAt(plain).fill || {}).fgColor && cellAt(plain).fill.fgColor.argb, 'FFFFF9C4');
   assert.equal(cellAt(hl).fill.fgColor.argb, 'FFFFF9C4');
+});
+
+// ---------- 읽기 쉽게 묶기: 같은 종류는 한 묶음 · 같은 칸은 한 장 · 같은 자동 정리는 한 번 ----------
+test('피드백을 고칠 방법(종류)마다 묶고, 설명 · 근거는 묶음에 한 번만', async () => {
+  const { digest } = await import('../public/assets/js/engine/digest.js');
+  const res = analyze(parseGrid(clone(SAMPLE_DRAFT)));
+  const d = digest(res);
+  // 고칠 것: 11분 초과가 맨 앞, 수정요망 28건이 12가지로
+  assert.match(d.todo[0].label, /40초 줄여 11분 안으로/);
+  assert.equal(d.todo.length, 12);
+  const places = d.todo.flatMap((g) => g.places);
+  assert.ok(places.every((f) => (f.level === 'error' || f.level === 'warn') && f.apply !== 'auto' && !f.dupOf));
+  // 같은 종류(빈 세부 내용 3곳)는 한 묶음, 위치 순서대로
+  const blank = d.todo.find((g) => /비어 있는 세부 내용/.test(g.label));
+  assert.equal(blank.places.length, 3);
+  assert.equal(blank.kind, 'pick');
+  assert.ok(blank.why && !/\n/.test(blank.why), '근거는 묶음에 한 번');
+  // 같은 칸(조명 Details)에 걸린 FX 4가지는 한 곳으로
+  const fx = d.todo.find((g) => /FX1·FX2로 지정하기/.test(g.label));
+  assert.equal(fx.places.length, 1);
+  assert.equal(fx.places[0].merged.length, 4);
+  // 자동 정리: 같은 fixId는 한 번만
+  const fixIds = d.auto.flatMap((g) => g.places).map((f) => f.fixId).filter(Boolean);
+  assert.equal(new Set(fixIds).size, fixIds.length);
+  // 항목별 고칠 곳 수 = 고칠 것 위치 수
+  assert.equal(d.items.reduce((n, i) => n + i.todo, 0), places.length);
+  assert.equal(d.items.find((i) => i.id === 'lyrics').todo, 0);
+  // 모든 수정요망은 고칠 것 · 자동 정리 · (같은 칸으로 묶임) 중 하나에 들어감
+  const inAuto = new Set(d.auto.flatMap((g) => g.places).map((f) => f.fixId));
+  for (const f of res.findings.filter((x) => x.level === 'error' || x.level === 'warn')) {
+    assert.ok(places.includes(f) || f.dupOf || (f.apply === 'auto' && inAuto.has(f.fixId)), f.id);
+  }
 });
