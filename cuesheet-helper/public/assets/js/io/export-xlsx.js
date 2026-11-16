@@ -2,6 +2,9 @@
 // 열 너비·행 높이·글꼴(Arial)·글자 크기·색·테두리·셀 병합·틀 고정을 2차 큐시트 템플릿과 같게 만든다.
 import { KEYS, COLS, GUIDE_ROW, CATS, LEVELS, colName } from '../engine/constants.js';
 
+// 검토용 '피드백 목록'의 수정 후 앞 표시
+const AFTER_TAG = { auto: '수정본에 반영됨', off: '자동 수정 꺼짐', example: '예시 — [ ]는 바꿔 적기', guide: '고칠 방향' };
+
 const COL_PX = { item: 150, runtime: 234, stage: 234, waiting: 175, detail: 292, lyrics: 234, sound: 234, screen: 190, lStage: 164, lTop: 164, pin1: 100, pin2: 100, pin3: 100, pin4: 100, details: 402, note: 100 };
 const FILL = {
   guide: 'FFF4CCCC', // 4행 안내(붉은색) / 작성 필요 칸
@@ -222,7 +225,7 @@ export async function buildWorkbook(ExcelJS, S, opts = {}) {
     lines.forEach((t) => {
       const r = ov.addRow([t]);
       r.alignment = { vertical: 'top', wrapText: true };
-      r.font = font(t === '수정 방향' ? { bold: true, size: 11 } : {});
+      r.font = font(t === '수정 방향' || /^음향·조명 제안/.test(t) || /^■ /.test(t) ? { bold: true, size: 11 } : {});
     });
   }
 
@@ -234,7 +237,9 @@ export async function buildWorkbook(ExcelJS, S, opts = {}) {
       { header: '영역', key: 'cat', width: 14 },
       { header: '위치', key: 'where', width: 30 },
       { header: '내용', key: 'title', width: 40 },
-      { header: '설명 / 대안', key: 'msg', width: 90 },
+      { header: '원래', key: 'before', width: 40 },
+      { header: '수정 후', key: 'after', width: 60 },
+      { header: '설명 / 대안', key: 'msg', width: 80 },
       { header: '근거', key: 'why', width: 50 },
       { header: '자동 반영', key: 'fix', width: 12 },
     ];
@@ -248,7 +253,9 @@ export async function buildWorkbook(ExcelJS, S, opts = {}) {
         cat: CATS[f.cat] || f.cat,
         where,
         title: f.title,
-        msg: [f.msg, f.suggestion ? `→ ${f.suggestion}` : '', f.examples && f.examples.length ? `예: ${f.examples.join(' / ')}` : ''].filter(Boolean).join('\n'),
+        before: f.after != null ? f.before || '(빈칸)' : '',
+        after: f.after != null ? `${AFTER_TAG[f.afterKind] ? `(${AFTER_TAG[f.afterKind]}) ` : ''}${f.after}` : '',
+        msg: [f.msg, f.after == null && f.suggestion ? `→ ${f.suggestion}` : '', f.examples && f.examples.length ? `예: ${f.examples.join(' / ')}` : ''].filter(Boolean).join('\n'),
         why: f.why || '',
         fix: f.fixId ? (f.fixEnabled ? '반영함' : '반영 안 함') : '-',
       });

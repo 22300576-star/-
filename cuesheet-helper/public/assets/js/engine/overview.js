@@ -59,6 +59,9 @@ const ACTIONS = [
   [/FX로 지정하지 않/, () => '스트로브·고보·무빙 같은 효과는 FX1·FX2로 지정하기'],
   [/스트로브를 오래/, () => '스트로브는 1~3초로 짧게 쓰기'],
   [/양식에 없는 열/, () => '2026 양식에 없는 열은 지우고 양식 그대로 쓰기'],
+  [/조명 Details에 (주인공|주연)/, () => '조명 Details에 주인공의 동선 · 의상 · 위치를 구체적으로 적기'],
+  [/노래하는 구간이 있는데 마이크가 없음/, () => '노래하는 구간에 쓸 합창 마이크를 인원에 맞게 적기'],
+  [/솔로 마이크가 없음/, () => '노래하는 주인공 · 솔로에게 무선(핸드) 마이크를 적기'],
 ];
 
 const firstSentence = (s) => (String(s || '').match(/^.*?[.!?다요](?=\s|$)/) || [String(s || '')])[0];
@@ -83,7 +86,7 @@ function placesOf(S, f) {
   return out;
 }
 
-export function buildOverview(S, findings, { totalSec = 0, autoCells = 0 } = {}) {
+export function buildOverview(S, findings, { totalSec = 0, autoCells = 0, advice = [] } = {}) {
   const todo = findings.filter((f) => f.level === 'error' || f.level === 'warn');
   const over = totalSec > STAGE_LIMIT_SEC ? totalSec - STAGE_LIMIT_SEC : 0;
   const c = { over: over ? fmtDurationKo(over) : '' };
@@ -138,14 +141,17 @@ export function buildOverview(S, findings, { totalSec = 0, autoCells = 0 } = {})
     lead.push(`수정이 필요한 곳은 ${top}${bad.length > 3 ? ' 등' : ''} 모두 ${todo.length}건이며, 아래 수정 방향 순서대로 고치면 됩니다.`);
   }
 
-  return { lead: lead.join(' '), directions, autoNote, todo: todo.length, ok: !todo.length };
+  // 음향·조명 제안: 무대 내용·개사를 분석해 무대마다 한 줄
+  const adv = advice.filter((a) => a.brief).map((a) => ({ label: a.label, title: a.title, brief: a.brief }));
+
+  return { lead: lead.join(' '), directions, autoNote, advice: adv, todo: todo.length, ok: !todo.length };
 }
 
 // '(무대 2, 무대 3 외 2곳)'
 export const placeText = (d) => (d.places.length ? ` (${d.places.join(', ')}${d.more ? ` 외 ${d.more}곳` : ''})` : '');
 
 // 메시지·엑셀용 글
-export function overviewText(o, { maxDirections = 10 } = {}) {
+export function overviewText(o, { maxDirections = 10, withAdvice = true } = {}) {
   if (!o) return '';
   const L = [o.lead];
   if (o.directions.length) {
@@ -154,6 +160,10 @@ export function overviewText(o, { maxDirections = 10 } = {}) {
       L.push(`${i + 1}. ${d.item} — ${d.action}${placeText(d)}${d.fixed ? ' — 수정본에 반영됨' : ''}`);
     });
     if (o.directions.length > maxDirections) L.push(`그 밖에 ${o.directions.length - maxDirections}가지는 항목별 피드백을 참고해 주세요.`);
+  }
+  if (withAdvice && o.advice && o.advice.length) {
+    L.push('', '음향·조명 제안 (무대 내용·개사 분석)');
+    for (const a of o.advice) L.push(`- ${a.label}${a.title ? ` ${a.title}` : ''}: ${a.brief}`);
   }
   if (o.autoNote) L.push('', o.autoNote);
   return L.join('\n');

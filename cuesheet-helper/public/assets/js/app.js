@@ -3,6 +3,8 @@ import { parseGrid, buildBlocks } from './engine/parser.js';
 import { classifyItem } from './engine/classify.js';
 import { analyze } from './engine/analyze.js';
 import { overviewText, placeText } from './engine/overview.js';
+import { adviceText } from './engine/advice.js';
+import { AFTER_LABEL } from './engine/remedy.js';
 import { KEYS, LEVELS, colName } from './engine/constants.js';
 import { fmtDurationKo } from './engine/time.js';
 import { readWorkbook, looksLikeCueSheet, gridFromTsv } from './io/importers.js';
@@ -23,9 +25,9 @@ const PAGES = [
   { id: 'stage', name: '무대 · 인원', icon: 'users', rule: '무대·단상 위 인원과 <b>무대 아래 대기 인원</b>을 숫자로' },
   { id: 'detail', name: '세부 내용', icon: 'route', rule: '<b>언제 · 어디서 · 누가(몇 명) · 무엇을 · 어떻게</b>' },
   { id: 'lyrics', name: '개사', icon: 'mic', rule: 'Run Time에 맞춰 <b>슬라이드 단위</b>로 · 가사 없으면 간주 / X' },
-  { id: 'sound', name: '음향 · FD', icon: 'sliders', rule: '<b>장비·개수 · 누가 · 언제</b> · 무대 사이 마이크 이동' },
+  { id: 'sound', name: '음향 · FD', icon: 'sliders', rule: '<b>장비·개수 · 누가 · 언제</b> · 노래하는 구간과 주인공·솔로의 <b>마이크</b> · 무대 사이 마이크 이동' },
   { id: 'screen', name: '화면', icon: 'monitor', rule: '화면에 띄울 <b>영상 / PPT</b>' },
-  { id: 'light', name: '조명', icon: 'bulb', rule: '무대·상단 <b>구역 / 색상 / 밝기%</b> · 핀은 <b>ON / X</b> · FX는 2개' },
+  { id: 'light', name: '조명', icon: 'bulb', rule: '무대·상단 <b>구역 / 색상 / 밝기%</b> · 핀은 <b>ON / X</b> · FX는 2개 · 주인공이 있으면 Details에 주인공의 <b>동선 · 의상 · 위치</b>' },
   { id: 'form', name: '양식', icon: 'clipboard', rule: '<b>양식 유지</b> · 빈칸 없이 X / 유지 · 공통 항목 셀 병합' },
 ];
 const PAGE = Object.fromEntries(PAGES.map((p) => [p.id, p]));
@@ -364,18 +366,64 @@ function issueHtml(f) {
   const row = editable ? state.result.revised.rows.find((r) => r.id === f.rowId) : null;
   let editor = '';
   if (row && !row.cont[f.key]) {
-    editor = `<div class="editor"><label>${esc(colName(f.key))} 고치기</label><textarea data-edit-row="${esc(row.id)}" data-edit-key="${f.key}">${esc(row.c[f.key] || '')}</textarea><div class="acts"><button class="btn primary small" data-save>${icon('check', 16)} 반영</button><a class="btn small" href="#/sheet" data-jump="${esc(row.id)}|${f.key}">표에서 보기</a></div></div>`;
+    const fill = f.afterCell && f.after && f.afterKind === 'example' ? `<button class="btn small" type="button" data-fill>${icon('sparkle', 16)} 수정 후 예시 넣기</button>` : '';
+    editor = `<div class="editor"><label>${esc(colName(f.key))} 고치기</label><textarea data-edit-row="${esc(row.id)}" data-edit-key="${f.key}">${esc(row.c[f.key] || '')}</textarea><div class="acts"><button class="btn primary small" data-save>${icon('check', 16)} 반영</button>${fill}<a class="btn small" href="#/sheet" data-jump="${esc(row.id)}|${f.key}">표에서 보기</a></div></div>`;
   }
-  const how = f.suggestion ? `→ ${f.suggestion}` : firstSentence(f.msg);
   return `<div class="issue ${cls} ${open ? 'open' : ''}" data-id="${esc(f.id)}">
-    <div class="issue-top"><div class="t"><b>${esc(f.title)}</b><div class="loc">${esc(locText(f))}</div><div class="how">${esc(how)}</div></div>${icon('chevron', 20).replace('class="ic"', 'class="ic chev"')}</div>
-    <div class="issue-body"><p>${esc(f.msg)}</p>${f.why ? `<div class="why">근거 · ${esc(f.why)}</div>` : ''}${editor}</div>
+    <div class="issue-top"><div class="t"><b>${esc(f.title)}</b><div class="loc">${esc(locText(f))}</div>${baMini(f)}</div>${icon('chevron', 20).replace('class="ic"', 'class="ic chev"')}</div>
+    <div class="issue-body"><p>${esc(f.msg)}</p>${baHtml(f)}${f.why ? `<div class="why">근거 · ${esc(f.why)}</div>` : ''}${editor}</div>
   </div>`;
 }
 
+// ---------------- 원래 → 수정 후 ----------------
+// [ ] 안은 학부만 알 수 있어 예시로 넣은 부분 → 파란 글씨로 표시
+const markEx = (t) => esc(t).replace(/\[([^\]\n]{1,40})\]/g, '<mark>$1</mark>');
+const hasEx = (t) => /\[[^\]\n]{1,40}\]/.test(String(t || ''));
+const clip = (t, n = 60) => {
+  const v = String(t || '').replace(/\s*\n\s*/g, ' / ').trim();
+  return v.length > n ? `${v.slice(0, n - 1)}…` : v;
+};
+const findingById = (id) => state.result.findings.find((x) => x.id === id);
+// 접힌 카드: 한 줄로 원래 → 수정 후
+function baMini(f) {
+  if (f.after == null) return `<div class="how">${esc(f.suggestion ? `→ ${f.suggestion}` : firstSentence(f.msg))}</div>`;
+  const before = f.before ? `<span class="v b">${esc(clip(f.before, 34))}</span>` : '<span class="v b empty">빈칸</span>';
+  return `<div class="ba-mini"><span class="k">원래</span>${before}<span class="arr">→</span><span class="k a">수정 후</span><span class="v">${markEx(clip(f.after, 64))}</span></div>`;
+}
+// 펼친 카드: 원래 | 수정 후 두 칸
+function baHtml(f) {
+  if (f.after == null) return '';
+  const pill = f.afterKind === 'auto' ? 'ok' : f.afterKind === 'off' ? '' : 'info';
+  const note = [f.afterNote, hasEx(f.after) ? '파란 글씨는 예시 — 우리 무대에 맞게 바꿔 적기' : ''].filter(Boolean);
+  const pairs = f.pairs && f.pairs.length > 1
+    ? `<ul class="ba-pairs">${f.pairs.map((p) => `<li><span class="loc">${esc(p.loc)}</span><s>${esc(clip(p.before, 60) || '빈칸')}</s> → <b>${esc(clip(p.after, 60))}</b></li>`).join('')}${f.pairsMore ? `<li class="muted">외 ${f.pairsMore}곳</li>` : ''}</ul>`
+    : '';
+  return `<div class="ba is-${esc(f.afterKind || 'none')}">
+    <div class="ba-col b"><div class="ba-k">원래</div><div class="ba-v">${f.before ? esc(f.before) : '<i>빈칸</i>'}</div></div>
+    <div class="ba-arrow" aria-hidden="true">→</div>
+    <div class="ba-col a"><div class="ba-k">수정 후 <span class="pill ${pill}">${esc(AFTER_LABEL[f.afterKind] || '')}</span></div><div class="ba-v">${markEx(f.after)}</div>${note.length ? `<div class="ba-note">${note.map(esc).join(' · ')}</div>` : ''}</div>
+  </div>${pairs}`;
+}
+// 음향 · 조명 항목 안: 무대 내용·개사를 분석한 제안
+function adviceHtml(cat) {
+  const list = (state.result.advice || []).filter((a) => a[cat].length);
+  if (!list.length) return '';
+  return `<h3 class="sub-title">이 무대에 맞춘 ${cat === 'sound' ? '음향' : '조명'} 제안 <small>무대 내용·개사를 분석한 제안이라 수정요망 개수에는 넣지 않습니다</small></h3>
+    <div class="advice">${list
+      .map(
+        (a) => `<div class="adv"><div class="adv-h"><b>${esc(a.label)}</b>${a.title ? ` <span>${esc(a.title)}</span>` : ''}${a.about ? `<small>${esc(a.about)}</small>` : ''}</div>
+        <ul>${a[cat].map((t) => `<li>${esc(t)}</li>`).join('')}</ul>${a.now.filter((n) => n.cat === cat).map((n) => `<p class="adv-now"><b>지금 큐시트</b> ${esc(n.text)}</p>`).join('')}</div>`,
+      )
+      .join('')}</div>`;
+}
+
+const fixEx = (f) => {
+  const p = f.pairs && f.pairs.length ? f.pairs[0] : f.after != null ? { before: f.before, after: f.after } : null;
+  return p ? `<span class="fx-ex"><s>${esc(clip(p.before, 36) || '빈칸')}</s> → <b>${esc(clip(p.after, 44))}</b></span>` : '';
+};
 const fixHtml = (f) =>
-  `<div class="fix"><div class="t">${esc(f.title)}<small>${esc(firstSentence(f.msg))}</small></div><label class="switch"><input type="checkbox" data-fix="${esc(f.fixId)}" ${f.fixEnabled ? 'checked' : ''} ${state.editMode ? 'disabled' : ''}><span>${f.fixEnabled ? '반영' : '끔'}</span></label></div>`;
-const noteHtml = (f) => `<div class="fix"><div class="t">${esc(f.title)}<small>${esc(firstSentence(f.msg))}</small></div></div>`;
+  `<div class="fix"><div class="t">${esc(f.title)}<small>${esc(firstSentence(f.msg))}</small>${fixEx(f)}</div><label class="switch"><input type="checkbox" data-fix="${esc(f.fixId)}" ${f.fixEnabled ? 'checked' : ''} ${state.editMode ? 'disabled' : ''}><span>${f.fixEnabled ? '반영' : '끔'}</span></label></div>`;
+const noteHtml = (f) => `<div class="fix"><div class="t">${esc(f.title)}<small>${esc(firstSentence(f.msg))}</small>${f.after != null ? fixEx(f) : ''}</div></div>`;
 const fxHtml = () =>
   `<div class="fix fx"><div class="t"><b>FX 지정</b><small>학부가 쓰는 효과 2개를 고르면 Details에 함께 적습니다</small></div><div class="fx-sel">${['FX1', 'FX2']
     .map((k) => `<select data-fx="${k}" class="btn small">${FX_OPTIONS.map((o) => `<option value="${esc(o)}" ${state.fx[k] === o ? 'selected' : ''}>${o ? `${k}: ${o}` : `${k} 지정 안 함`}</option>`).join('')}</select>`)
@@ -385,7 +433,8 @@ function sectionHtml(p) {
   const s = pageStats(p.id);
   const open = state.openSecs.has(p.id);
   const status = s.todo ? 'todo' : 'ok';
-  const chips = s.todo ? `<span class="pill error">수정요망 ${s.todo}</span>` : '<span class="pill ok">통과</span>';
+  const adv = (p.id === 'sound' || p.id === 'light') && (state.result.advice || []).some((a) => a[p.id].length);
+  const chips = `${s.todo ? `<span class="pill error">수정요망 ${s.todo}</span>` : '<span class="pill ok">통과</span>'}${adv ? '<span class="pill info">제안</span>' : ''}`;
   let body = '';
   if (open) {
     const todo = s.fs.filter(isTodo).sort((a, b) => LEVELS[a.level].order - LEVELS[b.level].order);
@@ -397,6 +446,7 @@ function sectionHtml(p) {
       <div class="rule">${p.rule}</div>
       ${p.id === 'time' ? timeCardHtml() : ''}
       ${todo.length ? `<div class="issues">${todo.slice(0, all ? todo.length : 6).map(issueHtml).join('')}</div>${todo.length > 6 && !all ? `<button class="btn ghost small more" data-more="${p.id}">나머지 ${todo.length - 6}개 더 보기</button>` : ''}` : '<div class="sec-ok">고칠 것이 없습니다.</div>'}
+      ${p.id === 'sound' || p.id === 'light' ? adviceHtml(p.id) : ''}
       ${p.id === 'light' ? `<h3 class="sub-title">FX</h3>${fxHtml()}` : ''}
       ${autos.length ? `<h3 class="sub-title">자동으로 고친 것 <small>${state.editMode ? '직접 고친 뒤에는 처음 결과로 되돌려야 끌 수 있습니다' : '끄면 원래 내용으로 돌아갑니다'}</small></h3><div class="fixes">${autos.map(fixHtml).join('')}</div>` : ''}
       ${notes.length ? `<h3 class="sub-title">참고</h3><div class="fixes">${notes.map(noteHtml).join('')}</div>` : ''}
@@ -439,6 +489,7 @@ function overviewHtml() {
     <h2>${icon('chat', 20)} 총평</h2>
     <p class="ov-lead">${esc(o.lead)}</p>
     ${dirs.length ? `<h3>수정 방향</h3><ol class="ov-dirs">${shown.map(li).join('')}</ol>${dirs.length > shown.length ? `<button class="btn ghost small more" id="b-dirs" type="button">나머지 ${dirs.length - shown.length}가지 더 보기</button>` : ''}` : ''}
+    ${o.advice && o.advice.length ? `<h3>음향 · 조명 제안 <small>무대 내용 · 개사 분석</small></h3><ul class="ov-adv">${o.advice.map((a) => `<li><b>${esc(a.label)}</b>${a.title ? ` <span class="muted">${esc(a.title)}</span>` : ''} — ${esc(a.brief)}</li>`).join('')}</ul><p class="ov-hint">무대별 자세한 제안은 아래 '음향 · FD'와 '조명' 항목을 펼치면 볼 수 있습니다.</p>` : ''}
     ${o.autoNote ? `<p class="ov-auto">${esc(o.autoNote)}</p>` : ''}
   </section>`;
 }
@@ -506,6 +557,17 @@ function pageResult() {
       if (state.open.has(fid)) state.open.delete(fid);
       else state.open.add(fid);
       return card.classList.toggle('open');
+    }
+    const fillBtn = e.target.closest('[data-fill]');
+    if (fillBtn) {
+      const f = findingById(fillBtn.closest('.issue').dataset.id);
+      const ta = fillBtn.closest('.editor').querySelector('textarea');
+      if (f && ta) {
+        ta.value = f.after;
+        ta.focus();
+        toast("예시를 넣었습니다. [ ] 부분을 우리 무대에 맞게 고친 뒤 '반영'을 누르세요.", 3600);
+      }
+      return;
     }
     const save = e.target.closest('[data-save]');
     if (save) {
@@ -615,15 +677,21 @@ function delRow() {
 // 학부 디렉터에게 보낼 메시지: 총평 · 수정 방향 → 항목별 피드백
 function reportText() {
   const { summary, findings } = state.result;
-  const L = [`[2026 학부합창대회 큐시트 피드백] ${state.name}`, `${summary.todo ? `수정요망 ${summary.todo}건` : '제출 가능'} · 무대 시간 ${summary.totalText}/11분`, '', '■ 총평', overviewText(summary.overview)];
+  const L = [`[2026 학부합창대회 큐시트 피드백] ${state.name}`, `${summary.todo ? `수정요망 ${summary.todo}건` : '제출 가능'} · 무대 시간 ${summary.totalText}/11분`, '', '■ 총평', overviewText(summary.overview, { withAdvice: false })];
   const items = [];
   for (const p of PAGES) {
     const fs = findings.filter((f) => pageOf(f) === p.id && isTodo(f));
     if (!fs.length) continue;
     items.push('', `[${p.name}]`);
-    fs.forEach((f) => items.push(`- ${f.title}${f.rowId ? ` (${locText(f)})` : ''}${f.suggestion ? `\n  → ${f.suggestion}` : ''}`));
+    fs.forEach((f) => {
+      items.push(`- ${f.title}${f.rowId ? ` (${locText(f)})` : ''}`);
+      if (f.after != null) items.push(`  원래: ${clip(f.before, 90) || '(빈칸)'}`, `  수정 후: ${clip(f.after, 140)}${f.afterKind === 'auto' ? ' — 수정본에 반영됨' : ''}`);
+      else if (f.suggestion) items.push(`  → ${f.suggestion}`);
+    });
   }
-  if (items.length) L.push('', '■ 항목별 피드백 (수정요망)', ...items);
+  if (items.length) L.push('', '■ 항목별 피드백 (수정요망) — 원래 → 수정 후, [ ]는 예시', ...items);
+  const adv = adviceText(state.result.advice);
+  if (adv) L.push('', `■ ${adv}`);
   L.push('', "수정본(새 시트)을 함께 보냅니다. 붉은 '(작성 필요)' 칸을 채워 다시 제출해 주세요.");
   return L.join('\n');
 }
@@ -645,7 +713,7 @@ async function exportFile(mode, { quiet = false } = {}) {
       feedbackText: state.fbText ?? state.result.summary.feedbackText,
       findings: state.result.findings,
       title: safeSheetName(state.name),
-      overviewText: mode === 'review' ? overviewText(state.result.summary.overview, { maxDirections: 100 }) : '',
+      overviewText: mode === 'review' ? [overviewText(state.result.summary.overview, { maxDirections: 100, withAdvice: false }), adviceText(state.result.advice)].filter(Boolean).join('\n\n') : '',
     });
     const base = state.name.replace(/[\\/:*?"<>|]/g, ' ').trim() || '큐시트';
     const file = `${base}_2026큐시트_${mode === 'review' ? '검토용' : '수정본'}.xlsx`;

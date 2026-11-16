@@ -6,6 +6,10 @@ import { runTimeRules, reparse } from './rules-time.js';
 import { lightRules } from './rules-light.js';
 import { formRules, pendingRules, stageRules, detailRules, lyricsRules, soundRules, screenRules, reportVideoDefaults } from './rules-content.js';
 import { buildSummary } from './summary.js';
+import { analyzeStages } from './content.js';
+import { stagecraftRules } from './rules-stagecraft.js';
+import { buildAdvice } from './advice.js';
+import { attachRemedies } from './remedy.js';
 
 function blankRow(id, item, extra = {}) {
   const row = { id, src: null, c: {}, cont: {}, extra: {}, inserted: true };
@@ -60,6 +64,9 @@ export function analyze(model, options = {}) {
   pendingRules(ctx);
   reportVideoDefaults(ctx);
   reparse(S);
+  // 무대 내용(출연 구성·개사·곡 흐름·주인공) 분석 → 연출 점검(주인공 조명 Details, 노래·마이크)
+  const stages = analyzeStages(S);
+  stagecraftRules(ctx, stages);
 
   // 정렬: 수준 → 행 순서
   const rowOrder = new Map(S.rows.map((r, i) => [r.id, i]));
@@ -72,7 +79,10 @@ export function analyze(model, options = {}) {
     if (f.fixId) f.fixEnabled = !opts.disabled.has(f.fixId);
   });
 
-  const summary = buildSummary(S, ctx.findings, ctx.fixes);
+  // 피드백마다 '원래 → 수정 후', 무대마다 음향·조명 제안
+  attachRemedies(ctx, stages);
+  const advice = buildAdvice(S, stages);
+  const summary = buildSummary(S, ctx.findings, ctx.fixes, advice);
   const timeline = S.rows
     .filter((r) => (r.kind === 'stage' || r.kind === 'video') && r.rt && r.rt.ok)
     .map((r) => ({ rowId: r.id, block: r.blockIndex, kind: r.kind, start: r.rt.start, end: r.rt.end, label: (S.blocks[r.blockIndex].item || '').split('\n')[0] }));
@@ -83,6 +93,7 @@ export function analyze(model, options = {}) {
     findings: ctx.findings,
     fixes: [...ctx.fixes.values()].map((f) => ({ id: f.id, enabled: !opts.disabled.has(f.id), count: f.cells.length })),
     summary,
+    advice,
     timeline,
     cats: CATS,
   };
