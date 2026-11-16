@@ -1,9 +1,9 @@
 import { josa } from './josa.js';
 // Run Time 규칙
 // 근거: OT '무대 큐시트 작성' - [Run Time] 00:00 ~ 00:00와 단시(n초) 모두 작성
-//       2026 큐시트 양식 4행 - 총 13분(인트로 영상 2분 + 무대 11분), 무대 시간 11분 초과 절대 X
+//       2026 2차 큐시트 4행 - 총 13분(인트로 영상 2분 + 무대 11분), 무대 시간 11분 초과 절대 X
 //       조명 가이드 '큐시트 작성 팁' - 영상의 재생 시간을 기준으로 시:분:초 기재
-//       TFT 피드백 - "단시 작성 및 각 무대당 Runtime 분리", "개사 내용 세부적인 Run Time에 맞춰서 분할"
+//       TFT 2차 피드백 - "단시 작성 및 각 무대당 Runtime 분리", "개사 내용 세부적인 Run Time에 맞춰서 분할"
 import { STAGE_LIMIT_SEC, PLACEHOLDER } from './constants.js';
 import { parseRunTime, fmtRunTime, fmtClock, fmtDurationKo } from './time.js';
 import { addFinding, applyChange, applyPlaceholder, rowLabel, blockLabel } from './context.js';
@@ -276,7 +276,7 @@ export function runTimeRules(ctx) {
         key: 'runtime',
         title: '단시가 나뉘지 않은 행이 있음',
         msg: `${blockLabel(b)}의 ${untimed.length}개 행에 Run Time이 없습니다. 가사 줄·동작·조명이 바뀌는 지점마다 '00:00 ~ 00:00 (n초)'로 나눠 적어야 합니다.`,
-        why: "TFT 피드백: '단시 작성 및 각 무대당 Runtime 분리'",
+        why: "TFT 2차 피드백: '단시 작성 및 각 무대당 Runtime 분리'",
       });
       for (const r of untimed) if (!r.c.runtime) applyPlaceholder(ctx, 'fill:placeholder', r, 'runtime', PLACEHOLDER, '단시 작성 필요');
     }
@@ -293,7 +293,7 @@ export function runTimeRules(ctx) {
           key: 'runtime',
           title: '한 곡을 한 행으로만 작성함',
           msg: `${josa(`${blockLabel(b)}(${dur}초)`, '이/가')} 한 행에 들어 있습니다. 가사 영상 슬라이드·대형 변화·조명 전환이 바뀌는 지점마다 행을 나누고 각각 Run Time과 단시를 적어주세요.`,
-          why: "TFT 피드백: '개사 내용 세부적인 Run Time에 맞춰서 분할 필요'",
+          why: "TFT 2차 피드백: '개사 내용 세부적인 Run Time에 맞춰서 분할 필요'",
         });
       }
     }

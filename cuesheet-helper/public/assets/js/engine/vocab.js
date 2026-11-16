@@ -5,7 +5,7 @@ export const norm = (s) => (s == null ? '' : String(s)).replace(/\r\n?/g, '\n').
 export const squash = (s) => norm(s).replace(/\s+/g, '').toLowerCase();
 export const isBlank = (s) => !norm(s) || /^[·.\s]+$/.test(norm(s)) || /^\((작성 필요|조명 작성 필요)\)$/.test(norm(s));
 
-// 논의 중/미정 표시 (논의 중 셀은 보라색 — 무대 전에 정해야 함)
+// 논의 중/미정 표시 (공시 2차 큐시트: 논의 중 셀을 보라색으로 표시)
 export const PENDING_RE = /(논의\s*중|의논\s*중|회의\s*중|미정|추후|구상\s*중|기획\s*중|수정\s*중|개사\s*중|협의\s*중|상의\s*중|확정\s*전|tbd|추가\s*예정|작성\s*예정|기록\s*예정|정해지지)/i;
 
 // 꺼짐 표현

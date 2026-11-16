@@ -91,7 +91,7 @@ test('붙여넣은 TSV(여러 줄 셀)를 읽는다', () => {
   assert.equal(g.cells[1][0], '무대 1\n(곡)');
 });
 
-test('2026 큐시트 양식으로 엑셀을 만든다', async () => {
+test('2차 큐시트 양식으로 엑셀을 만든다', async () => {
   const res = analyze(parseGrid(clone(SAMPLE_DRAFT)));
   const wb = await buildWorkbook(ExcelJS, res.revised, { mode: 'review', feedbackText: res.summary.feedbackText, findings: res.findings, title: '예시학부' });
   const ws = wb.getWorksheet('예시학부');
@@ -127,11 +127,11 @@ test('총평과 수정 방향을 만든다 (수정요망 하나로, 논의 중�
   assert.match(overviewText(o), /수정 방향\n1\. Run Time — /);
 });
 
-test('고칠 것이 없으면 총평이 무대에서 쓸 수 있다고 끝난다', () => {
+test('고칠 것이 없으면 총평이 제출 가능으로 끝난다', () => {
   const o = analyze(parseGrid(clone(SAMPLE_MODEL))).summary.overview;
   assert.ok(o.ok);
   assert.equal(o.directions.length, 0);
-  assert.match(o.lead, /이 큐시트만 보고 진행할 수 있습니다/);
+  assert.match(o.lead, /그대로 제출하면 됩니다/);
 });
 
 // ---------- 원래 → 수정 후 · 주인공 조명 기준 · 음향·조명 제안 ----------
@@ -339,7 +339,7 @@ test('검토용 엑셀의 반영 열: 반영함 · 반영 안 함 · 직접 고�
   assert.equal(tag(/세부 내용이 구체적이지 않음/), '반영 안 함');
   assert.equal(tag(/11분 초과/), '직접 고치기');
   assert.equal(tag(/Pin3에 색상 지정/), '반영함');
-  // 반영본 엑셀(무대용)에서 바뀐 칸 노란색은 고를 때만
+  // 반영본 엑셀(제출용)에서 바뀐 칸 노란색은 고를 때만
   const plain = await buildWorkbook(ExcelJS, out.S, { mode: 'submit', title: '예시학부' });
   const hl = await buildWorkbook(ExcelJS, out.S, { mode: 'submit', title: '예시학부', highlight: true });
   // 8행 Pin3: '주인공 / 금색' → 'ON / 주인공' (자동 정리로 바뀐 칸)

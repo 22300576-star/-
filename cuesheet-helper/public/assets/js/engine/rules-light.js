@@ -110,7 +110,7 @@ function splitLabeled(ctx) {
             key,
             title: '조명 칸을 가로로 병합해 한 번에 설명함',
             msg: `${colName(key)}부터 ${spanned.map(colName).join(', ')}까지 병합하고 설명을 한 번에 적었습니다. 조명팀은 무대·상단·Pin1~4·Details 칸을 따로 보고 큐를 넣으므로 칸마다 나눠 적어주세요.`,
-            why: "TFT 피드백: '큐시트 양식 유지 → 조명을 주어진 양식대로 수정'",
+            why: "TFT 2차 피드백: '큐시트 양식 유지 → 조명을 주어진 양식대로 수정'",
           });
           for (const k of spanned) if (!row.c[k]) applyPlaceholder(ctx, 'fill:placeholder', row, k, PLACEHOLDER, '칸별 조명 작성 필요');
         }
@@ -154,7 +154,7 @@ function splitLabeled(ctx) {
         key,
         title: '조명 지시가 한 칸에 몰려 있음',
         msg: `${colName(key)} 칸에 '무대: … / 상단: … / pin: …'처럼 여러 조명을 함께 적었습니다. 조명팀은 열 단위로 큐를 읽으므로 무대·상단·Pin1~4·Details 칸에 나눠 옮겼습니다. 구간 이름([대사], [간주] 등)으로 적은 부분은 Run Time 행에 맞춰 다시 나눠야 합니다.`,
-        why: "TFT 피드백: '큐시트 양식 유지 → 조명을 주어진 양식대로 수정'",
+        why: "TFT 2차 피드백: '큐시트 양식 유지 → 조명을 주어진 양식대로 수정'",
         fixId,
       });
       const assigned = new Set(Object.keys(targets));
@@ -329,7 +329,7 @@ function alignCueTimes(ctx) {
       level: 'error',
       title: '조명 시간이 Run Time과 맞지 않음',
       msg,
-      why: "TFT 피드백(공시): '조명 시간 Run Time 맞춰서 작성' / " + WHY_TIP,
+      why: "TFT 2차 피드백(공시): '조명 시간 Run Time 맞춰서 작성' / " + WHY_TIP,
       suggestion: example ? `예) ${rowLabel(S, example.row)}: ${fmtClock(example.t)} → ${fmtClock(conv(example))}` : '',
       fixId,
     });
@@ -366,7 +366,7 @@ function alignCueTimes(ctx) {
       key: 'details',
       title: '행의 Run Time 밖에 있는 조명 시간',
       msg: `이 행의 Run Time은 ${fmtClock(r.rt.start)}~${fmtClock(r.rt.end)}인데 ${josa(outs.slice(0, 4).join(', '), '이/가')} 적혀 있습니다. 해당 시간의 행으로 옮기거나, 시간이 맞는지 확인해주세요.`,
-      why: "TFT 피드백(공시): '조명 시간 Run Time 맞춰서 작성'",
+      why: "TFT 2차 피드백(공시): '조명 시간 Run Time 맞춰서 작성'",
     });
   }
 }
@@ -845,7 +845,7 @@ function fillBlanks(ctx) {
         key: 'lStage',
         title: '조명 미작성',
         msg: `${blockLabel(b)}에 조명이 하나도 적혀 있지 않습니다. 행마다 무대 / 상단 / Pin1~4 / Details를 채우고, 쓰지 않는 조명은 X로 표시해주세요.`,
-        why: "TFT 피드백: '조명 사용하지 않을 시에 X 표시 필요' · 조명 가이드",
+        why: "TFT 2차 피드백: '조명 사용하지 않을 시에 X 표시 필요' · 조명 가이드",
       });
       for (const r of b.rows) {
         if (!r.cont.lStage) applyPlaceholder(ctx, 'fill:placeholder', r, 'lStage', PLACEHOLDER, '조명 작성 필요');
@@ -932,7 +932,7 @@ function fillBlanks(ctx) {
       level: 'info',
       title: `빈 조명 칸 ${fl.cells.length}곳 채움 (X ${fl.cells.length - keep} · 유지 ${keep})`,
       msg: "쓰지 않는 조명은 'X', 앞 행의 조명을 그대로 이어가는 칸은 '유지'로 채웠습니다. '유지'로 채운 칸이 실제 의도와 맞는지 확인해주세요.",
-      why: "TFT 피드백: '조명 사용하지 않을 시에 X 표시 필요', 'Detail 부분 빈칸이 없게, 없다면 X'",
+      why: "TFT 2차 피드백: '조명 사용하지 않을 시에 X 표시 필요', 'Detail 부분 빈칸이 없게, 없다면 X'",
       fixId: 'fill:light',
     });
   }
