@@ -15,7 +15,7 @@ const WHY_DETAIL = 'OT 자료: [대기인원/세부내용] 언제·어디서·�
 const WHY_LYRICS = 'OT 자료: [개사내용] Run Time에 맞춰 개사 내용 작성 / 2026 큐시트 4행: 각 슬라이드에 들어갈 개사 내용';
 const WHY_SOUND = 'OT 자료: [음향/FD] 어떤 음향장비를 (누가) 언제 어떻게 / 2026 큐시트 4행: 어떤 음향 장비를 몇 개 사용하실 건지 정확하게';
 const WHY_SCREEN = 'OT 자료: [화면(영상)] 화면에 띄워질 영상 / PPT 작성';
-const WHY_BLANK = "TFT 2차 피드백: '붉은색 부분은 빈칸 없이, 작성할 내용이 없다면 X 표시'";
+const WHY_BLANK = "TFT 피드백: '붉은색 부분은 빈칸 없이, 작성할 내용이 없다면 X 표시'";
 
 // ---------------- 양식: 추가 열, 셀 병합 ----------------
 export function formRules(ctx) {
@@ -30,7 +30,7 @@ export function formRules(ctx) {
         level: 'warn',
         title: `양식에 없는 열: ${names.join(', ')}`,
         msg: '2026 큐시트 양식의 열을 그대로 유지해야 운영팀이 모든 학부 큐시트를 같은 방식으로 읽을 수 있습니다. 추가한 열의 내용은 비고로 옮겼습니다.',
-        why: "TFT 2차 피드백: '큐시트 양식 유지해주세요!'",
+        why: "TFT 피드백: '큐시트 양식 유지해주세요!'",
         fixId,
       });
     }
@@ -115,7 +115,7 @@ export function formRules(ctx) {
 }
 
 // ---------------- 논의 중 표시 ----------------
-// '논의 중'·'미정' 칸은 공시 2차 큐시트처럼 수정본에서 보라색으로만 칠한다.
+// '논의 중'·'미정' 칸은 수정본에서 보라색으로만 칠한다(피드백 항목으로는 내지 않음 — 무대 전에 학부가 확정).
 // 피드백 항목(수정요망)으로는 세지 않는다.
 export function pendingRules(ctx) {
   const { S } = ctx;
@@ -294,7 +294,7 @@ export function lyricsRules(ctx) {
         key: 'lyrics',
         title: `개사 내용 빈칸 ${blanks.length}곳`,
         msg: `${blockLabel(b)}에 개사 내용이 빈 행이 있습니다. 가사가 없는 구간은 '간주', 노래 없이 동작만 있으면 'X', 원곡을 그대로 쓰면 '원곡 그대로'처럼 빈칸 없이 적어주세요.`,
-        why: "TFT 2차 피드백: '개사내용에 빈칸이 없게 부탁드립니다'",
+        why: "TFT 피드백: '개사내용에 빈칸이 없게 부탁드립니다'",
       });
       for (const r of blanks) applyPlaceholder(ctx, 'fill:placeholder', r, 'lyrics', PLACEHOLDER, '개사 내용 작성 필요');
     }

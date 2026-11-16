@@ -134,7 +134,7 @@ export function buildOverview(S, findings, { totalSec = 0, autoCells = 0, advice
   const good = perItem.filter((it) => !it.n).map((it) => it.name);
   const bad = perItem.filter((it) => it.n).sort((a, b) => b.n - a.n);
   if (!todo.length) {
-    lead.push(`2026 기준을 모두 지켰습니다. ${autoCells ? `자동으로 맞춘 ${autoCells}칸만 확인하고 ` : ''}그대로 제출하면 됩니다.`);
+    lead.push(`2026 기준을 모두 지켜, 무대 당일 음향 · 조명 · 영상 · FD 담당이 이 큐시트만 보고 진행할 수 있습니다.${autoCells ? ` 자동으로 맞춘 ${autoCells}칸만 확인하면 됩니다.` : ''}`);
   } else {
     if (good.length) lead.push(`${josa(good.join(' · '), '은/는')} 2026 기준에 맞게 잘 작성했습니다.`);
     const top = bad.slice(0, 3).map((it) => `${it.name}(${it.n}건)`).join(' · ');

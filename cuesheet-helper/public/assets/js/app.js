@@ -452,7 +452,7 @@ function pageHome() {
     <div class="hero">
       ${wordmark('wm hero-wm')}
       <h1>큐시트, 넣기만 하세요.</h1>
-      <p>우리 학부 큐시트 시트 링크를 넣으면 피드백을 드립니다. 반영할 피드백을 고르면, 반영된 큐시트를 새 구글 시트로 만들어 드립니다.</p>
+      <p>우리 학부 큐시트 시트 링크를 넣으면, 무대에서 그대로 쓸 수 있는 큐시트가 되도록 피드백을 드립니다. 반영할 피드백을 고르면, 반영된 큐시트를 새 구글 시트로 만들어 드립니다.</p>
       <div class="start">
         <div class="field"><input id="sheet-url" type="url" placeholder="우리 학부 큐시트의 구글 시트 주소를 붙여넣으세요" autocomplete="off"><button class="btn primary big" id="btn-link">피드백 받기</button></div>
         <p class="hint">공유 설정을 '링크가 있는 모든 사용자 · 뷰어'로 바꿔 주세요 · 원본 시트는 읽기만 하고 바꾸지 않습니다</p>
@@ -712,7 +712,7 @@ function getPanelHtml() {
   const st = stats();
   return `<section class="card get" id="get">
     <h2><span class="g-no">3</span> 피드백 반영한 구글 시트 받기</h2>
-    <p class="get-lead">반영하기로 고른 <b>${st.on}개</b> 항목(자동 정리 ${st.auto} · 직접 고른 ${st.picked - st.ai}${st.ai ? ` · AI 작성 ${st.ai}` : ''})이 들어간 큐시트를 <b>내 구글 드라이브에 새 구글 시트</b>로 만듭니다. 2026 2차 양식(열 너비 · 셀 색 · 글꼴 · 병합)이 그대로 들어가고, 첨부한 원본 시트는 바뀌지 않습니다.${st.manual ? ` '직접 고치기' ${st.manual}개는 받은 시트에서 고쳐 주세요.` : ''}</p>
+    <p class="get-lead">반영하기로 고른 <b>${st.on}개</b> 항목(자동 정리 ${st.auto} · 직접 고른 ${st.picked - st.ai}${st.ai ? ` · AI 작성 ${st.ai}` : ''})이 들어간 큐시트를 <b>내 구글 드라이브에 새 구글 시트</b>로 만듭니다. 2026 큐시트 양식(열 너비 · 셀 색 · 글꼴 · 병합)이 그대로 들어가고, 첨부한 원본 시트는 바뀌지 않습니다.${st.manual ? ` '직접 고치기' ${st.manual}개는 받은 시트에서 고쳐 주세요.` : ''}</p>
     <label class="switch"><input type="checkbox" id="o-hl" ${state.highlight ? 'checked' : ''}><span>반영으로 바뀐 칸을 노란색으로 표시</span></label>
     <div class="res-actions">
       <button class="btn primary" type="button" data-make ${state.gs.busy ? 'disabled' : ''}>${icon('grid', 18)} ${makeLabel()}</button>
@@ -744,10 +744,10 @@ function pageResult() {
       ${stepsHtml()}
       <dl class="res-meta">
         <div><dt>첨부한 원본</dt><dd>${sourceHtml()}</dd></div>
-        <div><dt>점검 기준</dt><dd>2026 2차 큐시트 양식 · OT 작성 예시 · 2026 조명 가이드 · 모범 큐시트(공시) · 주인공 조명 Details · 무대 내용·개사 분석<a href="#/guide">가이드</a><a href="#/guide/feedback">피드백 고르는 법</a></dd></div>
+        <div><dt>점검 기준</dt><dd>무대 운영(음향 · 조명 · 영상 · FD가 큐시트만 보고 진행) · 2026 큐시트 양식 · OT 작성 예시 · 2026 조명 가이드 · 모범 큐시트(공시) · 주인공 조명 Details · 무대 내용·개사 분석<a href="#/guide">가이드</a><a href="#/guide/feedback">피드백 고르는 법</a></dd></div>
       </dl>
       <div class="chips">
-        ${ok ? '<span class="pill ok">제출 가능</span>' : `<span class="pill error">수정요망 ${summary.todo}</span>`}
+        ${ok ? '<span class="pill ok">무대에서 사용 가능</span>' : `<span class="pill error">수정요망 ${summary.todo}</span>`}
         <span class="pill ${over ? 'error' : ''}">무대 시간 ${summary.totalText}${over ? ` · ${fmtDurationKo(summary.totalSec - 660)} 초과` : ' / 11분'}</span>
         <span class="pill sel">반영 ${st.on}개 선택</span>
       </div>
@@ -896,7 +896,7 @@ function pageSheet() {
   app.innerHTML = `<section class="page">
     <a class="back" href="#/result">${icon('left', 18)} 반영할 피드백 고르기</a>
     <h1 class="page-title">미리보기</h1>
-    <p class="page-sub">${esc(state.name)} · ${isOrig ? '첨부한 원본' : `고른 피드백 ${st.on}개를 반영한 모습`} · 2026 2차 양식 그대로 · 반영 여부는 피드백 결과에서 바꿀 수 있습니다</p>
+    <p class="page-sub">${esc(state.name)} · ${isOrig ? '첨부한 원본' : `고른 피드백 ${st.on}개를 반영한 모습`} · 2026 큐시트 양식 그대로 · 반영 여부는 피드백 결과에서 바꿀 수 있습니다</p>
     <div class="sheet-tools">
       <div class="seg"><button data-v="output" class="${isOrig ? '' : 'active'}">피드백 반영본</button><button data-v="original" class="${isOrig ? 'active' : ''}">원본</button></div>
       <label class="switch"><input type="checkbox" id="t-diff" ${state.showDiff ? 'checked' : ''}><span>바뀐 칸 표시</span></label>
@@ -926,7 +926,7 @@ function pageSheet() {
 function reportText() {
   const { summary, findings } = state.result;
   const st = stats();
-  const L = [`[2026 학부합창대회 큐시트 피드백] ${state.name}`, `${summary.todo ? `수정요망 ${summary.todo}건` : '제출 가능'} · 무대 시간 ${summary.totalText}/11분 · 반영하기로 고른 항목 ${st.on}개`, '', '■ 총평', overviewText(summary.overview, { withAdvice: false })];
+  const L = [`[2026 학부합창대회 큐시트 피드백] ${state.name}`, `${summary.todo ? `수정요망 ${summary.todo}건` : '무대에서 사용 가능'} · 무대 시간 ${summary.totalText}/11분 · 반영하기로 고른 항목 ${st.on}개`, '', '■ 총평', overviewText(summary.overview, { withAdvice: false })];
   const items = [];
   for (const p of PAGES) {
     const fs = findings.filter((f) => pageOf(f) === p.id && isTodo(f));
@@ -951,7 +951,7 @@ function reportText() {
   }
   const adv = adviceText(state.result.advice);
   if (adv) L.push('', `■ ${adv}`);
-  L.push('', state.made ? `피드백을 반영한 새 구글 시트: ${state.made.url}` : '피드백을 반영한 새 구글 시트를 만들어 함께 보냅니다.', "붉은 칸('(작성 필요)', [ ] 예시)을 채워 다시 제출해 주세요.");
+  L.push('', state.made ? `피드백을 반영한 새 구글 시트: ${state.made.url}` : '피드백을 반영한 새 구글 시트를 만들어 함께 보냅니다.', "붉은 칸('(작성 필요)', [ ] 예시)과 보라색 '논의 중' 칸을 채우면 무대에서 그대로 쓸 수 있는 큐시트가 됩니다.");
   return L.join('\n');
 }
 
@@ -1055,7 +1055,7 @@ async function makeViaImport() {
       <li>새 시트에서 <b>파일 → 가져오기 → 업로드</b>를 누르고, 방금 받은 <b>${esc(file)}</b> 파일을 고릅니다.</li>
       <li>가져오기 위치를 <b>스프레드시트 바꾸기</b>로 두고 <b>데이터 가져오기</b>를 누릅니다.</li>
     </ol>
-    <p>2026 2차 양식(열 너비 · 셀 색 · 글꼴 · 셀 병합)이 그대로 들어가고, 첨부한 원본 시트는 그대로입니다. <button class="linkbtn" type="button" id="b-redl">엑셀 다시 받기</button></p>`);
+    <p>2026 큐시트 양식(열 너비 · 셀 색 · 글꼴 · 셀 병합)이 그대로 들어가고, 첨부한 원본 시트는 그대로입니다. <button class="linkbtn" type="button" id="b-redl">엑셀 다시 받기</button></p>`);
   const r = $('#b-redl', app);
   if (r) r.addEventListener('click', () => exportFile('submit'));
 }
@@ -1091,7 +1091,7 @@ function pageExample() {
   app.innerHTML = `<section class="page">
     <a class="back" href="#/guide">${icon('left', 18)} 가이드</a>
     <h1 class="page-title">모범 예시</h1>
-    <p class="page-sub">가장 잘 쓴 2차 큐시트(공시)의 방식을 따른 가상 학부입니다</p>
+    <p class="page-sub">무대에서 그대로 쓸 수 있게 쓴 모범 큐시트(공시)의 방식을 따른 가상 학부입니다</p>
     <div class="chips" style="margin-bottom:16px">
       <span class="pill info">Run Time 이어짐</span><span class="pill info">바뀌는 곳마다 행 분리</span><span class="pill info">인원 숫자</span><span class="pill info">조명 구역/색상/밝기%</span><span class="pill info">핀 ON/X</span><span class="pill info">FD 지시</span>
     </div>
@@ -1100,7 +1100,7 @@ function pageExample() {
 }
 
 // ---------------- 페이지: AI 작성 (OpenAI) ----------------
-// 학부 디렉터가 요구사항(자유 형식 프롬프트)과 참고 파일을 넣으면 AI가 2026 2차 양식으로
+// 학부 디렉터가 요구사항(자유 형식 프롬프트)과 참고 파일을 넣으면 AI가 무대에서 그대로 쓸 수 있는 큐시트를 (2026 양식으로)
 //  - 고치기: 첨부한 큐시트(지금 고른 피드백을 반영한 상태)에서 바꿀 칸 · 새 행 → 반영 / 반영 안 함을 골라 구글 시트로
 //  - 새로 작성: 큐시트 전체 → '이 큐시트로 피드백 받기' → 피드백 · 반영 고르기 → 구글 시트로
 // 요청은 /api/ai/start(접수) → 백그라운드 함수(OpenAI) → /api/ai/status(결과)로, 다른 화면을 봐도 계속 기다린다.
@@ -1114,7 +1114,7 @@ const AI_EX = {
   ],
   create: [
     ['순서 · 인원', "우리 학부는 자체영상 1개(1분) → 무대 1 '[곡 제목]'(콰이어 24명) → 무대 2 '[곡 제목]'(댄서 16명 + 주인공 1명) 순서입니다."],
-    ['기획안대로', '첨부한 기획안 문서의 순서와 내용대로 2026 2차 양식 큐시트를 작성해 주세요.'],
+    ['기획안대로', '첨부한 기획안 문서의 순서와 내용대로 무대에서 쓸 큐시트를 작성해 주세요.'],
     ['가사 나누기', '첨부한 가사를 2줄씩 슬라이드로 나눠 개사 칸과 Run Time을 맞춰 주세요.'],
     ['조명 분위기', '무대 1은 차분하게(진파랑), 무대 2는 밝고 희망차게(하늘색), 마지막 후렴에서 가장 밝게 해 주세요.'],
   ],
@@ -1389,12 +1389,12 @@ function pageWrite() {
     mode === 'edit'
       ? `고칠 큐시트 <b>${esc(state.name)}</b> <span class="muted">· ${state.output.S.rows.length}행 · 지금 고른 피드백을 반영한 상태에서 고칩니다</span> <a href="#/result">피드백 결과</a>`
       : hasSheet
-        ? 'AI가 2026 2차 양식으로 새 큐시트를 처음부터 씁니다. 지금 첨부한 큐시트는 그대로 둡니다.'
-        : 'AI가 2026 2차 양식으로 새 큐시트를 처음부터 씁니다. 이미 쓴 큐시트를 고치려면 먼저 <a href="#/">큐시트 링크를 첨부</a>하세요.';
+        ? 'AI가 무대에서 그대로 쓸 수 있는 큐시트를 2026 양식으로 처음부터 씁니다. 지금 첨부한 큐시트는 그대로 둡니다.'
+        : 'AI가 무대에서 그대로 쓸 수 있는 큐시트를 2026 양식으로 처음부터 씁니다. 이미 쓴 큐시트를 고치려면 먼저 <a href="#/">큐시트 링크를 첨부</a>하세요.';
   app.innerHTML = `<section class="page write">
     <span class="eyebrow">${icon('sparkle', 15)} AI 큐시트 작성 · OpenAI</span>
     <h1 class="page-title">원하는 큐시트를 말로 설명하세요</h1>
-    <p class="page-sub">요구사항을 자유롭게 쓰고 기획안 · 가사 · 콘티 같은 파일을 붙이면, AI가 2026 2차 양식에 맞춰 큐시트를 고치거나 새로 씁니다. 결과는 피드백처럼 <b>반영 / 반영 안 함</b>을 고른 뒤 새 구글 시트로 받습니다.</p>
+    <p class="page-sub">요구사항을 자유롭게 쓰고 기획안 · 가사 · 콘티 같은 파일을 붙이면, AI가 무대 당일 음향 · 조명 · 영상 · FD 담당이 그대로 보고 진행할 수 있는 큐시트로 고치거나 새로 씁니다. 결과는 피드백처럼 <b>반영 / 반영 안 함</b>을 고른 뒤 새 구글 시트로 받습니다.</p>
     ${off ? `<div class="w-off" role="note">${icon('chat', 18)}<div><b>AI 기능이 아직 켜져 있지 않습니다.</b><p>사이트 관리자가 Netlify AI Gateway를 쓰거나 환경 변수 OPENAI_API_KEY를 넣으면 사용할 수 있습니다. 그동안은 <a href="#/">큐시트 링크로 피드백 받기</a>를 이용해 주세요.</p></div></div>` : ''}
     <div class="card w-form">
       <div class="w-step"><span class="g-no">1</span><b>무엇을 할까요?</b></div>

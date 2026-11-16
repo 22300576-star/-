@@ -22,7 +22,7 @@
   --green-soft: rgba(61, 220, 151, 0.13);
   --violet: #b9a6ff;
   --violet-soft: rgba(185, 166, 255, 0.14);
-  /* 2차 큐시트 칸 색 (표는 밝은 종이색 유지) */
+  /* 큐시트 칸 색 (표는 밝은 종이색 유지) */
   --c-guide: #f4cccc;
   --c-host: #cfe2f3;
   --c-intro: #d9ead3;
@@ -109,7 +109,7 @@ h1, h2, h3 { letter-spacing: -0.02em; }
 .picker { margin-top: 14px; display: flex; gap: 10px; }
 .picker select { flex: 1; background: rgba(0,0,0,0.55); border: 1px solid #2a3150; border-radius: 12px; padding: 12px 14px; color: #fff; }
 
-/* ---------- 칩 · 무대 시간(Run Time) · 제출 상태(수정본 받기) ---------- */
+/* ---------- 칩 · 무대 시간(Run Time) · 상태(수정본 받기) ---------- */
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .timecard { background: #0b0e16; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 0 0 14px; }
 .tc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }

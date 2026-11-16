@@ -1,6 +1,6 @@
 // 피드백 반영본을 학부 계정의 구글 드라이브에 '새 구글 시트'로 만든다.
 //  - 구글 로그인(Google Identity Services)으로 drive.file 권한만 받음: 이 사이트가 만든 파일에만 접근
-//  - 2026 2차 양식 엑셀을 업로드하면서 구글 시트로 변환 → 열 너비·셀 색·글꼴·테두리·병합이 그대로 들어감
+//  - 2026 큐시트 양식 엑셀을 업로드하면서 구글 시트로 변환 → 열 너비·셀 색·글꼴·테두리·병합이 그대로 들어감
 //  - 첨부한 원본 시트는 읽지도 바꾸지도 않는다 (원본은 /api/sheet가 공개 링크로만 읽음)
 const GIS_SRC = 'https://accounts.google.com/gsi/client';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
