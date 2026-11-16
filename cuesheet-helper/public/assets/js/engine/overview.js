@@ -2,7 +2,7 @@
 // 항목별 피드백을 학부 디렉터가 한눈에 이해할 수 있도록 짧은 글로 묶는다.
 //  - lead: 큐시트 구성 · 무대 시간 · 잘한 점 · 고칠 곳 요약
 //  - directions: 무엇을 어떻게 고칠지 (11분 초과 → 수정요망 큰 것부터, 같은 종류는 한 줄로 묶고 위치를 붙임)
-//  - autoNote: 자동으로 고쳐 수정본에 이미 반영한 것
+//  - autoNote: 사이트가 형식을 맞춘 자동 정리(기본으로 반영, 끌 수 있음)
 import { fmtDurationKo } from './time.js';
 import { josa } from './josa.js';
 import { STAGE_LIMIT_SEC } from './constants.js';
@@ -99,23 +99,23 @@ export function buildOverview(S, findings, { totalSec = 0, autoCells = 0, advice
     const key = `${item}|${action}`;
     const d = dirs.get(key) || { item, action, error: false, fixed: true, n: 0, places: [] };
     d.error = d.error || f.level === 'error';
-    d.fixed = d.fixed && !!(f.fixId && f.fixEnabled); // 모두 자동으로 고쳐졌으면 '수정본에 반영됨'
+    d.fixed = d.fixed && !!(f.fixId && f.fixEnabled); // 모두 자동 정리로 반영되면 '자동 정리'
     d.n++;
     for (const p of placesOf(S, f)) if (!d.places.includes(p)) d.places.push(p);
     dirs.set(key, d);
   }
-  // 순서: 11분 초과 → 직접 고칠 것(큰 문제 먼저, 항목 순) → 수정본에 이미 반영된 것
+  // 순서: 11분 초과 → 골라서 반영하거나 직접 고칠 것(큰 문제 먼저, 항목 순) → 자동 정리로 반영되는 것
   const rank = (d) => (/11분 안으로/.test(d.action) ? 0 : d.fixed ? 2 : 1);
   const directions = [...dirs.values()]
     .sort((a, b) => rank(a) - rank(b) || Number(b.error) - Number(a.error) || itemIndex(a.item) - itemIndex(b.item))
     .map((d) => ({ item: itemName(d.item), action: d.action, fixed: d.fixed, places: d.places.slice(0, 3), more: Math.max(0, d.places.length - 3) }));
 
-  // 자동으로 고친 것 · 직접 채울 칸
+  // 자동 정리 · 직접 채울 칸
   const fixed = [...new Set(findings.filter((f) => f.level === 'info' && f.fixId && f.fixEnabled && f.fixId !== 'fill:placeholder').map((f) => plainTitle(f.title)))];
   const blanks = (S.rows || []).reduce((n, r) => n + Object.values(r.marks || {}).filter((m) => m && m.placeholder).length, 0);
   const autoParts = [];
-  if (autoCells) autoParts.push(`${fixed.length ? `${fixed.slice(0, 3).join(' · ')}${fixed.length > 3 ? ' 등' : ''} ` : ''}자동으로 고친 ${autoCells}칸은 수정본에 이미 반영했습니다.`);
-  if (blanks) autoParts.push(`직접 채워야 하는 ${blanks}칸은 수정본에 붉은 '(작성 필요)'로 표시해 두었습니다.`);
+  if (autoCells) autoParts.push(`${fixed.length ? `${fixed.slice(0, 3).join(' · ')}${fixed.length > 3 ? ' 등' : ''} ` : ''}형식을 맞추는 자동 정리 ${autoCells}칸은 기본으로 반영하도록 골라 두었습니다(항목에서 끌 수 있음).`);
+  if (blanks) autoParts.push(`학부만 알 수 있어 비워 둔 ${blanks}칸은 피드백 반영본에 붉은 '(작성 필요)'로 표시됩니다.`);
   const autoNote = autoParts.join(' ');
 
   // 총평 문장
@@ -157,7 +157,7 @@ export function overviewText(o, { maxDirections = 10, withAdvice = true } = {}) 
   if (o.directions.length) {
     L.push('', '수정 방향');
     o.directions.slice(0, maxDirections).forEach((d, i) => {
-      L.push(`${i + 1}. ${d.item} — ${d.action}${placeText(d)}${d.fixed ? ' — 수정본에 반영됨' : ''}`);
+      L.push(`${i + 1}. ${d.item} — ${d.action}${placeText(d)}${d.fixed ? ' — 자동 정리(기본 반영)' : ''}`);
     });
     if (o.directions.length > maxDirections) L.push(`그 밖에 ${o.directions.length - maxDirections}가지는 항목별 피드백을 참고해 주세요.`);
   }

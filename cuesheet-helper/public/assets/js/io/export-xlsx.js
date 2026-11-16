@@ -3,7 +3,7 @@
 import { KEYS, COLS, GUIDE_ROW, CATS, LEVELS, colName } from '../engine/constants.js';
 
 // 검토용 '피드백 목록'의 수정 후 앞 표시
-const AFTER_TAG = { auto: '수정본에 반영됨', off: '자동 수정 꺼짐', example: '예시 — [ ]는 바꿔 적기', guide: '고칠 방향' };
+const AFTER_TAG = { auto: '자동 정리', off: '자동 정리 · 반영 안 함', example: '반영하면 이렇게 — [ ]는 바꿔 적기', guide: '고칠 방향' };
 
 const COL_PX = { item: 150, runtime: 234, stage: 234, waiting: 175, detail: 292, lyrics: 234, sound: 234, screen: 190, lStage: 164, lTop: 164, pin1: 100, pin2: 100, pin3: 100, pin4: 100, details: 402, note: 100 };
 const FILL = {
@@ -66,7 +66,7 @@ function verticalRuns(S, key) {
 /**
  * @param {*} ExcelJS ExcelJS 라이브러리
  * @param {object} S analyze().revised
- * @param {object} opts { mode: 'review'|'submit', feedbackText, findings, title, overviewText(검토용 '총평' 시트) }
+ * @param {object} opts { mode: 'review'|'submit', feedbackText, findings, title, overviewText(검토용 '총평' 시트), chosen(반영한 항목 id Set), highlight(바뀐 칸 노란색) }
  */
 export async function buildWorkbook(ExcelJS, S, opts = {}) {
   const mode = opts.mode || 'review';
@@ -181,11 +181,11 @@ export async function buildWorkbook(ExcelJS, S, opts = {}) {
       if (m && !row.cont[k]) {
         if (m.pending) cell.fill = fill(FILL.pending);
         else if (m.placeholder) cell.fill = fill(FILL.guide);
-        else if (m.changed && mode === 'review') cell.fill = fill(FILL.changed);
+        else if (m.changed && (mode === 'review' || opts.highlight)) cell.fill = fill(FILL.changed);
         if (mode === 'review' && (m.changed || m.placeholder)) {
           const before = m.before == null ? '' : String(m.before);
           const reasons = (m.reasons || []).join(', ');
-          const txt = `[자동 수정] ${reasons}${before ? `\n원래 내용: ${before.length > 180 ? `${before.slice(0, 180)}…` : before}` : '\n원래 내용: (빈칸)'}`;
+          const txt = `${m.by ? '[반영한 피드백]' : '[자동 정리]'} ${reasons}${before ? `\n원래 내용: ${before.length > 180 ? `${before.slice(0, 180)}…` : before}` : '\n원래 내용: (빈칸)'}`;
           cell.note = { texts: [{ font: { size: 9, name: 'Arial' }, text: txt }], margins: { insetmode: 'auto' } };
         }
       }
@@ -241,7 +241,7 @@ export async function buildWorkbook(ExcelJS, S, opts = {}) {
       { header: '수정 후', key: 'after', width: 60 },
       { header: '설명 / 대안', key: 'msg', width: 80 },
       { header: '근거', key: 'why', width: 50 },
-      { header: '자동 반영', key: 'fix', width: 12 },
+      { header: '반영', key: 'fix', width: 14 },
     ];
     fs.getRow(1).font = font({ bold: true });
     fs.getRow(1).fill = fill('FFD9D9D9');
@@ -257,7 +257,7 @@ export async function buildWorkbook(ExcelJS, S, opts = {}) {
         after: f.after != null ? `${AFTER_TAG[f.afterKind] ? `(${AFTER_TAG[f.afterKind]}) ` : ''}${f.after}` : '',
         msg: [f.msg, f.after == null && f.suggestion ? `→ ${f.suggestion}` : '', f.examples && f.examples.length ? `예: ${f.examples.join(' / ')}` : ''].filter(Boolean).join('\n'),
         why: f.why || '',
-        fix: f.fixId ? (f.fixEnabled ? '반영함' : '반영 안 함') : '-',
+        fix: f.apply === 'manual' ? '직접 고치기' : opts.chosen ? (opts.chosen.has(f.id) ? '반영함' : f.apply === 'auto' || f.apply === 'op' ? '반영 안 함' : '-') : f.fixId ? (f.fixEnabled ? '반영함' : '반영 안 함') : '-',
       });
       r.alignment = { vertical: 'top', wrapText: true };
       r.font = font({ color: f.level === 'error' || f.level === 'warn' ? { argb: 'FFC00000' } : undefined });

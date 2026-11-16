@@ -20,7 +20,7 @@ export function buildSummary(S, findings, fixes, advice = []) {
     lines.push(`[수정요망] ${dirs.slice(0, 6).join(' / ')}${dirs.length > 6 ? ` 외 ${dirs.length - 6}가지` : ''}`);
   }
   if (overview.advice.length) lines.push(`[음향·조명 제안] ${overview.advice.slice(0, 4).map((a) => `${a.label}: ${a.brief}`).join(' / ')}`);
-  if (overview.autoNote) lines.push(`[자동 반영] ${overview.autoNote}`);
+  if (overview.autoNote) lines.push(`[자동 정리] ${overview.autoNote}`);
 
   return {
     counts,

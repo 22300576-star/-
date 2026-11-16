@@ -3,10 +3,11 @@
 // 빈칸 피드백의 '수정 후' 예시를 만들 때도 쓴다.
 import { fmtClock } from './time.js';
 import { norm, isBlank, OFF_ONLY_RE, PENDING_RE } from './vocab.js';
-import { PIN_POS, PIN_KEYS } from './constants.js';
+import { PIN_POS, PIN_KEYS, PLACEHOLDER } from './constants.js';
 import { josa } from './josa.js';
 import { micsFor } from './rules-stagecraft.js';
 import { MAIN_CHAR_RE } from './content.js';
+import { applyText } from './ops.js';
 
 const ZONE_LABEL = { left: '왼쪽', right: '오른쪽', center: '중앙', back: '전체', offstage: '전체' };
 const round10 = (n) => Math.round(n / 10) * 10;
@@ -166,6 +167,32 @@ export function stageAdvice(S, st) {
     if (a != null && z != null && z <= a) now.push({ cat: 'light', text: `절정(${fmtClock(climax.start ?? 0)})의 밝기(${z}%)가 도입(${a}%)보다 높지 않습니다 — 절정에서 밝기를 올리면 곡의 흐름이 살아납니다` });
   }
 
+  // ---------- 반영할 수 있는 제안 (골라서 반영 · 기본은 반영 안 함) ----------
+  const actions = [];
+  const b = st.block.index;
+  const soundRow = st.block.rows.find((r) => !r.cont.sound) || st.block.rows[0];
+  const soundNow = norm(soundRow.c.sound) === PLACEHOLDER ? '' : norm(soundRow.c.sound);
+  const act = (id, cat, title, row, key, op) => {
+    const before = row.cont[key] ? '' : norm(row.c[key]) === PLACEHOLDER ? '' : norm(row.c[key]);
+    const o = { rowId: row.id, key, ...op };
+    actions.push({ id, cat, title, level: 'info', advice: true, apply: 'op', ops: [o], defaultOn: false, editable: true, rowId: row.id, key, before, after: applyText(before, o), afterKind: 'example' });
+  };
+  if (sing.length && quiet.length && quiet.length < st.rows.length && !/OFF/i.test(soundNow)) {
+    const lines = [];
+    for (const q of quiet.slice(0, 3)) {
+      lines.push(`${span(q)} ${q.dance ? '안무' : '간주'}: 합창 마이크 OFF`);
+      const next = st.rows.slice(st.rows.indexOf(q) + 1).find((x) => x.singing && x.start != null);
+      if (next) lines.push(`${fmtClock(next.start)} 가사 시작: 합창 마이크 ON`);
+    }
+    act(`adv:mic:${b}`, 'sound', '간주 · 안무 구간은 합창 마이크 OFF, 가사 시작에 ON', soundRow, 'sound', { append: [...new Set(lines)].join('\n') });
+  }
+  if (climax && climax.start != null && !/볼륨/.test(soundNow)) {
+    act(`adv:vol:${b}`, 'sound', '절정에서 합창 마이크 볼륨 크게', soundRow, 'sound', { append: `${fmtClock(climax.start)} 절정${cueOf(climax) ? ` ${cueOf(climax)}` : ''}: 합창 마이크 볼륨 크게` });
+  }
+  if (now.some((n) => n.cat === 'light') && climax && !climax.row.cont.lStage) {
+    act(`adv:climax:${b}`, 'light', `절정 ${fmtClock(climax.start ?? 0)}에 무대 전체 100%로 밝게`, climax.row, 'lStage', { set: '전체 / 흰색 / 100%' });
+  }
+
   // 총평용 한 줄
   const brief = [
     m.name ? `${m.short} 분위기 → 상단 ${m.top}${st.moodEnd ? `→${st.moodEnd.top}` : ''}` : '',
@@ -184,6 +211,7 @@ export function stageAdvice(S, st) {
     light,
     now,
     brief,
+    actions,
   };
 }
 

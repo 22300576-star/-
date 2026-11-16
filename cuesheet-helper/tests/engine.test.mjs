@@ -10,6 +10,7 @@ import { gridFromTsv } from '../public/assets/js/io/importers.js';
 import { SAMPLE_DRAFT, SAMPLE_MODEL } from '../public/assets/js/samples.js';
 import { overviewText } from '../public/assets/js/engine/overview.js';
 import { adviceText } from '../public/assets/js/engine/advice.js';
+import { buildOutput, isChosen, choiceItems, choiceStats, editOps, parseSplitText } from '../public/assets/js/engine/choices.js';
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const titles = (res) => res.findings.map((f) => f.title);
@@ -232,8 +233,117 @@ test('검토용 엑셀 피드백 목록에 원래 · 수정 후 열이 있다', 
   const rows = fl.getSheetValues().slice(2).filter(Boolean);
   const pin = rows.find((r) => /Pin3에 색상 지정/.test(r[4]));
   assert.equal(pin[5], '주인공 / 금색');
-  assert.match(pin[6], /^\(수정본에 반영됨\) /);
+  assert.match(pin[6], /^\(자동 정리\) /);
   const ov = wb.getWorksheet('총평');
   const text = ov.getSheetValues().map((r) => (r ? r[1] : '')).join('\n');
   assert.match(text, /\[음향\] 합창 마이크 4개 정도/);
+});
+
+// ---------- 항목별 반영 고르기 → 피드백 반영본 ----------
+const rowOf = (S, id) => S.rows.find((r) => r.id === id);
+
+test('기본 선택: 자동 정리는 반영, 예시가 들어가는 수정은 골라서', () => {
+  const res = analyze(parseGrid(clone(SAMPLE_DRAFT)));
+  const pin = res.findings.find((f) => f.id === 'light:pincolor:r7:pin3');
+  const protag = res.findings.find((f) => f.id.startsWith('light:protag'));
+  const limit = res.findings.find((f) => f.id === 'time:limit');
+  assert.equal(pin.apply, 'auto');
+  assert.ok(isChosen(pin, new Map()));
+  assert.equal(protag.apply, 'op');
+  assert.ok(protag.editable);
+  assert.ok(!isChosen(protag, new Map()), '[ ] 예시가 들어가는 수정은 기본으로 반영하지 않음');
+  assert.equal(limit.apply, 'manual');
+  // 고를 수 있는 항목: 자동 정리 + 반영 작업이 있는 수정 + 반영할 수 있는 제안
+  const items = choiceItems(res);
+  assert.ok(items.some((i) => i.id === 'adv:mic:3'), '간주 구간 마이크 OFF/ON 제안');
+  const st = choiceStats(res, new Map());
+  assert.equal(st.total, items.length);
+  assert.equal(st.manual, 2); // 11분 초과 · FX 3종류는 직접 고치기
+});
+
+test('고른 피드백만 반영본에 들어가고 원본은 그대로', () => {
+  const model = parseGrid(clone(SAMPLE_DRAFT));
+  const snapshot = JSON.stringify(model);
+  const res = analyze(model);
+  const protag = res.findings.find((f) => f.id.startsWith('light:protag'));
+  // 기본: 주인공 Details는 원래대로
+  const def = buildOutput(res, new Map(), new Map());
+  assert.equal(rowOf(def.S, 'r7').c.details, '주인공 따라 핀 이동');
+  // 반영: 수정 후 문구가 그 칸에 들어가고, [ ] 예시가 있으면 붉게(작성 필요) 표시
+  const on = buildOutput(res, new Map([[protag.id, true]]), new Map());
+  const cell = rowOf(on.S, 'r7');
+  assert.equal(cell.c.details, protag.after);
+  assert.equal(cell.marks.details.by, protag.id);
+  assert.ok(cell.marks.details.placeholder);
+  assert.ok(on.applied.includes(protag.id));
+  // 문구를 고쳐서 반영
+  const ed = buildOutput(res, new Map([[protag.id, true]]), new Map([[protag.id, '00:40 흰 드레스를 입은 주인공이 무대 왼쪽 계단에서 올라와 Pin3 자리에 서면 Pin3 즉시 ON']]));
+  assert.match(rowOf(ed.S, 'r7').c.details, /^00:40 흰 드레스를 입은/);
+  assert.ok(!rowOf(ed.S, 'r7').marks.details.placeholder);
+  // 첨부한 원본 모델은 바뀌지 않음
+  assert.equal(JSON.stringify(model), snapshot);
+});
+
+test('자동 정리를 반영 안 함으로 고르면 그 칸은 원래대로', () => {
+  const model = parseGrid(clone(SAMPLE_DRAFT));
+  const off = analyze(model, { disabled: new Set(['light:pincolor:r7:pin3']) });
+  const out = buildOutput(off, new Map(), new Map());
+  assert.equal(rowOf(out.S, 'r7').c.pin3, '주인공 / 금색');
+  assert.ok(!isChosen(off.findings.find((f) => f.id === 'light:pincolor:r7:pin3'), new Map()));
+});
+
+test('한 곡을 한 행으로 쓴 무대는 반영하면 가사 슬라이드마다 행을 나눈다', () => {
+  const res = analyze(parseGrid(clone(SAMPLE_DRAFT)));
+  const split = res.findings.find((f) => f.id === 'time:split1:5');
+  const out = buildOutput(res, new Map([[split.id, true]]), new Map());
+  assert.equal(out.S.rows.length, res.revised.rows.length + 3);
+  const rows = out.S.rows.filter((r) => r.id === 'r11' || r.id.startsWith('r11-s'));
+  assert.deepEqual(rows.map((r) => r.c.runtime), ['02:41 ~ 03:09 (28초)', '03:09 ~ 03:36 (27초)', '03:36 ~ 04:04 (28초)', '04:04 ~ 04:31 (27초)']);
+  assert.equal(rows[1].c.lyrics, '손을 잡고 노래해요\n한동의 빛이 되어');
+  assert.ok(rows[1].cont.item && rows[1].cont.sound, '항목·음향은 위 칸과 병합');
+  assert.equal(rows[1].c.detail, '(작성 필요)');
+  assert.equal(rows[1].c.lStage, '유지');
+  // 나눈 행도 같은 무대(묶음)로 계산
+  assert.equal(out.S.blocks.find((b) => b.rows.some((r) => r.id === 'r11')).rows.length, 4);
+  // 문구를 고쳐 3행으로
+  const ed = buildOutput(res, new Map([[split.id, true]]), new Map([[split.id, '02:41 ~ 03:30 (49초) 함께 걷는 이 길 위에 / 우리의 꿈을 그려요\n03:30 ~ 04:00 (30초) 손을 잡고 노래해요\n04:00 ~ 04:31 (31초) 우리의 행진은']]));
+  assert.equal(ed.S.rows.length, res.revised.rows.length + 2);
+  assert.deepEqual(parseSplitText('00:00 ~ 00:10 (10초) 가 / 나')[0], { runtime: '00:00 ~ 00:10 (10초)', lyrics: '가\n나' });
+});
+
+test('같은 칸을 바꾸는 항목을 함께 고르면 알려 주고, 제안도 반영할 수 있다', () => {
+  const res = analyze(parseGrid(clone(SAMPLE_DRAFT)));
+  const follow = res.findings.find((f) => f.id === 'light:pinfollow:r7');
+  const protag = res.findings.find((f) => f.id.startsWith('light:protag'));
+  const both = buildOutput(res, new Map([[follow.id, true], [protag.id, true]]), new Map());
+  assert.ok(both.conflicts.get(protag.id).includes(follow.id));
+  assert.equal(rowOf(both.S, 'r7').c.details, protag.after, '아래 항목(주인공)이 최종');
+  const mic = choiceItems(res).find((i) => i.id === 'adv:mic:3');
+  const out = buildOutput(res, new Map([['adv:mic:3', true]]), new Map());
+  const sound = rowOf(out.S, mic.rowId).c.sound;
+  assert.match(sound, /00:40 ~ 00:52 간주: 합창 마이크 OFF\n00:52 가사 시작: 합창 마이크 ON/);
+  // FX 한 줄 바꾸기는 다른 줄을 건드리지 않음
+  const fx = res.findings.find((f) => f.id === 'fx:unlabeled:strobe');
+  assert.deepEqual(editOps(fx, 'X')[0].replace, [fx.ops[0].replace[0], 'X']);
+});
+
+test('검토용 엑셀의 반영 열: 반영함 · 반영 안 함 · 직접 고치기', async () => {
+  const res = analyze(parseGrid(clone(SAMPLE_DRAFT)));
+  const protag = res.findings.find((f) => f.id.startsWith('light:protag'));
+  const out = buildOutput(res, new Map([[protag.id, true]]), new Map());
+  const wb = await buildWorkbook(ExcelJS, out.S, { mode: 'review', findings: res.findings, chosen: new Set(out.applied), title: '예시학부' });
+  const rows = wb.getWorksheet('피드백 목록').getSheetValues().slice(2).filter(Boolean);
+  const tag = (re) => rows.find((r) => re.test(r[4]))[9];
+  assert.equal(wb.getWorksheet('피드백 목록').getCell('I1').value, '반영');
+  assert.equal(tag(/조명 Details에 주인공/), '반영함');
+  assert.equal(tag(/세부 내용이 구체적이지 않음/), '반영 안 함');
+  assert.equal(tag(/11분 초과/), '직접 고치기');
+  assert.equal(tag(/Pin3에 색상 지정/), '반영함');
+  // 반영본 엑셀(제출용)에서 바뀐 칸 노란색은 고를 때만
+  const plain = await buildWorkbook(ExcelJS, out.S, { mode: 'submit', title: '예시학부' });
+  const hl = await buildWorkbook(ExcelJS, out.S, { mode: 'submit', title: '예시학부', highlight: true });
+  // 8행 Pin3: '주인공 / 금색' → 'ON / 주인공' (자동 정리로 바뀐 칸)
+  const cellAt = (wbk) => wbk.getWorksheet('예시학부').getCell(`M${out.S.rows.findIndex((r) => r.id === 'r7') + 5}`);
+  assert.notEqual((cellAt(plain).fill || {}).fgColor && cellAt(plain).fill.fgColor.argb, 'FFFFF9C4');
+  assert.equal(cellAt(hl).fill.fgColor.argb, 'FFFFF9C4');
 });

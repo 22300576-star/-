@@ -916,6 +916,7 @@ function fillBlanks(ctx) {
         msg: `${blockLabel(b)}에서 조명이 바뀌는 ${b.noTransition.length}개 행에 즉시 바뀌는지, 서서히(몇 초) 바뀌는지가 없습니다. 함께 끄거나 바꿔야 하는 조명도 같이 적어주세요.`,
         why: WHY_TIP,
         suggestion: "예) '바로 켜주세요', '2초에 걸쳐 서서히 어둡게', '상단 끄면서 Pin3만 남기기'",
+        rows: b.noTransition.map((x) => x.id),
       });
     }
   }
