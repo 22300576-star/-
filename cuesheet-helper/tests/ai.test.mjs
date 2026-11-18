@@ -209,3 +209,10 @@ test('첨부 문서 읽기: 워드 · 한글(hwpx) · 파워포인트 글자 꺼
   assert.equal(decodeXml('&#xAC00;&#44032;&quot;'), '가가"');
   assert.equal(toBase64(new TextEncoder().encode('큐시트')), Buffer.from('큐시트').toString('base64'));
 });
+
+test('AI 작성 지시문에 TFT 조명 Q&A가 들어 있다', async () => {
+  const { SYSTEM } = await import('../netlify/lib/aiwrite.mts');
+  for (const want of ['TFT 조명 Q&A', '콰이어만 비추기', '십자가', '점멸', '앞줄을 강조하려면 무대 조명을 밝게', '소수점 첫째 자리', '같은 효과를 여러 구간에서 반복하는 것은 1종류']) {
+    assert.ok(SYSTEM.includes(want), `'${want}' 없음`);
+  }
+});

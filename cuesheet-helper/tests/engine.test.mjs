@@ -386,3 +386,101 @@ test('피드백을 고칠 방법(종류)마다 묶고, 설명 · 근거는 묶�
     assert.ok(places.includes(f) || f.dupOf || (f.apply === 'auto' && inAuto.has(f.fixId)), f.id);
   }
 });
+
+// ---------------- TFT 조명 Q&A ----------------
+// 모범 예시(고칠 점 없음)의 무대 1 칸을 바꿔 규칙을 확인한다. dr: 무대 1 첫 행에서 몇 번째 행인지
+const COL = { lStage: 8, lTop: 9, pin1: 10, pin2: 11, pin3: 12, pin4: 13, details: 14, note: 15 };
+function modelWith(edits) {
+  const g = clone(SAMPLE_MODEL);
+  const base = g.cells.findIndex((r) => /^무대 1/.test(r[0]));
+  for (const [dr, key, v] of edits) g.cells[base + dr][COL[key]] = v;
+  return analyze(parseGrid(g));
+}
+const ids = (res, re) => res.findings.filter((f) => re.test(f.id));
+
+test('TFT 조명 Q&A: 점멸 · 반짝임은 FX가 아니지만 어떤 조명을 · 어떻게까지 적어야 한다', () => {
+  let res = modelWith([[1, 'details', '후렴에서 신나게 깜빡깜빡']]);
+  const f = ids(res, /^light:blink:/)[0];
+  assert.ok(f, titles(res).join(' / '));
+  assert.equal(f.level, 'warn');
+  assert.match(f.msg, /빠진 것: 어떤 조명을, 어떻게/);
+  assert.equal(ids(res, /^fx:/).filter((x) => x.level !== 'info').length, 0, 'FX로 세지 않는다');
+  // 구체적으로 적으면 통과
+  res = modelWith([[1, 'details', '00:52 가사 "새벽을" 동안 상단 전체 / 핑크를 1박마다 30% ↔ 80%로 점멸']]);
+  assert.equal(ids(res, /^light:blink:/).length, 0, titles(res).join(' / '));
+  // '깜빡임 X'는 하지 말라는 뜻
+  res = modelWith([[1, 'details', '00:52 상단 빨강 즉시 ON (깜빡임 X)']]);
+  assert.equal(ids(res, /^light:blink:/).length, 0);
+  // 비트에 맞춘 번쩍임은 스트로브(FX)로 세지 않는다
+  res = modelWith([[1, 'details', '00:55 비트에 맞춰 무대 중앙 / 흰색 / 100%를 0.5초 번쩍 (2번)']]);
+  assert.equal(ids(res, /^fx:unlabeled:strobe|^light:blink:/).length, 0, titles(res).join(' / '));
+  // FX 이름을 단순 점멸에 붙이면 'FX가 아님' 참고 ('어떤 효과인지 없음' 대신)
+  res = modelWith([[1, 'details', '00:52 FX2 점멸 (상단 1초 간격)']]);
+  assert.ok(res.findings.some((x) => x.id === 'fx:blinkfx:2' && x.level === 'info'), titles(res).join(' / '));
+  assert.ok(!res.findings.some((x) => x.id === 'fx:undefined:2'));
+});
+
+test('TFT 조명 Q&A: 콰이어만 · 샤워 · 무대 아래 단원 · 십자가 비추기는 FX로 지정해야 한다', () => {
+  const cases = [
+    ['choirOnly', '01:00 후렴에서 콰이어만 따로 비춰주세요', /콰이어만 비추기 연출을 FX로 지정하지 않음/],
+    ['shower', '01:00 위에서 샤워처럼 빛이 쏟아지게', /일반 핀으로 쓸 수 없습니다/],
+    ['below', '01:00 무대 아래 왼쪽 계단 앞에서 안무하는 단원들도 비춰주세요', /단원들의 위치/],
+    ['cross', '01:00 단원들은 어둡게, 채플 오른쪽 위 십자가만 비춰주세요', /FX를 써야 가능/],
+  ];
+  for (const [type, text, re] of cases) {
+    const res = modelWith([[1, 'details', text]]);
+    const f = res.findings.find((x) => x.id === `fx:unlabeled:${type}`);
+    assert.ok(f, `${type}: ${titles(res).join(' / ')}`);
+    assert.equal(f.level, 'warn');
+    assert.match(`${f.title} ${f.msg}`, re);
+    assert.match(f.why, /TFT 조명 Q&A/);
+  }
+  // 무대 아래에서 걸어 올라오는 사람을 핀으로 비추는 것은 '무대 아래 단원 비추기'가 아님
+  let res = modelWith([[1, 'details', '00:55 댄서 1명이 무대 아래에서 가운데로 걸어올 때 Pin3 ON']]);
+  assert.ok(!res.findings.some((x) => x.id === 'fx:unlabeled:below'), titles(res).join(' / '));
+  // FX로 지정했어도 무대 아래 단원의 위치가 없으면 수정요망
+  res = modelWith([[1, 'details', '01:00 FX2 무대 아래에서 안무하는 단원들 비춰주세요']]);
+  assert.ok(res.findings.some((x) => /^fx:belowloc:/.test(x.id)), titles(res).join(' / '));
+  assert.ok(!res.findings.some((x) => x.id === 'fx:unlabeled:below'));
+  res = modelWith([[1, 'details', '01:00 FX2 무대 아래 왼쪽 계단 앞에서 안무하는 댄서 4명 비추기']]);
+  assert.ok(!res.findings.some((x) => /^fx:belowloc:/.test(x.id)));
+});
+
+test('TFT 조명 Q&A: 같은 FX는 여러 번 써도 1종류, 고보는 TFT 사진에서 고르기', () => {
+  // 모범 예시의 FX1(스트로브)을 한 번 더 써도 종류는 그대로
+  let res = modelWith([[1, 'details', '01:00 가사 "새벽을"에 맞춰 1초간 스트로브(FX1)']]);
+  assert.ok(!res.findings.some((x) => x.id === 'fx:toomany'), titles(res).join(' / '));
+  res = modelWith([[1, 'details', '01:00 FX2 바닥 고보 패턴'], [2, 'details', '01:25 무빙 라이트 회전']]);
+  const f = res.findings.find((x) => x.id === 'fx:toomany');
+  assert.ok(f, titles(res).join(' / '));
+  assert.match(f.msg, /반복하는 것은 1종류/);
+  assert.ok(res.findings.some((x) => x.id === 'fx:gobo' && x.level === 'info'));
+});
+
+test('TFT 조명 Q&A: 밝기는 소수점 첫째 자리까지', () => {
+  const res = modelWith([[1, 'lStage', '중앙 / 흰색 / 37.5'], [1, 'pin3', '37.5%'], [2, 'lTop', '전체 / 하늘색 / 62.55%']]);
+  const r = res.revised.rows.find((x) => x.c.runtime === '00:52 ~ 01:20 (28초)');
+  assert.equal(r.c.lStage, '중앙 / 흰색 / 37.5%');
+  assert.equal(r.c.pin3, 'ON (37.5%)');
+  const f = res.findings.find((x) => /^light:decimal:/.test(x.id));
+  assert.ok(f && f.level === 'info', titles(res).join(' / '));
+  assert.match(f.msg, /62\.6%/);
+});
+
+test('TFT 조명 Q&A: 앞줄 강조 · 연한 색과 밝기 · 레퍼런스 사진', () => {
+  const front = '00:52 가사 "새벽을" 시작과 동시에 앞줄 강조, 즉시';
+  let res = modelWith([[1, 'lStage', '전체 / 흰색 / 30%'], [1, 'lTop', '전체 / 파란색 / 80%'], [1, 'details', front]]);
+  const f = res.findings.find((x) => /^light:frontrow:/.test(x.id));
+  assert.ok(f && f.level === 'warn', titles(res).join(' / '));
+  assert.match(f.msg, /무대 조명 30%보다 상단 조명 80%/);
+  res = modelWith([[1, 'lStage', '전체 / 흰색 / 100%'], [1, 'lTop', '전체 / 파란색 / 20%'], [1, 'details', front]]);
+  assert.ok(!res.findings.some((x) => /^light:frontrow:/.test(x.id)));
+  // 연한 색이라고 밝기를 낮출 필요는 없음 (참고)
+  res = modelWith([[1, 'lTop', '전체 / 연한 핑크 / 20%']]);
+  assert.ok(res.findings.some((x) => /^light:pastel:/.test(x.id) && x.level === 'info'), titles(res).join(' / '));
+  res = modelWith([[1, 'lTop', '전체 / 연한 핑크 / 70%']]);
+  assert.ok(!res.findings.some((x) => /^light:pastel:/.test(x.id)));
+  // 레퍼런스 사진과 똑같이 나오지 않을 수 있음 (참고)
+  res = modelWith([[1, 'details', '00:52 레퍼런스 사진처럼 상단을 노란 색감으로 즉시']]);
+  assert.ok(res.findings.some((x) => x.id === 'light:reference' && x.level === 'info'), titles(res).join(' / '));
+});

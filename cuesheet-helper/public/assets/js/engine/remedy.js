@@ -87,7 +87,7 @@ function fillZone(text, key, st, x) {
       if (!line.trim() || OFF_ONLY_RE.test(line) || /^X\b/.test(line) || /^유지/.test(line)) return line;
       const zone = (line.match(ZONE_RE) || [])[0];
       const color = (line.match(COLOR_WORD_RE) || line.match(/#[0-9a-f]{3,6}/i) || [])[0];
-      const p = (line.match(/(\d{1,3})\s*%/) || [])[1];
+      const p = (line.match(/(\d{1,3}(?:\.\d+)?)\s*%/) || [])[1];
       const time = (line.match(/^\s*\d{1,2}:\d{2}\s*/) || [''])[0];
       return `${time}${zone || ex('전체')} / ${color || (key === 'lTop' ? ex(m.top) : ex('흰색'))} / ${p ? `${p}%` : ex(`${pct}%`)}`;
     })
@@ -500,7 +500,7 @@ export function attachRemedies(ctx, stages) {
       const z = LOC_WORDS.find((w) => w.re.test(before));
       const zone = /(콰이어|합창|단상|전원|전체)/.test(before) ? '전체' : z ? { left: '왼쪽', right: '오른쪽', center: '중앙', back: '전체' }[z.zone] || '전체' : ex('왼쪽');
       const color = (before.match(COLOR_WORD_RE) || ['흰색'])[0];
-      const pct = (before.match(/\d{1,3}\s*%/) || [ex('70%')])[0];
+      const pct = (before.match(/\d{1,3}(?:\.\d+)?\s*%/) || [ex('70%')])[0];
       const line = `${zone} / ${color} / ${pct}`;
       const ops = [set(row, key, 'X'), { rowId: row.id, key: 'lStage', append: line }];
       return { before, after: `${PIN_POS[key] ? `${PIN_POS[key].name}: X / ` : ''}무대: ${line}`, ops, pairs: pairsOf(ops), afterNote: '그룹은 무대 조명 구역으로, 핀은 1명만' };

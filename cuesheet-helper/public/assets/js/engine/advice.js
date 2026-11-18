@@ -24,7 +24,7 @@ function brightness(row) {
   for (const k of ['lStage', 'lTop']) {
     const v = norm(row.c[k]);
     if (!v || OFF_ONLY_RE.test(v) || /^X\b/.test(v) || /^유지/.test(v)) continue;
-    for (const m of v.matchAll(/(\d{1,3})\s*%/g)) best = Math.max(best ?? 0, Number(m[1]));
+    for (const m of v.matchAll(/(\d{1,3}(?:\.\d+)?)\s*%/g)) best = Math.max(best ?? 0, Number(m[1]));
   }
   return best;
 }

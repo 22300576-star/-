@@ -10,17 +10,29 @@ import { LIGHT_KEYS, PIN_KEYS, PIN_POS, PLACEHOLDER, colName } from './constants
 import { findClockTokens, shiftClocksInText, fmtClock } from './time.js';
 import {
   norm, isBlank, PENDING_RE, OFF_ONLY_RE, BLACK_COLOR_RE, KEEP_RE, ZONE_RE, HEX_RE, COLOR_WORD_RE, WHITE_RE,
-  PERCENT_RE, VAGUE_BRIGHT, PIN_ON_ONLY_RE, GROUP_RE, COUNT_RE, FOLLOW_RE, LOC_WORDS, FX_TYPES, FX_ANY_RE,
-  TRANSITION_RE, SUBJECTIVE_RE,
+  PERCENT_RE, PCT_NUM_RE, VAGUE_BRIGHT, PIN_ON_ONLY_RE, GROUP_RE, COUNT_RE, FOLLOW_RE, LOC_WORDS, FX_TYPES, FX_ANY_RE,
+  TRANSITION_RE, SUBJECTIVE_RE, BLINK_RE, BLINK_NEG_RE, LIGHT_WHICH_RE, BLINK_HOW_RE, BLINK_REPEAT_RE, FRONT_ROW_RE,
+  PASTEL_RE, REFERENCE_RE,
 } from './vocab.js';
 import { addFinding, applyChange, applyPlaceholder, rowLabel, blockLabel } from './context.js';
 import { reparse } from './rules-time.js';
 
 const WHY_ZONE = '조명 가이드 1·2: 무대·상단 조명은 구역(왼쪽/중앙/오른쪽) / 색상 / 밝기로 요청 — 예) 중앙 / 하얀색 / 100%';
 const WHY_PIN = '조명 가이드 3: 핀조명은 색 변경이 어렵고 ON/OFF와 밝기만 조절 가능, 위치 조정이 어려워 핀이 비추는 곳에 가서 서야 함, 3명 이상은 무대 조명 권장';
-const WHY_FX = '조명 가이드 4: FX(스트로브·고보·무빙·추가 핀) 중 2개만 FX1·FX2로 지정해 Pin4 옆 Details에 작성';
+const WHY_FX = '조명 가이드 4: FX(스트로브·고보·무빙·추가 핀) 중 2종류만 FX1·FX2로 지정해 Pin4 옆 Details에 작성 · TFT 조명 Q&A: 같은 효과는 여러 구간에서 반복해 써도 1종류';
 const WHY_TIP = '조명 가이드 큐시트 작성 팁: 전환 방식(즉시/서서히) 명시, 영상 재생 시간 기준, 객관적이고 명확한 시점';
+// TFT 조명 Q&A (학부 질문에 대한 TFT 답변, 2026)
+const WHY_QA_FX = 'TFT 조명 Q&A: 콰이어만 비추기 · 샤워처럼 쏟아지는 빛 · 무대 아래 단원 비추기 · 십자가만 비추기는 FX를 써야 가능';
+const WHY_QA_BLINK = 'TFT 조명 Q&A: 가사·비트에 맞춘 연속 점멸과 순간적인 반짝임은 FX가 아님. 다만 요청이 많으면 운용이 어려워 어떤 조명을 언제, 어떻게 점멸할지 구체적으로 작성';
+const WHY_QA_PINFX = 'TFT 조명 Q&A: FX에 쓰이는 핀 조명은 효과가 진행되는 동안 일반 핀 조명으로 쓸 수 없음 — FX를 고를 때 함께 고려';
+const WHY_QA_GOBO = 'TFT 조명 Q&A: 고보는 TFT가 주는 패턴 사진에서 선택, 무대 전체에 고르게 비출 수 있는지는 설치 후 확인';
+const WHY_QA_FRONT = 'TFT 조명 Q&A: 앞줄을 강조하려면 무대 조명을 밝게, 상단 조명을 어둡게';
+const WHY_QA_COLOR = 'TFT 조명 Q&A: 색의 연하고 진한 정도와 조명 밝기는 별개 — 연한 색이라고 밝기를 낮출 필요 없음';
+const WHY_QA_REF = 'TFT 조명 Q&A: 레퍼런스 사진과 채플의 조명 환경 · 배치가 달라 같은 설정으로도 똑같이 나오지 않을 수 있음(비슷한 색감은 가능)';
+const WHY_QA_DEC = 'TFT 조명 Q&A: 밝기는 소수점 첫째 자리까지 조절 가능';
 
+// 'FX1 점멸', '깜빡임(FX2)'처럼 FX 이름이 점멸 바로 옆에 붙은 줄
+const BLINK_NEAR_FX_RE = /FX\s*[12][^\n]{0,6}(?:점멸|깜빡|깜박|번쩍|반짝|두근)|(?:점멸|깜빡|깜박|번쩍|반짝|두근)[^\n]{0,6}FX\s*[12]/i;
 const TIME_PREFIX_RE = /^\s*(\d{1,2}\s*:\s*\d{2}(?:\s*[~\-–]\s*\d{1,2}\s*:\s*\d{2})?)\s*/;
 const HEADING_ONLY_RE = /^(무대|상단|조명|무대\s*조명|상단\s*조명|핀|pin\s*\d?|details?)\s*:?$/i;
 const OFFISH_RE = /(^|[\s\/(·,])(x|X|off|OFF|끄기|꺼짐|끔|암전|꺼주세요|끄고)(?=$|[\s\/()·,.])/;
@@ -372,7 +384,8 @@ function alignCueTimes(ctx) {
 }
 
 // ---------------- 4. 칸별 정리·점검 ----------------
-const SLASH_TAIL_NUM = /(?<![\d#A-Za-z%.:])(\d{1,3})(?![\d%A-Za-z:.초분명개번열줄회차])/g;
+// 'XX / 색 / 37.5'처럼 % 없이 쓴 마지막 숫자 (소수점 첫째 자리까지)
+const SLASH_TAIL_NUM = /(?<![\d#A-Za-z%.:])(\d{1,3}(?:\.\d)?)(?![\d%A-Za-z:.초분명개번열줄회차])/g;
 
 function fixZoneLine(line) {
   let out = line;
@@ -392,7 +405,7 @@ function fixZoneLine(line) {
   }
   out = segs.join('');
   out = out.replace(/(\d{1,3})\s*~\s*(\d{1,3})\s*정도의?\s*밝기/g, '$1%~$2%');
-  out = out.replace(/밝기\s*(\d{1,3})(?![\d%])/g, '밝기 $1%');
+  out = out.replace(/밝기\s*(\d{1,3}(?:\.\d)?)(?![\d%.])/g, '밝기 $1%');
   return out;
 }
 
@@ -448,6 +461,8 @@ function normalizeZoneCell(text, kind) {
             }
           }
           issues.add('vague');
+          // '연하게'는 색을 연하게 하려는 뜻일 수 있다 — 색의 연하기와 밝기는 별개 (TFT 조명 Q&A)
+          if (PASTEL_RE.test(v.phrase) && c) issues.add('vaguePastel');
           p = true;
         }
       }
@@ -465,7 +480,7 @@ function normalizeZoneCell(text, kind) {
             gl[0] = gl[0].replace(t, `${parts[0]}/흰색/${parts[1]}`);
             issues.add('whiteAdded');
           } else {
-            const m = t.match(/^(전체|왼쪽|오른쪽|중앙|좌우|양쪽)\s*(?:조명)?\s*(\d{1,3}\s*%)$/);
+            const m = t.match(/^(전체|왼쪽|오른쪽|중앙|좌우|양쪽)\s*(?:조명)?\s*(\d{1,3}(?:\.\d+)?\s*%)$/);
             if (m) {
               gl[0] = gl[0].replace(t, `${m[1]} / 흰색 / ${m[2].replace(/\s/g, '')}`);
               issues.add('whiteAdded');
@@ -500,7 +515,7 @@ function normalizePinCell(text, pinKey) {
     }
     if (OFF_ONLY_RE.test(bodyFlat)) body = 'X';
     else if (PIN_ON_ONLY_RE.test(bodyFlat)) body = 'ON';
-    else if (/^\d{1,3}\s*%$/.test(bodyFlat)) body = `ON (${bodyFlat.replace(/\s/g, '')})`;
+    else if (/^\d{1,3}(?:\.\d+)?\s*%$/.test(bodyFlat)) body = `ON (${bodyFlat.replace(/\s/g, '')})`;
     else {
       body = body.replace(/^(o|O)(?=\s*[\/(]|\s*$)/, 'ON').replace(/(pin|핀)\s*조명\s*on|pin\s*on|핀\s*on/gi, 'ON');
       const colors = nonWhiteColors(bodyFlat);
@@ -516,7 +531,7 @@ function normalizePinCell(text, pinKey) {
           // 그룹을 비추는 색 조명 → 무대 조명(구역)으로 옮김
           const loc = LOC_WORDS.find((l) => l.re.test(bodyFlat));
           const zone = loc ? { left: '왼쪽', right: '오른쪽', center: '중앙', back: '중앙', offstage: '전체' }[loc.zone] : '전체';
-          const pct = (bodyFlat.match(/\d{1,3}\s*%/) || [''])[0].replace(/\s/g, '');
+          const pct = (bodyFlat.match(PERCENT_RE) || [''])[0].replace(/\s/g, '');
           move = { line: `${g.prefix ? `${g.prefix} ` : ''}${zone} / ${colors[0].replace(/^(?=[0-9a-fA-F]{6}$)/, '#')} / ${pct || '50%'}`, from: bodyFlat };
           issues.add('moved');
           body = 'X';
@@ -551,13 +566,16 @@ function normalizeCells(ctx) {
   for (const row of lightingRows(S)) {
     for (const key of ['lStage', 'lTop']) {
       if (!row.c[key]) continue;
+      qaPastel(ctx, row, key, row.c[key]);
+      qaDecimal(ctx, row, key, row.c[key]);
       const { value, issues } = normalizeZoneCell(row.c[key], key);
       if (value !== row.c[key]) applyChange(ctx, 'light:format', row, key, value, '조명 표기 정리(구역 / 색상 / 밝기%)');
-      const real = issues.filter((i) => ['unparsed', 'noColor', 'noColorTop', 'noPct', 'black', 'vague', 'zoneAdded', 'whiteAdded'].includes(i));
+      const real = issues.filter((i) => ['unparsed', 'noColor', 'noColorTop', 'noPct', 'black', 'vague', 'vaguePastel', 'zoneAdded', 'whiteAdded'].includes(i));
       if (real.length) zoneIssueRows.push({ row, key, issues: real });
     }
     for (const key of PIN_KEYS) {
       if (!row.c[key]) continue;
+      qaDecimal(ctx, row, key, row.c[key]);
       const { value, issues, move } = normalizePinCell(row.c[key], key);
       const pos = PIN_POS[key];
       if (issues.includes('color')) {
@@ -652,6 +670,7 @@ function normalizeCells(ctx) {
     if (issues.includes('noColorTop')) msgs.push('상단 조명 색상이 없습니다(상단은 무대에 색을 입히는 조명)');
     const auto = [];
     if (issues.includes('vague')) auto.push("'밝게/어둡게' 같은 표현을 추정 %로 바꿨습니다(실제 밝기 확인)");
+    if (issues.includes('vaguePastel')) auto.push("'연하게'가 색을 연하게 하려는 뜻이라면 밝기를 낮출 필요는 없습니다. 색의 연하기와 밝기는 별개라 밝기를 따로 정해 적어주세요(TFT 조명 Q&A)");
     if (issues.includes('zoneAdded')) auto.push("구역이 없어 '전체'로 적었습니다");
     if (issues.includes('whiteAdded')) auto.push("색상이 없어 '흰색'으로 적었습니다");
     if (issues.includes('black')) auto.push("'블랙/검정' 조명은 없으므로 꺼짐(X)으로 바꿨습니다");
@@ -690,6 +709,7 @@ function fxRules(ctx) {
   const labelRows = { 1: [], 2: [] };
   const typeUse = new Map(); // type -> rows
   const defs = { 1: new Set(), 2: new Set() };
+  const blinkLabel = { 1: [], 2: [] }; // 'FX1 점멸'처럼 단순 점멸에 FX 이름을 붙인 줄 (TFT 조명 Q&A: 점멸은 FX가 아님)
   const outside = [];
   for (const row of S.rows) {
     const cells = { ...Object.fromEntries([...LIGHT_KEYS, 'details', 'note'].map((k) => [k, row.c[k] || ''])) };
@@ -698,6 +718,7 @@ function fxRules(ctx) {
       for (const line of text.split('\n')) {
         const labels = [...line.matchAll(/FX\s*([12])/gi)].map((m) => m[1]);
         const types = FX_TYPES.filter((t) => t.re.test(line)).map((t) => t.key);
+        if (labels.length && !types.length && BLINK_NEAR_FX_RE.test(line)) for (const l of labels) blinkLabel[l].push({ row, line });
         for (const l of labels) {
           labelRows[l].push(row);
           for (const t of types) defs[l].add(t);
@@ -713,7 +734,20 @@ function fxRules(ctx) {
   const used = [1, 2].filter((n) => labelRows[n].length);
   for (const n of used) {
     const userDef = (o.fx && o.fx[`FX${n}`]) || '';
-    if (!defs[n].size && !userDef) {
+    if (!defs[n].size && !userDef && blinkLabel[n].length) {
+      const b = blinkLabel[n][0];
+      addFinding(ctx, {
+        id: `fx:blinkfx:${n}`,
+        cat: 'fx',
+        level: 'info',
+        rowId: b.row.id,
+        key: 'details',
+        title: `FX${n}에 적은 점멸 · 반짝임은 FX가 아님`,
+        msg: `'${b.line.trim().slice(0, 40)}' — 가사·비트에 맞춘 연속 점멸이나 순간적인 반짝임은 FX로 세지 않습니다. FX 2종류는 스트로브 · 고보 · 무빙 같은 효과에 남겨 두고, 점멸은 FX 표시 없이 어떤 조명을 · 언제 · 어떻게 점멸할지 적어주세요.`,
+        why: WHY_QA_BLINK,
+        suggestion: '예) 01:05~01:13 상단 전체 / 핑크 / 30% ↔ 80%를 1박마다 점멸 (FX 표시 없이)',
+      });
+    } else if (!defs[n].size && !userDef) {
       addFinding(ctx, {
         id: `fx:undefined:${n}`,
         cat: 'fx',
@@ -749,25 +783,91 @@ function fxRules(ctx) {
       cat: 'fx',
       level: 'error',
       title: `FX 효과가 ${types.length}종류 — 2개까지만 가능`,
-      msg: `${josa(types.map((t) => FX_TYPES.find((x) => x.key === t).name).join(', '), '을/를')} 사용하려고 합니다. FX는 2개만 골라 FX1·FX2로 지정할 수 있습니다(여러 효과를 하나로 묶은 연출은 FX 하나로 인정).`,
+      msg: `${josa(types.map((t) => FX_TYPES.find((x) => x.key === t).name).join(', '), '을/를')} 사용하려고 합니다. FX는 학부당 2종류만 골라 FX1·FX2로 지정할 수 있습니다. 같은 효과를 여러 구간에서 반복하는 것은 1종류로 세고, 여러 효과를 하나로 묶은 연출도 FX 하나로 인정합니다.`,
       why: WHY_FX,
     });
   }
   for (const [t, uses] of typeUse) {
+    const T = FX_TYPES.find((x) => x.key === t);
     const unlabeled = uses.filter((u) => !u.labeled);
     if (unlabeled.length && !uses.some((u) => u.labeled)) {
       const u = unlabeled[0];
+      const head = `'${u.line.trim().slice(0, 40)}' — `;
+      const tail = "FX1 또는 FX2로 이름을 붙이고 Details에 '언제 / 어떤 효과(FX1) / 얼마나'를 적어주세요.";
       addFinding(ctx, {
         id: `fx:unlabeled:${t}`,
         cat: 'fx',
         level: 'warn',
         rowId: u.row.id,
         key: u.key,
-        title: `${FX_TYPES.find((x) => x.key === t).name} 효과를 FX로 지정하지 않음`,
-        msg: `'${u.line.trim().slice(0, 40)}' — 이 효과는 FX에 해당합니다. FX1 또는 FX2로 이름을 붙이고 Details에 '언제 / 어떤 효과(FX1) / 얼마나'를 적어주세요.`,
-        why: WHY_FX,
+        title: `${T.name} ${josa(T.qa ? '연출' : '효과', '을/를')} FX로 지정하지 않음`,
+        msg: T.qa ? `${head}이 연출은 FX를 써야 가능합니다. ${tail}${T.hint ? ` ${T.hint}` : ''}` : `${head}이 효과는 FX에 해당합니다. ${tail}`,
+        why: T.qa ? `${WHY_QA_FX} · ${WHY_FX}` : WHY_FX,
       });
     }
+  }
+  // 무대 아래 단원 비추기 (TFT 조명 Q&A Q11): FX로 지정하고 단원들의 위치를 구체적으로
+  for (const u of typeUse.get('below') || []) {
+    if (/(왼쪽|오른쪽|중앙|가운데|좌측|우측|계단|통로|객석|양옆|양쪽|구석|피아노|출입문|앞\s*줄|첫\s*줄)/.test(u.line)) continue;
+    addFinding(ctx, {
+      id: `fx:belowloc:${u.row.id}`,
+      cat: 'fx',
+      level: 'warn',
+      rowId: u.row.id,
+      key: u.key,
+      title: '무대 아래 단원의 위치가 없음',
+      msg: `'${u.line.trim().slice(0, 40)}' — 무대 아래에서 안무하는 단원을 비추려면 FX로 지정하고, 그 단원들이 서는 위치를 구체적으로 적어야 합니다.`,
+      why: 'TFT 조명 Q&A: 무대 아래 단원은 FX로 비출 수 있음, 단원들의 위치를 구체적으로',
+      suggestion: '예) 02:10 FX1 무대 아래 왼쪽 계단 앞에서 안무하는 댄서 4명 비추기',
+    });
+  }
+  // 고보 (TFT 조명 Q&A Q4): 패턴은 TFT가 주는 사진에서 고르고, 무대 전체에 고르게 비출 수 있는지는 설치 후 확인
+  const gobo = typeUse.get('gobo');
+  if (gobo && gobo.length) {
+    addFinding(ctx, {
+      id: 'fx:gobo',
+      cat: 'fx',
+      level: 'info',
+      rowId: gobo[0].row.id,
+      key: gobo[0].key,
+      title: '고보 패턴은 TFT가 주는 사진에서 고르기',
+      msg: '고보는 TFT가 보내 주는 고보 패턴 사진 중에서 원하는 패턴을 골라 Details에 패턴 이름(번호)을 적어주세요. 무대 전체에 고르게 비출 수 있는지는 설치 후 확인이 필요합니다.',
+      why: WHY_QA_GOBO,
+      suggestion: '예) 03:38 FX2 고보 [패턴 이름/번호] 무대 전체에',
+    });
+  }
+  // FX와 핀 (TFT 조명 Q&A): FX에 쓰이는 핀은 효과가 이어지는 동안 일반 핀으로 쓸 수 없다
+  const fxRows = new Set([...labelRows[1], ...labelRows[2], ...[...typeUse.values()].flat().map((u) => u.row)]);
+  for (const b of S.blocks) {
+    if (b.kind !== 'stage') continue;
+    const hits = [];
+    const on = {};
+    for (const r of b.rows) {
+      for (const k of PIN_KEYS) {
+        const v = norm(r.c[k]);
+        if (!v || r.cont[k] || KEEP_RE.test(v) || PENDING_RE.test(v) || v === PLACEHOLDER) continue;
+        // 칸 안의 마지막 큐가 그 행이 끝날 때의 상태 ('00:44 ON (70%)' → 켜짐, '03:19 X' · '01:20 서서히 X' → 꺼짐)
+        const gs = splitCues(v);
+        const last = bodyOf(gs[gs.length - 1]).trim();
+        if (!last) continue;
+        on[k] = !(isOff(last) || /(^|\s)(X|x|OFF|off)(\s*\(.*\))?$/.test(last) || /(끄기|꺼짐|꺼주|끄고|소등)/.test(last));
+      }
+      const pins = PIN_KEYS.filter((k) => on[k]);
+      if (fxRows.has(r) && pins.length) hits.push({ r, pins });
+    }
+    if (!hits.length) continue;
+    const names = [...new Set(hits.flatMap((h) => h.pins))].map((k) => PIN_POS[k].name).join('·');
+    addFinding(ctx, {
+      id: `fx:pinshare:${b.index}`,
+      cat: 'fx',
+      level: 'info',
+      rowId: hits[0].r.id,
+      key: hits[0].pins[0],
+      title: 'FX를 쓰는 구간에 핀조명도 켜 둠',
+      msg: `${blockLabel(b)}에서 FX를 쓰는 행에 ${josa(names, '이/가')} 켜져 있습니다. FX에 쓰이는 핀은 효과가 이어지는 동안 일반 핀으로 쓸 수 없으니, 켜 둔 핀이 FX에 쓰이는 핀과 겹치지 않는지 FX를 고를 때 함께 확인해주세요.`,
+      why: WHY_QA_PINFX,
+      rows: hits.map((h) => h.r.id),
+    });
   }
   const pinMoving = S.rows.find((r) => PIN_KEYS.some((k) => /무빙/.test(r.c[k] || '')));
   if (pinMoving && !typeUse.has('moving')) {
@@ -803,6 +903,140 @@ function fxRules(ctx) {
     }
   }
   S.fx = { used, defs: { 1: [...defs[1]], 2: [...defs[2]] }, types };
+}
+
+// ---------------- 5-1. TFT 조명 Q&A ----------------
+// 학부 질문에 대한 TFT 답변을 점검 기준으로: 점멸은 FX가 아니지만 구체적으로, 앞줄 강조는 무대를 밝게,
+// 연한 색과 밝기는 별개, 레퍼런스와 똑같지 않을 수 있음, 밝기는 소수점 첫째 자리까지
+const pctsOf = (v) => [...String(v || '').matchAll(PCT_NUM_RE)].map((m) => Number(m[1]));
+
+function qaDecimal(ctx, row, key, text) {
+  const m = String(text || '').match(/(\d{1,3}\.\d{2,})\s*%/);
+  if (!m) return;
+  const r = Math.round(Number(`${m[1]}e1`)) / 10;
+  addFinding(ctx, {
+    id: `light:decimal:${row.id}:${key}`,
+    cat: 'light',
+    level: 'info',
+    rowId: row.id,
+    key,
+    title: '밝기는 소수점 첫째 자리까지',
+    msg: `${colName(key)}에 '${m[0].replace(/\s/g, '')}'처럼 소수점 둘째 자리까지 적었습니다. 조명 밝기는 소수점 첫째 자리까지 조절할 수 있으니 ${r}%처럼 적어주세요.`,
+    why: WHY_QA_DEC,
+    suggestion: `예) ${r}%`,
+  });
+}
+
+function qaPastel(ctx, row, key, text) {
+  const t = String(text || '');
+  const line = t.split('\n').find((l) => PASTEL_RE.test(l));
+  if (!line) return;
+  const pcts = pctsOf(line);
+  if (!pcts.length || Math.max(...pcts) > 40) return;
+  addFinding(ctx, {
+    id: `light:pastel:${row.id}:${key}`,
+    cat: 'light',
+    level: 'info',
+    rowId: row.id,
+    key,
+    title: '연한 색이라고 밝기를 낮출 필요는 없음',
+    msg: `'${line.trim().slice(0, 30)}'처럼 연한 색에 밝기를 ${Math.max(...pcts)}%로 낮게 적었습니다. 색의 연하고 진한 정도와 조명 밝기는 별개라, 연한 색을 원한다고 밝기를 낮출 필요는 없습니다. 원하는 밝기를 따로 정해 적어주세요(어둡게 하려던 것이라면 그대로 두면 됩니다).`,
+    why: WHY_QA_COLOR,
+    suggestion: '예) 전체 / 연한 핑크 / 70%',
+  });
+}
+
+// 블록 안에서 '유지' · 빈 칸이면 앞 행 값을 따라간 실제 값
+function heldValue(S, row, key) {
+  const b = S.blocks[row.blockIndex];
+  const rows = b ? b.rows : [row];
+  for (let i = rows.indexOf(row); i >= 0; i--) {
+    const v = norm(rows[i].c[key]);
+    if (v && !KEEP_RE.test(v) && v !== PLACEHOLDER) return v;
+  }
+  return '';
+}
+const levelOf = (v) => (!v || isOff(v) ? 0 : pctsOf(v).length ? Math.max(...pctsOf(v)) : null);
+
+function qaRules(ctx) {
+  const { S } = ctx;
+  // 1) 점멸 · 반짝임 (Q5 · Q7 · Q8): FX가 아니지만 어떤 조명을 · 언제 · 어떻게
+  for (const row of lightingRows(S)) {
+    let hit = null;
+    for (const key of [...LIGHT_KEYS, 'details']) {
+      const lines = String(row.c[key] || '').split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const m = line.match(BLINK_RE);
+        if (!m || BLINK_NEG_RE.test(line.slice(m.index + m[0].length))) continue;
+        if (/FX\s*[12]/i.test(line) || FX_TYPES.some((t) => t.re.test(line))) continue; // FX 문장은 FX 규칙에서
+        // 한 문장이 여러 줄에 걸쳐 있을 수 있어 앞뒤 줄까지 함께 본다 ('…HOUSE\n조명 on, 1초에 한번 깜박')
+        const near = lines.slice(Math.max(0, i - 1), i + 2).join(' ');
+        const clocks = findClockTokens(near).length > 0;
+        const which = key !== 'details' || LIGHT_WHICH_RE.test(near);
+        const when = (row.rt && row.rt.ok) || clocks || /["“'‘「]/.test(near) || /(동안|부터|까지|구간|후렴|간주|도입|절정|전주)/.test(near);
+        const how = BLINK_HOW_RE.test(near) || (clocks && !BLINK_REPEAT_RE.test(near));
+        if (which && when && how) continue;
+        hit = { key, line: line.trim(), heart: /두근|심장|심박/.test(line), miss: [!which && '어떤 조명을', !when && '언제', !how && '어떻게(간격 · 횟수 · 밝기 변화)'].filter(Boolean) };
+        break;
+      }
+      if (hit) break;
+    }
+    if (!hit) continue;
+    addFinding(ctx, {
+      id: `light:blink:${row.id}`,
+      cat: 'light',
+      level: 'warn',
+      rowId: row.id,
+      key: hit.key,
+      title: '점멸 · 반짝임 연출이 구체적이지 않음',
+      msg: `'${hit.line.slice(0, 40)}' — 가사·비트에 맞춘 점멸이나 순간적인 반짝임은 FX로 세지 않아 FX 없이 쓸 수 있습니다. 다만 요청이 많으면 운용이 어려워 어떤 조명을 · 언제 · 어떻게 점멸할지 구체적으로 적어야 합니다. 빠진 것: ${hit.miss.join(', ')}.`,
+      why: WHY_QA_BLINK,
+      suggestion: hit.heart
+        ? '예) 01:05~01:13 가사 "두근두근" 동안 상단 전체 / 핑크를 1박(약 0.5초)마다 30% ↔ 80%로 점멸'
+        : '예) 02:10~02:18 후렴 비트마다 무대 중앙 / 흰색 / 100%를 0.5초씩 번쩍 (8번)',
+    });
+  }
+  // 2) 앞줄 강조 (Q1): 무대 조명을 밝게, 상단 조명을 어둡게
+  for (const row of S.rows.filter((r) => r.kind === 'stage')) {
+    const text = [row.c.details, row.c.lStage, row.c.lTop, row.c.note].map((v) => v || '').join('\n');
+    if (!FRONT_ROW_RE.test(text)) continue;
+    const st = levelOf(heldValue(S, row, 'lStage'));
+    const top = levelOf(heldValue(S, row, 'lTop'));
+    const said = /무대\s*(?:조명)?\s*(?:을|은|는)?\s*(?:조금|살짝|약간)?\s*(?:끄|꺼|낮|줄|어둡)/.test(text) && /상단[^\n]{0,10}(?:켜|밝|올)/.test(text);
+    const nums = st != null && top != null && st < top;
+    if (!said && !nums) continue;
+    addFinding(ctx, {
+      id: `light:frontrow:${row.id}`,
+      cat: 'light',
+      level: 'warn',
+      rowId: row.id,
+      key: 'lStage',
+      title: '앞줄 강조는 무대 조명을 밝게, 상단을 어둡게',
+      msg: `앞줄을 강조하려는데 ${nums ? `무대 조명 ${st}%보다 상단 조명 ${top}%가 더 밝습니다` : '무대 조명을 줄이고 상단 조명을 켜도록 적었습니다'}. 앞줄을 강조하려면 반대로 무대 조명(앞에서 사람을 비추는 조명)을 밝게 하고 상단 조명을 어둡게 하는 것이 도움이 됩니다. TFT가 주는 레퍼런스 사진도 참고해주세요.`,
+      why: WHY_QA_FRONT,
+      suggestion: '예) 무대: 전체 / 흰색 / 100%, 상단: 전체 / 파란색 / 20%',
+    });
+  }
+  // 3) 레퍼런스 사진 (Q6 · Q9): 채플과 조명 환경이 달라 똑같이 나오지 않을 수 있음 — 한 번만
+  outer: for (const row of lightingRows(S)) {
+    for (const key of [...LIGHT_KEYS, 'details', 'note']) {
+      const line = String(row.c[key] || '').split('\n').find((l) => REFERENCE_RE.test(l) && (key !== 'note' || /(조명|색감|컬러|빛|밝기|상단)/.test(l)));
+      if (!line) continue;
+      addFinding(ctx, {
+        id: 'light:reference',
+        cat: 'light',
+        level: 'info',
+        rowId: row.id,
+        key,
+        title: '레퍼런스 사진과 똑같이 나오지 않을 수 있음',
+        msg: `'${line.trim().slice(0, 40)}' — 레퍼런스 사진과 실제 채플은 조명 환경과 배치가 달라, 같은 밝기 설정으로도 똑같이 보이지 않을 수 있습니다. 비슷한 색감은 낼 수 있으니 원하는 색을 '구역 / 색상 / 밝기%'로 적어주세요.`,
+        why: WHY_QA_REF,
+        suggestion: '예) 상단: 전체 / 노란색 / 60%',
+      });
+      break outer;
+    }
+  }
 }
 
 // ---------------- 6. 빈 칸 채우기 / Details / 조명 미작성 ----------------
@@ -946,6 +1180,7 @@ export function lightRules(ctx) {
   alignCueTimes(ctx);
   normalizeCells(ctx);
   fxRules(ctx);
+  qaRules(ctx);
   fillBlanks(ctx);
   const lf = ctx.fixes.get('light:format');
   if (lf && lf.cells.length && !ctx.findings.some((f) => f.id === 'light:format-sum')) {

@@ -42,7 +42,7 @@ const CAT_PAGE = { time: 'time', stage: 'stage', detail: 'detail', lyrics: 'lyri
 const pageOf = (f) => CAT_PAGE[f.cat] || 'form';
 // 고칠 것: 큰 문제(error)와 나머지(warn)를 나누지 않고 모두 '수정요망'
 const isTodo = (f) => f.level === 'error' || f.level === 'warn';
-const FX_OPTIONS = ['', '스트로브', '고보(무늬 투사)', '무빙(좌우 교차·원 그리기)', '추가 핀(Pin1~4 외 위치)', '조합 연출(여러 효과를 하나로)'];
+const FX_OPTIONS = ['', '스트로브', '고보(무늬 투사)', '무빙(좌우 교차·원 그리기)', '추가 핀(Pin1~4 외 위치)', '콰이어만 비추기', '샤워처럼 쏟아지는 빛', '무대 아래 단원 비추기', '십자가만 비추기', '조합 연출(여러 효과를 하나로)'];
 
 // ---------------- 상태 ----------------
 const state = {
